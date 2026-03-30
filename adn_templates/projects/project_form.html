@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - ADN{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <span><i class="bi bi-pencil-square me-2"></i>{{ title }}</span>
+                <a href="{% if project %}{% url 'project_detail' project.pk %}{% else %}{% url 'project_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm" style="border-radius:8px;">Cancel</a>
+            </div>
+            <div class="card-body-custom">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Project Title *</label>
+                            {{ form.title }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Priority</label>
+                            {{ form.priority }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Client Name *</label>
+                            {{ form.client_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Client Phone</label>
+                            {{ form.client_phone }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Client Email</label>
+                            {{ form.client_email }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Location</label>
+                            {{ form.location }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Budget (TZS)</label>
+                            {{ form.budget }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Completion %</label>
+                            {{ form.completion_percentage }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Start Date</label>
+                            {{ form.start_date }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">End Date</label>
+                            {{ form.end_date }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Notes</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    {% if form.errors %}
+                    <div class="alert alert-danger mt-3" style="border-radius:10px;font-size:0.85rem;">
+                        {% for field, errors in form.errors.items %}
+                        <div><strong>{{ field }}:</strong> {{ errors.0 }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-lg me-1"></i> Save Project
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

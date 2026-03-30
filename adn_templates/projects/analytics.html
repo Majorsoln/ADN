@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Analytics - ADN{% endblock %}
+{% block page_title %}Analytics & Insights{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2 col-6">
+        <div class="stat-card text-center">
+            <div class="stat-value" style="font-size:1.5rem;">{{ project_count }}</div>
+            <div class="stat-label">Projects</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card text-center">
+            <div class="stat-value" style="font-size:1.5rem;">{{ avg_completion|floatformat:0 }}%</div>
+            <div class="stat-label">Avg Completion</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card text-center">
+            <div class="stat-value financial-positive" style="font-size:1rem;">TZS {{ total_revenue|floatformat:0|intcomma }}</div>
+            <div class="stat-label">Revenue</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card text-center">
+            <div class="stat-value financial-negative" style="font-size:1rem;">TZS {{ total_expenses|floatformat:0|intcomma }}</div>
+            <div class="stat-label">Expenses</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card text-center">
+            <div class="stat-value {% if total_profit >= 0 %}financial-positive{% else %}financial-negative{% endif %}" style="font-size:1rem;">TZS {{ total_profit|floatformat:0|intcomma }}</div>
+            <div class="stat-label">Net Profit</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="stat-card text-center">
+            <div class="stat-value" style="font-size:1rem;">TZS {{ total_budget|floatformat:0|intcomma }}</div>
+            <div class="stat-label">Total Budget</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Budget vs Expenses vs Revenue -->
+    <div class="col-md-8">
+        <div class="card-custom">
+            <div class="card-header-custom"><span><i class="bi bi-bar-chart-fill me-2"></i>Budget vs Expenses vs Revenue</span></div>
+            <div class="card-body-custom">
+                <canvas id="budgetChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Distribution -->
+    <div class="col-md-4">
+        <div class="card-custom">
+            <div class="card-header-custom"><span><i class="bi bi-pie-chart-fill me-2"></i>Status Distribution</span></div>
+            <div class="card-body-custom">
+                <canvas id="statusChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Monthly Spending -->
+    <div class="col-md-12">
+        <div class="card-custom">
+            <div class="card-header-custom"><span><i class="bi bi-graph-up me-2"></i>Monthly Spending Trend</span></div>
+            <div class="card-body-custom">
+                <canvas id="monthlyChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mt-4">
+    <div class="col-md-3">
+        <a href="{% url 'financial_summary_pdf' %}" class="btn btn-primary-custom w-100 py-3">
+            <i class="bi bi-file-pdf-fill me-2"></i>Download Financial PDF
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'export_json' %}" class="btn btn-outline-primary w-100 py-3" style="border-radius:8px;">
+            <i class="bi bi-download me-2"></i>Export All Data (JSON)
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-secondary w-100 py-3" style="border-radius:8px;">
+            <i class="bi bi-file-earmark-text me-2"></i>View Reports
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'project_create' %}" class="btn btn-outline-success w-100 py-3" style="border-radius:8px;">
+            <i class="bi bi-plus-circle me-2"></i>New Project
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const labels = {{ project_labels|safe }};
+const budgets = {{ project_budgets|safe }};
+const expenses = {{ project_expenses|safe }};
+const revenues = {{ project_revenues|safe }};
+const statusCounts = {{ status_counts|safe }};
+const monthlyData = {{ monthly_data|safe }};
+
+// Budget Chart
+new Chart(document.getElementById('budgetChart'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [
+            { label: 'Budget', data: budgets, backgroundColor: '#3b82f6', borderRadius: 4 },
+            { label: 'Expenses', data: expenses, backgroundColor: '#ef4444', borderRadius: 4 },
+            { label: 'Revenue', data: revenues, backgroundColor: '#10b981', borderRadius: 4 },
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { labels: { font: { family: 'Inter', size: 11 } } } },
+        scales: {
+            y: { beginAtZero: true, ticks: { callback: v => 'TZS ' + (v/1000000).toFixed(1) + 'M' } },
+            x: { ticks: { font: { size: 9 } } }
+        }
+    }
+});
+
+// Status Chart
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(statusCounts),
+        datasets: [{
+            data: Object.values(statusCounts),
+            backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#64748b'],
+            borderWidth: 0,
+        }]
+    },
+    options: { responsive: true, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 10, family: 'Inter' } } } } }
+});
+
+// Monthly Chart
+if (monthlyData.labels.length > 0) {
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'line',
+        data: {
+            labels: monthlyData.labels,
+            datasets: [{
+                label: 'Monthly Spending',
+                data: monthlyData.values,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#3b82f6',
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, ticks: { callback: v => 'TZS ' + (v/1000000).toFixed(1) + 'M' } } },
+            plugins: { legend: { labels: { font: { family: 'Inter' } } } }
+        }
+    });
+}
+</script>
+{% endblock %}

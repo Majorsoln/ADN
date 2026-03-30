@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Dashboard - ADN Project Manager{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">
+                    <i class="bi bi-folder-fill"></i>
+                </div>
+                <span class="badge-status badge-in_progress">Active: {{ active_projects }}</span>
+            </div>
+            <div class="stat-value">{{ total_projects }}</div>
+            <div class="stat-label">Total Projects</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669);">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ completed_projects }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+            </div>
+            <div class="stat-value" style="font-size:1.3rem;">TZS {{ total_budget|floatformat:0|intcomma }}</div>
+            <div class="stat-label">Total Budget</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background:linear-gradient(135deg,{% if total_profit >= 0 %}#10b981,#059669{% else %}#ef4444,#dc2626{% endif %});">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+            </div>
+            <div class="stat-value {% if total_profit >= 0 %}financial-positive{% else %}financial-negative{% endif %}" style="font-size:1.3rem;">
+                TZS {{ total_profit|floatformat:0|intcomma }}
+            </div>
+            <div class="stat-label">Net Profit/Loss</div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue/Expenses mini cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Revenue</div>
+                    <div style="font-size:1.2rem;font-weight:700;color:#10b981;">TZS {{ total_revenue|floatformat:0|intcomma }}</div>
+                </div>
+                <i class="bi bi-arrow-down-circle-fill" style="font-size:1.5rem;color:#10b981;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="border-left:4px solid #ef4444;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Total Expenses</div>
+                    <div style="font-size:1.2rem;font-weight:700;color:#ef4444;">TZS {{ total_expenses|floatformat:0|intcomma }}</div>
+                </div>
+                <i class="bi bi-arrow-up-circle-fill" style="font-size:1.5rem;color:#ef4444;"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="border-left:4px solid #f59e0b;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Overdue Projects</div>
+                    <div style="font-size:1.2rem;font-weight:700;color:#f59e0b;">{{ overdue_projects }}</div>
+                </div>
+                <i class="bi bi-exclamation-triangle-fill" style="font-size:1.5rem;color:#f59e0b;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Status Chart -->
+    <div class="col-md-5">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <span><i class="bi bi-pie-chart-fill me-2"></i>Project Status</span>
+            </div>
+            <div class="card-body-custom">
+                <canvas id="statusChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="col-md-7">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <span><i class="bi bi-clock-history me-2"></i>Recent Activity</span>
+                <a href="{% url 'project_list' %}" style="font-size:0.8rem;color:#3b82f6;">View All</a>
+            </div>
+            <div class="card-body-custom" style="max-height:300px;overflow-y:auto;">
+                {% if recent_activities %}
+                {% for activity in recent_activities %}
+                <div class="d-flex gap-3 align-items-start mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-top:6px;flex-shrink:0;"></div>
+                    <div>
+                        <div style="font-size:0.85rem;font-weight:500;">{{ activity.action }}</div>
+                        <div style="font-size:0.7rem;color:#94a3b8;">
+                            {{ activity.timestamp|timesince }} ago
+                            {% if activity.user %} by {{ activity.user.username }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-clock"></i>
+                    <p>No activity yet</p>
+                    <form method="post" action="{% url 'load_demo_data' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary-custom btn-sm">
+                            <i class="bi bi-database-fill-gear me-1"></i> Load Demo Data
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Projects -->
+<div class="card-custom mb-4">
+    <div class="card-header-custom">
+        <span><i class="bi bi-collection-fill me-2"></i>Recent Projects</span>
+        <a href="{% url 'project_create' %}" class="btn btn-primary-custom btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> New Project
+        </a>
+    </div>
+    <div class="card-body-custom">
+        {% if recent_projects %}
+        <div class="row g-3">
+            {% for project in recent_projects %}
+            <div class="col-md-4">
+                <a href="{% url 'project_detail' project.pk %}" class="project-card">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span>
+                        <span class="badge-status badge-{{ project.priority }}">{{ project.get_priority_display }}</span>
+                    </div>
+                    <h6 style="font-weight:700;color:#0f172a;margin-bottom:4px;font-size:0.9rem;">{{ project.title|truncatechars:35 }}</h6>
+                    <div style="font-size:0.75rem;color:#64748b;margin-bottom:8px;">
+                        <i class="bi bi-person-fill"></i> {{ project.client_name }}
+                        {% if project.location %} &middot; <i class="bi bi-geo-alt-fill"></i> {{ project.location|truncatechars:20 }}{% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:0.7rem;color:#94a3b8;">Progress</span>
+                        <span style="font-size:0.7rem;font-weight:700;color:#0f172a;">{{ project.completion_percentage }}%</span>
+                    </div>
+                    <div class="progress-custom">
+                        <div class="bar" style="width:{{ project.completion_percentage }}%;"></div>
+                    </div>
+                    <div style="margin-top:10px;font-size:0.75rem;font-weight:600;color:#475569;">
+                        Budget: TZS {{ project.budget|floatformat:0|intcomma }}
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-folder-plus"></i>
+            <p>No projects yet. Create your first project or load demo data.</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="{% url 'project_create' %}" class="btn btn-primary-custom btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i> Create Project
+                </a>
+                <form method="post" action="{% url 'load_demo_data' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" style="border-radius:8px;">
+                        <i class="bi bi-database-fill-gear me-1"></i> Load Demo Data
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const statusData = {{ status_data|safe }};
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(statusData).map(k => k.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())),
+        datasets: [{
+            data: Object.values(statusData),
+            backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444'],
+            borderWidth: 0,
+            hoverOffset: 8,
+        }]
+    },
+    options: {
+        responsive: true,
+        cutout: '65%',
+        plugins: {
+            legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, font: { size: 11, family: 'Inter' } } }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - ADN{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <span><i class="bi bi-receipt me-2"></i>{{ title }}</span>
+                <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-secondary btn-sm" style="border-radius:8px;">Cancel</a>
+            </div>
+            <div class="card-body-custom">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Project *</label>
+                            {{ form.project }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Invoice Number *</label>
+                            {{ form.invoice_number }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Client Name *</label>
+                            {{ form.client_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Client Address</label>
+                            {{ form.client_address }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Total Amount (TZS)</label>
+                            {{ form.total_amount }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:0.8rem;font-weight:600;">Due Date</label>
+                            {{ form.due_date }}
+                        </div>
+                    </div>
+                    {% if form.errors %}
+                    <div class="alert alert-danger mt-3" style="border-radius:10px;font-size:0.85rem;">
+                        {% for field, errors in form.errors.items %}<div><strong>{{ field }}:</strong> {{ errors.0 }}</div>{% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary-custom"><i class="bi bi-check-lg me-1"></i>Create Invoice</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

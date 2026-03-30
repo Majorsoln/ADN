@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Delete {{ project.title }} - ADN{% endblock %}
+{% block page_title %}Delete Project{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card-custom">
+            <div class="card-body-custom text-center" style="padding:40px;">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size:3rem;color:#ef4444;"></i>
+                <h4 style="font-weight:700;color:#0f172a;margin-top:16px;">Delete Project?</h4>
+                <p style="color:#64748b;">Are you sure you want to delete <strong>"{{ project.title }}"</strong>? This action cannot be undone. All associated data (materials, costs, payments, milestones, tasks) will be permanently deleted.</p>
+                <div class="d-flex gap-3 justify-content-center mt-4">
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-secondary" style="border-radius:8px;">Cancel</a>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" style="border-radius:8px;"><i class="bi bi-trash me-1"></i>Delete Project</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

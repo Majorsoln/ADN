@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Register - ADN Project Manager{% endblock %}
+
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);">
+    <div style="width:100%;max-width:420px;padding:20px;">
+        <div style="text-align:center;margin-bottom:32px;">
+            <h2 style="font-weight:800;background:linear-gradient(135deg,#3b82f6,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:2rem;margin-bottom:4px;">ADN Projects</h2>
+            <p style="color:#64748b;font-size:0.85rem;">Create your account</p>
+        </div>
+        <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <h4 style="font-weight:700;color:#0f172a;margin-bottom:24px;">Register</h4>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:0.8rem;font-weight:600;color:#475569;">{{ field.label }}</label>
+                    <input type="{{ field.field.widget.input_type|default:'text' }}" name="{{ field.html_name }}" class="form-control" style="border-radius:10px;padding:10px 16px;" {% if field.field.required %}required{% endif %} value="{{ field.value|default:'' }}">
+                    {% if field.errors %}
+                    <div style="color:#ef4444;font-size:0.75rem;margin-top:4px;">{{ field.errors.0 }}</div>
+                    {% endif %}
+                    {% if field.help_text %}
+                    <div style="color:#94a3b8;font-size:0.7rem;margin-top:4px;">{{ field.help_text }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn w-100 mt-2" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border-radius:10px;padding:10px;font-weight:700;">
+                    Create Account
+                </button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="{% url 'login' %}" style="color:#3b82f6;font-size:0.85rem;font-weight:500;">Already have an account? Sign in</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

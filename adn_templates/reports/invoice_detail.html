@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Invoice INV-{{ invoice.invoice_number }} - ADN{% endblock %}
+{% block page_title %}Invoice INV-{{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- Invoice Preview -->
+        <div class="card-custom mb-4">
+            <div class="card-header-custom">
+                <span><i class="bi bi-receipt me-2"></i>Invoice INV-{{ invoice.invoice_number }}</span>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'invoice_pdf' invoice.pk %}" class="btn btn-primary-custom btn-sm"><i class="bi bi-file-pdf me-1"></i>Download PDF</a>
+                    <span class="badge-status badge-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+                </div>
+            </div>
+            <div class="card-body-custom">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h3 style="font-weight:800;color:#0f172a;">ADN uPVC & Aluminum</h3>
+                        <p style="color:#64748b;font-size:0.85rem;">Professional Windows & Doors Solutions</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <h4 style="color:#3b82f6;font-weight:700;">INVOICE</h4>
+                        <div style="font-size:0.85rem;color:#64748b;">
+                            <div><strong>Invoice #:</strong> {{ invoice.invoice_number }}</div>
+                            <div><strong>Date:</strong> {{ invoice.issue_date|date:"M d, Y" }}</div>
+                            {% if invoice.due_date %}<div><strong>Due:</strong> {{ invoice.due_date|date:"M d, Y" }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background:#f8fafc;border-radius:10px;padding:16px;margin-bottom:20px;">
+                    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;font-weight:600;">Bill To</div>
+                    <div style="font-weight:700;font-size:1.1rem;">{{ invoice.client_name }}</div>
+                    {% if invoice.client_address %}<div style="font-size:0.85rem;color:#64748b;">{{ invoice.client_address }}</div>{% endif %}
+                    <div style="font-size:0.85rem;color:#64748b;">Project: {{ invoice.project.title }}</div>
+                </div>
+
+                {% if invoice.description %}
+                <p style="color:#475569;margin-bottom:20px;">{{ invoice.description }}</p>
+                {% endif %}
+
+                <!-- Items -->
+                <div class="section-title">Invoice Items</div>
+                {% if items %}
+                <table class="table table-custom">
+                    <thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price (TZS)</th><th>Total (TZS)</th></tr></thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity|floatformat:1 }}</td>
+                            <td style="text-align:right;">{{ item.unit_price|floatformat:0|intcomma }}</td>
+                            <td style="text-align:right;"><strong>{{ item.total|floatformat:0|intcomma }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="border-top:3px solid #0f172a;">
+                            <td colspan="4" style="text-align:right;font-weight:800;font-size:1.1rem;">TOTAL:</td>
+                            <td style="text-align:right;font-weight:800;font-size:1.1rem;color:#0f172a;">TZS {{ invoice.total_amount|floatformat:0|intcomma }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                {% else %}
+                <div class="empty-state" style="padding:20px;"><p>No items added yet</p></div>
+                {% endif %}
+
+                <!-- Add Item Form -->
+                <div style="background:#f8fafc;border-radius:10px;padding:16px;margin-top:20px;">
+                    <h6 style="font-weight:600;margin-bottom:12px;">Add Item</h6>
+                    <form method="post" action="{% url 'add_invoice_item' invoice.pk %}">
+                        {% csrf_token %}
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label" style="font-size:0.75rem;">Description</label>
+                                {{ item_form.description }}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size:0.75rem;">Quantity</label>
+                                {{ item_form.quantity }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size:0.75rem;">Unit Price (TZS)</label>
+                                {{ item_form.unit_price }}
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary-custom w-100"><i class="bi bi-plus-lg"></i> Add</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

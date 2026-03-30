@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Reports & Invoices - ADN{% endblock %}
+{% block page_title %}Reports & Documents{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card" style="border-left:4px solid #3b82f6;">
+            <div class="stat-label">Invoices</div>
+            <div class="stat-value">{{ invoice_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="border-left:4px solid #8b5cf6;">
+            <div class="stat-label">Quotes</div>
+            <div class="stat-value">{{ quote_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">Reports Generated</div>
+            <div class="stat-value">{{ report_count }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a href="{% url 'create_invoice' %}" class="btn btn-primary-custom"><i class="bi bi-receipt me-1"></i>New Invoice</a>
+    <a href="{% url 'create_quote' %}" class="btn btn-primary-custom" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);"><i class="bi bi-file-earmark-plus me-1"></i>New Quote</a>
+    <a href="{% url 'financial_summary_pdf' %}" class="btn btn-outline-primary" style="border-radius:8px;"><i class="bi bi-file-pdf me-1"></i>Financial Summary PDF</a>
+</div>
+
+<!-- Invoices -->
+<div class="card-custom mb-4">
+    <div class="card-header-custom"><span><i class="bi bi-receipt me-2"></i>Invoices</span></div>
+    {% if invoices %}
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead><tr><th>Invoice #</th><th>Project</th><th>Client</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for inv in invoices %}
+                <tr>
+                    <td><strong>INV-{{ inv.invoice_number }}</strong></td>
+                    <td><a href="{% url 'project_detail' inv.project.pk %}">{{ inv.project.title|truncatechars:25 }}</a></td>
+                    <td>{{ inv.client_name }}</td>
+                    <td><strong>TZS {{ inv.total_amount|floatformat:0|intcomma }}</strong></td>
+                    <td><span class="badge-status badge-{{ inv.status }}">{{ inv.get_status_display }}</span></td>
+                    <td>{{ inv.issue_date|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'invoice_detail' inv.pk %}" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:0.7rem;">View</a>
+                        <a href="{% url 'invoice_pdf' inv.pk %}" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:0.7rem;"><i class="bi bi-file-pdf"></i> PDF</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body-custom"><div class="empty-state"><i class="bi bi-receipt"></i><p>No invoices yet</p></div></div>
+    {% endif %}
+</div>
+
+<!-- Quotes -->
+<div class="card-custom mb-4">
+    <div class="card-header-custom"><span><i class="bi bi-file-earmark-text me-2"></i>Quotes</span></div>
+    {% if quotes %}
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead><tr><th>Quote #</th><th>Client</th><th>Project</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for qt in quotes %}
+                <tr>
+                    <td><strong>QT-{{ qt.quote_number }}</strong></td>
+                    <td>{{ qt.client_name }}</td>
+                    <td>{{ qt.project_name }}</td>
+                    <td><strong>TZS {{ qt.total_amount|floatformat:0|intcomma }}</strong></td>
+                    <td><span class="badge-status badge-{{ qt.status }}">{{ qt.get_status_display }}</span></td>
+                    <td>
+                        <a href="{% url 'quote_pdf' qt.pk %}" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:0.7rem;"><i class="bi bi-file-pdf"></i> PDF</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body-custom"><div class="empty-state"><i class="bi bi-file-earmark-text"></i><p>No quotes yet</p></div></div>
+    {% endif %}
+</div>
+
+<!-- Generated Reports -->
+<div class="card-custom">
+    <div class="card-header-custom"><span><i class="bi bi-clipboard-data me-2"></i>Generated Reports</span></div>
+    {% if reports %}
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead><tr><th>Report</th><th>Project</th><th>Prepared By</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for rpt in reports %}
+                <tr>
+                    <td><strong>{{ rpt.title }}</strong></td>
+                    <td><a href="{% url 'project_detail' rpt.project.pk %}">{{ rpt.project.title|truncatechars:30 }}</a></td>
+                    <td>{{ rpt.prepared_by.username|default:"System" }}</td>
+                    <td>{{ rpt.report_date|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card-body-custom"><div class="empty-state"><i class="bi bi-clipboard-data"></i><p>No reports generated yet. Generate reports from project detail pages.</p></div></div>
+    {% endif %}
+</div>
+{% endblock %}

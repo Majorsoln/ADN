@@ -1,0 +1,567 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ project.title }} - ADN{% endblock %}
+{% block page_title %}{{ project.title|truncatechars:50 }}{% endblock %}
+
+{% block content %}
+<!-- Project Header -->
+<div class="card-custom mb-4">
+    <div class="card-body-custom">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <h4 style="font-weight:800;color:#0f172a;margin:0;">{{ project.title }}</h4>
+                    <span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span>
+                    <span class="badge-status badge-{{ project.priority }}">{{ project.get_priority_display }}</span>
+                    {% if project.is_overdue %}<span class="badge bg-danger" style="font-size:0.7rem;">OVERDUE</span>{% endif %}
+                </div>
+                <p style="color:#64748b;font-size:0.85rem;margin-bottom:8px;">{{ project.description|default:"No description" }}</p>
+                <div style="font-size:0.8rem;color:#94a3b8;">
+                    <i class="bi bi-person-fill"></i> {{ project.client_name }}
+                    {% if project.client_phone %} &middot; <i class="bi bi-telephone-fill"></i> {{ project.client_phone }}{% endif %}
+                    {% if project.location %} &middot; <i class="bi bi-geo-alt-fill"></i> {{ project.location }}{% endif %}
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+                    <a href="{% url 'project_edit' project.pk %}" class="btn btn-outline-primary btn-sm" style="border-radius:8px;">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                    </a>
+                    <a href="{% url 'project_report_pdf' project.pk %}" class="btn btn-primary-custom btn-sm">
+                        <i class="bi bi-file-pdf me-1"></i>PDF Report
+                    </a>
+                    <a href="{% url 'project_delete' project.pk %}" class="btn btn-outline-danger btn-sm" style="border-radius:8px;">
+                        <i class="bi bi-trash me-1"></i>Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="border-left:4px solid #3b82f6;">
+            <div class="stat-label">Budget</div>
+            <div style="font-size:1.1rem;font-weight:700;color:#0f172a;">TZS {{ project.budget|floatformat:0|intcomma }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="border-left:4px solid #ef4444;">
+            <div class="stat-label">Total Expenses</div>
+            <div style="font-size:1.1rem;font-weight:700;color:#ef4444;">TZS {{ project.total_expenses|floatformat:0|intcomma }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="border-left:4px solid #10b981;">
+            <div class="stat-label">Revenue (Payments)</div>
+            <div style="font-size:1.1rem;font-weight:700;color:#10b981;">TZS {{ project.total_revenue|floatformat:0|intcomma }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="border-left:4px solid {% if project.profit_loss >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+            <div class="stat-label">Profit / Loss</div>
+            <div style="font-size:1.1rem;font-weight:700;" class="{% if project.profit_loss >= 0 %}financial-positive{% else %}financial-negative{% endif %}">
+                TZS {{ project.profit_loss|floatformat:0|intcomma }}
+                <small style="font-size:0.7rem;">({{ project.profit_margin|floatformat:1 }}%)</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress & Dates -->
+<div class="card-custom mb-4">
+    <div class="card-body-custom">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span style="font-size:0.8rem;font-weight:600;color:#475569;">Progress</span>
+                    <span style="font-size:0.85rem;font-weight:800;color:#0f172a;">{{ project.completion_percentage }}%</span>
+                </div>
+                <div class="progress-custom" style="height:12px;">
+                    <div class="bar" style="width:{{ project.completion_percentage }}%;"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-4 justify-content-md-end mt-3 mt-md-0" style="font-size:0.8rem;">
+                    <div><span style="color:#94a3b8;">Start:</span> <strong>{{ project.start_date|date:"M d, Y" }}</strong></div>
+                    {% if project.end_date %}<div><span style="color:#94a3b8;">End:</span> <strong>{{ project.end_date|date:"M d, Y" }}</strong></div>{% endif %}
+                    {% if project.days_remaining is not None %}
+                    <div><span style="color:#94a3b8;">Days Left:</span> <strong class="{% if project.days_remaining < 0 %}financial-negative{% endif %}">{{ project.days_remaining }}</strong></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nav Tabs -->
+<ul class="nav nav-tabs mb-4" id="projectTabs" role="tablist" style="border:none;">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#expenses" style="border-radius:8px 8px 0 0;font-size:0.85rem;font-weight:600;">Expenses & Costs</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#payments" style="border-radius:8px 8px 0 0;font-size:0.85rem;font-weight:600;">Payments</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#milestones" style="border-radius:8px 8px 0 0;font-size:0.85rem;font-weight:600;">Milestones</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#team" style="border-radius:8px 8px 0 0;font-size:0.85rem;font-weight:600;">Team & Tasks</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#activity" style="border-radius:8px 8px 0 0;font-size:0.85rem;font-weight:600;">Activity</a></li>
+</ul>
+
+<div class="tab-content">
+    <!-- EXPENSES TAB -->
+    <div class="tab-pane fade show active" id="expenses">
+        <div class="row g-4">
+            <!-- Expense Chart -->
+            <div class="col-md-4">
+                <div class="card-custom">
+                    <div class="card-header-custom"><span>Expense Breakdown</span></div>
+                    <div class="card-body-custom">
+                        <canvas id="expenseChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <!-- Materials -->
+                <div class="card-custom mb-3">
+                    <div class="card-header-custom">
+                        <span><i class="bi bi-box-fill me-2"></i>Materials (TZS {{ project.total_material_cost|floatformat:0|intcomma }})</span>
+                        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#materialModal">
+                            <i class="bi bi-plus-lg"></i> Add
+                        </button>
+                    </div>
+                    {% if materials %}
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0">
+                            <thead><tr><th>Material</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th><th></th></tr></thead>
+                            <tbody>
+                                {% for m in materials %}
+                                <tr>
+                                    <td><strong>{{ m.name }}</strong></td>
+                                    <td>{{ m.quantity|floatformat:1 }}</td>
+                                    <td>{{ m.unit }}</td>
+                                    <td>{{ m.unit_price|floatformat:0|intcomma }}</td>
+                                    <td><strong>{{ m.total_cost|floatformat:0|intcomma }}</strong></td>
+                                    <td><a href="{% url 'delete_item' project.pk 'material' m.pk %}" class="text-danger" title="Delete"><i class="bi bi-trash"></i></a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="card-body-custom"><div class="empty-state" style="padding:20px;"><p>No materials added</p></div></div>
+                    {% endif %}
+                </div>
+
+                <!-- Labor -->
+                <div class="card-custom mb-3">
+                    <div class="card-header-custom">
+                        <span><i class="bi bi-people-fill me-2"></i>Labor Costs (TZS {{ project.total_labor_cost|floatformat:0|intcomma }})</span>
+                        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#laborModal"><i class="bi bi-plus-lg"></i> Add</button>
+                    </div>
+                    {% if labor_costs %}
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0">
+                            <thead><tr><th>Description</th><th>Worker</th><th>Days</th><th>Rate</th><th>Amount</th><th></th></tr></thead>
+                            <tbody>
+                                {% for l in labor_costs %}
+                                <tr>
+                                    <td>{{ l.description }}</td>
+                                    <td>{{ l.worker_name }}</td>
+                                    <td>{{ l.days }}</td>
+                                    <td>{{ l.daily_rate|floatformat:0|intcomma }}</td>
+                                    <td><strong>{{ l.amount|floatformat:0|intcomma }}</strong></td>
+                                    <td><a href="{% url 'delete_item' project.pk 'labor' l.pk %}" class="text-danger"><i class="bi bi-trash"></i></a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="card-body-custom"><div class="empty-state" style="padding:20px;"><p>No labor costs</p></div></div>
+                    {% endif %}
+                </div>
+
+                <!-- Transport -->
+                <div class="card-custom mb-3">
+                    <div class="card-header-custom">
+                        <span><i class="bi bi-truck me-2"></i>Transport (TZS {{ project.total_transport_cost|floatformat:0|intcomma }})</span>
+                        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#transportModal"><i class="bi bi-plus-lg"></i> Add</button>
+                    </div>
+                    {% if transport_costs %}
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0">
+                            <thead><tr><th>Vehicle</th><th>From</th><th>To</th><th>Cost</th><th></th></tr></thead>
+                            <tbody>
+                                {% for t in transport_costs %}
+                                <tr>
+                                    <td>{{ t.vehicle_type }}</td>
+                                    <td>{{ t.from_location }}</td>
+                                    <td>{{ t.to_location }}</td>
+                                    <td><strong>{{ t.cost|floatformat:0|intcomma }}</strong></td>
+                                    <td><a href="{% url 'delete_item' project.pk 'transport' t.pk %}" class="text-danger"><i class="bi bi-trash"></i></a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="card-body-custom"><div class="empty-state" style="padding:20px;"><p>No transport costs</p></div></div>
+                    {% endif %}
+                </div>
+
+                <!-- Other Expenses -->
+                <div class="card-custom mb-3">
+                    <div class="card-header-custom">
+                        <span><i class="bi bi-receipt me-2"></i>Other Expenses (TZS {{ project.total_other_expenses|floatformat:0|intcomma }})</span>
+                        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#expenseModal"><i class="bi bi-plus-lg"></i> Add</button>
+                    </div>
+                    {% if other_expenses %}
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0">
+                            <thead><tr><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead>
+                            <tbody>
+                                {% for e in other_expenses %}
+                                <tr>
+                                    <td><span class="badge bg-secondary" style="font-size:0.7rem;">{{ e.get_category_display }}</span></td>
+                                    <td>{{ e.description }}</td>
+                                    <td><strong>{{ e.amount|floatformat:0|intcomma }}</strong></td>
+                                    <td><a href="{% url 'delete_item' project.pk 'expense' e.pk %}" class="text-danger"><i class="bi bi-trash"></i></a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="card-body-custom"><div class="empty-state" style="padding:20px;"><p>No other expenses</p></div></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAYMENTS TAB -->
+    <div class="tab-pane fade" id="payments">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <span><i class="bi bi-cash-coin me-2"></i>Payments Received (TZS {{ project.total_revenue|floatformat:0|intcomma }})</span>
+                <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal"><i class="bi bi-plus-lg"></i> Record Payment</button>
+            </div>
+            {% if payments %}
+            <div class="table-responsive">
+                <table class="table table-custom mb-0">
+                    <thead><tr><th>Date</th><th>Amount (TZS)</th><th>Method</th><th>Reference</th><th>Notes</th><th></th></tr></thead>
+                    <tbody>
+                        {% for p in payments %}
+                        <tr>
+                            <td>{{ p.date|date:"M d, Y" }}</td>
+                            <td><strong style="color:#10b981;">{{ p.amount|floatformat:0|intcomma }}</strong></td>
+                            <td>{{ p.get_method_display }}</td>
+                            <td>{{ p.reference|default:"-" }}</td>
+                            <td>{{ p.notes|truncatechars:30|default:"-" }}</td>
+                            <td><a href="{% url 'delete_item' project.pk 'payment' p.pk %}" class="text-danger"><i class="bi bi-trash"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="card-body-custom"><div class="empty-state"><i class="bi bi-cash"></i><p>No payments recorded</p></div></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- MILESTONES TAB -->
+    <div class="tab-pane fade" id="milestones">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <span><i class="bi bi-flag-fill me-2"></i>Milestones</span>
+                <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#milestoneModal"><i class="bi bi-plus-lg"></i> Add</button>
+            </div>
+            <div class="card-body-custom">
+                {% if milestones %}
+                {% for m in milestones %}
+                <div class="d-flex align-items-center gap-3 p-3 mb-2" style="background:{% if m.completed %}#f0fdf4{% else %}#f8fafc{% endif %};border-radius:10px;border:1px solid {% if m.completed %}#bbf7d0{% else %}#e2e8f0{% endif %};">
+                    <form method="post" action="{% url 'toggle_milestone' project.pk m.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm p-0" style="border:none;background:none;font-size:1.3rem;">
+                            {% if m.completed %}<i class="bi bi-check-circle-fill" style="color:#10b981;"></i>{% else %}<i class="bi bi-circle" style="color:#cbd5e1;"></i>{% endif %}
+                        </button>
+                    </form>
+                    <div class="flex-grow-1">
+                        <div style="font-weight:600;{% if m.completed %}text-decoration:line-through;color:#94a3b8;{% else %}color:#0f172a;{% endif %}">{{ m.title }}</div>
+                        {% if m.due_date %}<div style="font-size:0.7rem;color:#94a3b8;">Due: {{ m.due_date|date:"M d, Y" }}</div>{% endif %}
+                    </div>
+                    <a href="{% url 'delete_item' project.pk 'milestone' m.pk %}" class="text-danger"><i class="bi bi-trash"></i></a>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state"><i class="bi bi-flag"></i><p>No milestones set</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- TEAM & TASKS TAB -->
+    <div class="tab-pane fade" id="team">
+        <div class="row g-4">
+            <!-- Team Members -->
+            <div class="col-md-5">
+                <div class="card-custom">
+                    <div class="card-header-custom">
+                        <span><i class="bi bi-people-fill me-2"></i>Team ({{ team_members.count }})</span>
+                        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#teamModal"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                    <div class="card-body-custom">
+                        {% for tm in team_members %}
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;">
+                                {{ tm.name|first|upper }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div style="font-weight:600;font-size:0.85rem;">{{ tm.name }}</div>
+                                <div style="font-size:0.7rem;color:#94a3b8;">{{ tm.get_role_display }}{% if tm.phone %} &middot; {{ tm.phone }}{% endif %}</div>
+                            </div>
+                            <a href="{% url 'delete_item' project.pk 'team' tm.pk %}" class="text-danger"><i class="bi bi-x-lg"></i></a>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state" style="padding:20px;"><p>No team members</p></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks -->
+            <div class="col-md-7">
+                <div class="card-custom">
+                    <div class="card-header-custom">
+                        <span><i class="bi bi-check2-square me-2"></i>Tasks ({{ tasks.count }})</span>
+                        <button class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#taskModal"><i class="bi bi-plus-lg"></i> Add</button>
+                    </div>
+                    <div class="card-body-custom">
+                        {% for task in tasks %}
+                        <div class="d-flex align-items-center gap-3 p-2 mb-2" style="background:#f8fafc;border-radius:8px;">
+                            <form method="post" action="{% url 'update_task_status' project.pk task.pk %}" class="d-flex gap-1">
+                                {% csrf_token %}
+                                <select name="status" onchange="this.form.submit()" class="form-select form-select-sm" style="width:110px;font-size:0.7rem;border-radius:6px;">
+                                    <option value="todo" {% if task.status == 'todo' %}selected{% endif %}>To Do</option>
+                                    <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
+                                </select>
+                            </form>
+                            <div class="flex-grow-1">
+                                <div style="font-weight:600;font-size:0.85rem;{% if task.status == 'done' %}text-decoration:line-through;color:#94a3b8;{% endif %}">{{ task.title }}</div>
+                                {% if task.assigned_to %}<div style="font-size:0.7rem;color:#94a3b8;">{{ task.assigned_to.name }}</div>{% endif %}
+                            </div>
+                            <a href="{% url 'delete_item' project.pk 'task' task.pk %}" class="text-danger"><i class="bi bi-trash"></i></a>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state" style="padding:20px;"><p>No tasks</p></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIVITY TAB -->
+    <div class="tab-pane fade" id="activity">
+        <div class="card-custom">
+            <div class="card-header-custom"><span><i class="bi bi-clock-history me-2"></i>Activity Log</span></div>
+            <div class="card-body-custom">
+                {% for act in activities %}
+                <div class="d-flex gap-3 mb-3 pb-3" style="border-bottom:1px solid #f1f5f9;">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-top:6px;flex-shrink:0;"></div>
+                    <div>
+                        <div style="font-size:0.85rem;">{{ act.action }}</div>
+                        <div style="font-size:0.7rem;color:#94a3b8;">{{ act.timestamp|timesince }} ago{% if act.user %} &middot; {{ act.user.username }}{% endif %}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state"><p>No activity recorded</p></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<!-- Material Modal -->
+<div class="modal fade" id="materialModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add Material</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_material' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">{{ material_form.name.label_tag }} {{ material_form.name }}</div>
+                    <div class="col-12">{{ material_form.description.label_tag }} {{ material_form.description }}</div>
+                    <div class="col-4">{{ material_form.quantity.label_tag }} {{ material_form.quantity }}</div>
+                    <div class="col-4">{{ material_form.unit.label_tag }} {{ material_form.unit }}</div>
+                    <div class="col-4">{{ material_form.unit_price.label_tag }} {{ material_form.unit_price }}</div>
+                    <div class="col-6">{{ material_form.date_added.label_tag }} {{ material_form.date_added }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Add Material</button></div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Labor Modal -->
+<div class="modal fade" id="laborModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add Labor Cost</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_labor' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">{{ labor_form.description.label_tag }} {{ labor_form.description }}</div>
+                    <div class="col-6">{{ labor_form.worker_name.label_tag }} {{ labor_form.worker_name }}</div>
+                    <div class="col-6">{{ labor_form.days.label_tag }} {{ labor_form.days }}</div>
+                    <div class="col-6">{{ labor_form.daily_rate.label_tag }} {{ labor_form.daily_rate }}</div>
+                    <div class="col-6">{{ labor_form.amount.label_tag }} {{ labor_form.amount }}</div>
+                    <div class="col-6">{{ labor_form.date.label_tag }} {{ labor_form.date }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Add Labor Cost</button></div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Transport Modal -->
+<div class="modal fade" id="transportModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add Transport Cost</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_transport' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">{{ transport_form.vehicle_type.label_tag }} {{ transport_form.vehicle_type }}</div>
+                    <div class="col-6">{{ transport_form.from_location.label_tag }} {{ transport_form.from_location }}</div>
+                    <div class="col-6">{{ transport_form.to_location.label_tag }} {{ transport_form.to_location }}</div>
+                    <div class="col-6">{{ transport_form.cost.label_tag }} {{ transport_form.cost }}</div>
+                    <div class="col-6">{{ transport_form.date.label_tag }} {{ transport_form.date }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Add Transport</button></div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Expense Modal -->
+<div class="modal fade" id="expenseModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add Other Expense</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_expense' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">{{ expense_form.category.label_tag }} {{ expense_form.category }}</div>
+                    <div class="col-6">{{ expense_form.amount.label_tag }} {{ expense_form.amount }}</div>
+                    <div class="col-12">{{ expense_form.description.label_tag }} {{ expense_form.description }}</div>
+                    <div class="col-6">{{ expense_form.date.label_tag }} {{ expense_form.date }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Add Expense</button></div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Record Payment</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_payment' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">{{ payment_form.amount.label_tag }} {{ payment_form.amount }}</div>
+                    <div class="col-6">{{ payment_form.method.label_tag }} {{ payment_form.method }}</div>
+                    <div class="col-6">{{ payment_form.reference.label_tag }} {{ payment_form.reference }}</div>
+                    <div class="col-6">{{ payment_form.date.label_tag }} {{ payment_form.date }}</div>
+                    <div class="col-12">{{ payment_form.notes.label_tag }} {{ payment_form.notes }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Record Payment</button></div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Milestone Modal -->
+<div class="modal fade" id="milestoneModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add Milestone</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_milestone' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">{{ milestone_form.title.label_tag }} {{ milestone_form.title }}</div>
+                    <div class="col-12">{{ milestone_form.description.label_tag }} {{ milestone_form.description }}</div>
+                    <div class="col-6">{{ milestone_form.due_date.label_tag }} {{ milestone_form.due_date }}</div>
+                    <div class="col-6">{{ milestone_form.order.label_tag }} {{ milestone_form.order }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Add Milestone</button></div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Team Modal -->
+<div class="modal fade" id="teamModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add Team Member</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_team_member' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">{{ team_form.name.label_tag }} {{ team_form.name }}</div>
+                    <div class="col-6">{{ team_form.role.label_tag }} {{ team_form.role }}</div>
+                    <div class="col-6">{{ team_form.phone.label_tag }} {{ team_form.phone }}</div>
+                    <div class="col-6">{{ team_form.daily_rate.label_tag }} {{ team_form.daily_rate }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Add Member</button></div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Add Task</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form method="post" action="{% url 'add_task' project.pk %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">{{ task_form.title.label_tag }} {{ task_form.title }}</div>
+                    <div class="col-12">{{ task_form.description.label_tag }} {{ task_form.description }}</div>
+                    <div class="col-6">{{ task_form.assigned_to.label_tag }} {{ task_form.assigned_to }}</div>
+                    <div class="col-6">{{ task_form.status.label_tag }} {{ task_form.status }}</div>
+                    <div class="col-6">{{ task_form.due_date.label_tag }} {{ task_form.due_date }}</div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-primary-custom">Add Task</button></div>
+        </form>
+    </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const expenseData = {{ expense_breakdown|safe }};
+new Chart(document.getElementById('expenseChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Materials', 'Labor', 'Transport', 'Other'],
+        datasets: [{
+            data: [expenseData.materials, expenseData.labor, expenseData.transport, expenseData.other],
+            backgroundColor: ['#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
+            borderWidth: 0,
+        }]
+    },
+    options: {
+        responsive: true,
+        cutout: '60%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 10, family: 'Inter' } } } }
+    }
+});
+</script>
+{% endblock %}

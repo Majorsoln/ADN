@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Projects - ADN{% endblock %}
+{% block page_title %}All Projects{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card-custom mb-4">
+    <div class="card-body-custom">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label" style="font-size:0.75rem;font-weight:600;">Search</label>
+                <input type="text" name="search" class="form-control" placeholder="Search projects..." value="{{ search }}" style="border-radius:8px;">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" style="font-size:0.75rem;font-weight:600;">Status</label>
+                <select name="status" class="form-select" style="border-radius:8px;">
+                    <option value="">All Status</option>
+                    <option value="planning" {% if status_filter == 'planning' %}selected{% endif %}>Planning</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+                    <option value="review" {% if status_filter == 'review' %}selected{% endif %}>Under Review</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="on_hold" {% if status_filter == 'on_hold' %}selected{% endif %}>On Hold</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" style="font-size:0.75rem;font-weight:600;">Priority</label>
+                <select name="priority" class="form-select" style="border-radius:8px;">
+                    <option value="">All Priority</option>
+                    <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+                    <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary-custom w-100"><i class="bi bi-search me-1"></i>Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Actions bar -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div style="font-size:0.85rem;color:#64748b;">{{ projects|length }} project{{ projects|length|pluralize }}</div>
+    <a href="{% url 'project_create' %}" class="btn btn-primary-custom btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> New Project
+    </a>
+</div>
+
+<!-- Project Grid -->
+{% if projects %}
+<div class="row g-3">
+    {% for project in projects %}
+    <div class="col-md-4">
+        <a href="{% url 'project_detail' project.pk %}" class="project-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge-status badge-{{ project.status }}">{{ project.get_status_display }}</span>
+                <span class="badge-status badge-{{ project.priority }}">{{ project.get_priority_display }}</span>
+            </div>
+            <h6 style="font-weight:700;color:#0f172a;margin-bottom:4px;">{{ project.title|truncatechars:40 }}</h6>
+            <p style="font-size:0.8rem;color:#64748b;margin-bottom:8px;">{{ project.description|truncatechars:60 }}</p>
+            <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:8px;">
+                <i class="bi bi-person-fill"></i> {{ project.client_name }}
+                {% if project.location %}&middot; <i class="bi bi-geo-alt-fill"></i> {{ project.location|truncatechars:25 }}{% endif %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="font-size:0.7rem;color:#94a3b8;">{{ project.completion_percentage }}% Complete</span>
+                {% if project.is_overdue %}<span style="font-size:0.7rem;color:#ef4444;font-weight:600;">OVERDUE</span>{% endif %}
+            </div>
+            <div class="progress-custom mb-2">
+                <div class="bar" style="width:{{ project.completion_percentage }}%;"></div>
+            </div>
+            <div class="d-flex justify-content-between" style="font-size:0.75rem;">
+                <span style="color:#475569;"><strong>Budget:</strong> TZS {{ project.budget|floatformat:0|intcomma }}</span>
+                <span style="color:#94a3b8;">{{ project.start_date|date:"M d" }}</span>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card-custom">
+    <div class="card-body-custom">
+        <div class="empty-state">
+            <i class="bi bi-folder-x"></i>
+            <p>No projects found matching your criteria.</p>
+            <a href="{% url 'project_list' %}" class="btn btn-outline-secondary btn-sm" style="border-radius:8px;">Clear Filters</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
