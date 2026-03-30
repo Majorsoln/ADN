@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Project Report Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            animation: gradientShift 8s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            50% { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); }
+            100% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h2::before {
+            content: '📋';
+            font-size: 1.2em;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.95rem;
+        }
+
+        input, textarea, select {
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 15px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-add { background: linear-gradient(135deg, #28a745, #20c997); }
+        .btn-remove { background: linear-gradient(135deg, #dc3545, #e74c3c); }
+        .btn-preview { background: linear-gradient(135deg, #17a2b8, #20c997); }
+        .btn-download { background: linear-gradient(135deg, #ffc107, #ff8c00); color: #000; }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: scale(1.05);
+        }
+
+        .summary-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-card .amount {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .profit { color: #28a745 !important; }
+        .loss { color: #dc3545 !important; }
+
+        .workflow-steps {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 900px;
+            margin: 0 auto;
+            border-radius: 15px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .payment-installment {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .workflow-steps {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .floating-action:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-bg"></div>
+    
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                <img src="logo.png" alt="ADN Logo" style="width: 100px; height: 100px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(30,60,114,0.3); object-fit: cover;" />
+    
+                <div style="text-align: center;">
+                    <h1 style="margin: 0; font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">🏗️ Professional Project Report Generator</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 1.1rem; opacity: 0.9;">ADN UPVC & ALUMINUM SOLUTIONS</p>
+                    <p style="margin: 0; opacity: 0.8;">Comprehensive Cost Tracking & Financial Management</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Workflow Steps -->
+            <div class="workflow-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <span>Fill Project Details</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <span>Generate Preview</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <span>Download PDF</span>
+                </div>
+            </div>
+
+            <!-- Project Information -->
+            <div class="section">
+                <h2>Project Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Project Title</label>
+                        <input type="text" id="projectTitle" placeholder="Enter project title">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Name</label>
+                        <input type="text" id="clientName" placeholder="Enter client name">
+                    </div>
+                    <div class="form-group">
+                        <label>Project Date</label>
+                        <input type="date" id="projectDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Prepared By</label>
+                        <input type="text" id="preparedBy" placeholder="Enter your name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Project Description</label>
+                    <textarea id="projectDescription" rows="3" placeholder="Brief description of the project"></textarea>
+                </div>
+            </div>
+
+            <!-- Materials Section -->
+            <div class="section">
+                <h2>Materials Used and Costs</h2>
+                <button class="btn btn-add" onclick="addMaterialRow()">➕ Add Material</button>
+                <div class="table-container">
+                    <table id="materialsTable">
+                        <thead>
+                            <tr>
+                                <th>Material Name</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Unit Price (TZS)</th>
+                                <th>Total (TZS)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" placeholder="Material name" onchange="calculateTotals()"></td>
+                                <td><input type="number" min="0" step="0.01" placeholder="0" onchange="calculateRowTotal(this)"></td>
+                                <td><input type="text" placeholder="kg, m, pcs" onchange="calculateTotals()"></td>
+                                <td><input type="number" min="0" step="0.01" placeholder="0.00" onchange="calculateRowTotal(this)"></td>
+                                <td class="row-total">TZS 0.00</td>
+                                <td><button class="btn btn-remove" onclick="removeRow(this, 'materials')">🗑️</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Materials Cost</h3>
+                    <div class="amount" id="totalMaterialsCost">TZS 0.00</div>
+                </div>
+            </div>
+
+            <!-- Additional Expenses -->
+            <div class="section">
+                <h2>Additional Project Expenses</h2>
+                
+                <!-- Transportation -->
+                <h3>🚚 Transportation Costs</h3>
+                <button class="btn btn-add" onclick="addTransportRow()">➕ Add Transportation</button>
+                <div class="table-container">
+                    <table id="transportTable">
+                        <thead>
+                            <tr>
+                                <th>Type of Transport</th>
+                                <th>From</th>
+                                <th>To Destination</th>
+                                <th>Cost (TZS)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <!-- Labor -->
+                <h3>👷 Labor Charges</h3>
+                <button class="btn btn-add" onclick="addLaborRow()">➕ Add Labor</button>
+                <div class="table-container">
+                    <table id="laborTable">
+                        <thead>
+                            <tr>
+                                <th>Type of Work</th>
+                                <th>Cost (TZS)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <!-- Other Expenses -->
+                <h3>📄 Other Expenses</h3>
+                <button class="btn btn-add" onclick="addOtherExpenseRow()">➕ Add Expense</button>
+                <div class="table-container">
+                    <table id="otherExpensesTable">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount (TZS)</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="summary-card">
+                    <h3>Total Additional Expenses</h3>
+                    <div class="amount" id="totalAdditionalExpenses">TZS 0.00</div>
+                </div>
+            </div>
+
+            <!-- Funding Sources -->
+            <div class="section">
+                <h2>💰 Funding Sources</h2>
+                <button class="btn btn-add" onclick="addFundingRow()">➕ Add Funding Source</button>
+                <div class="table-container">
+                    <table id="fundingTable">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Amount (TZS)</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Funding</h3>
+                    <div class="amount" id="totalFunding">TZS 0.00</div>
+                </div>
+            </div>
+
+            <!-- Customer Payment -->
+            <div class="section">
+                <h2>💳 Customer Payment Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Total Customer Charge (TZS)</label>
+                        <input type="number" id="totalCustomerCharge" min="0" step="0.01" placeholder="0.00" 
+                               onchange="calculateProfitLoss()" 
+                               oninput="handleTotalChargeChange()">
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Installments</label>
+                        <input type="number" id="installmentCount" min="1" value="1" onchange="generateInstallments()">
+                    </div>
+                </div>
+                
+                <div id="installmentsContainer"></div>
+                
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h3>Total Charge</h3>
+                        <div class="amount" id="displayTotalCharge">TZS 0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Total Paid</h3>
+                        <div class="amount" id="totalPaid">TZS 0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Outstanding Balance</h3>
+                        <div class="amount" id="outstandingBalance">TZS 0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="section">
+                <h2>📊 Financial Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h3>Total Project Costs</h3>
+                        <div class="amount" id="totalProjectCosts">TZS 0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Customer Revenue</h3>
+                        <div class="amount" id="customerRevenue">TZS 0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Profit/Loss</h3>
+                        <div class="amount" id="profitLoss">TZS 0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Profit Margin</h3>
+                        <div class="amount" id="profitMargin">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-preview" onclick="generatePreview()">👁️ Generate Preview</button>
+                <button class="btn btn-download" onclick="downloadPDF()">📄 Download PDF Report</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Generating your professional report...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="preview-modal" id="previewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Report Preview</h2>
+                <button class="close-btn" onclick="closePreview()">✕</button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="floating-action" onclick="scrollToTop()" title="Scroll to Top">
+        ⬆️
+    </div>
+
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('projectDate').value = new Date().toISOString().split('T')[0];
+            calculateTotals();
+            
+            // Initialize installments
+            generateInstallments();
+            
+            // Add event listener for total charge input to provide better UX
+            const totalChargeInput = document.getElementById('totalCustomerCharge');
+            totalChargeInput.addEventListener('input', handleTotalChargeChange);
+            
+            // Force calculate payment summary after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                calculatePaymentSummary();
+                console.log('Initial payment summary calculation completed');
+            }, 100);
+        });
+
+        // Material Functions
+        function addMaterialRow() {
+            const table = document.getElementById('materialsTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="Material name" onchange="calculateTotals()"></td>
+                <td><input type="number" min="0" step="0.01" placeholder="0" onchange="calculateRowTotal(this)"></td>
+                <td><input type="text" placeholder="kg, m, pcs" onchange="calculateTotals()"></td>
+                <td><input type="number" min="0" step="0.01" placeholder="0.00" onchange="calculateRowTotal(this)"></td>
+                <td class="row-total">$0.00</td>
+                <td><button class="btn btn-remove" onclick="removeRow(this, 'materials')">🗑️</button></td>
+            `;
+        }
+
+        function addTransportRow() {
+            const table = document.getElementById('transportTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="e.g., Truck, Bus, Motorcycle" onchange="calculateTotals()"></td>
+                <td><input type="text" placeholder="Departure location" onchange="calculateTotals()"></td>
+                <td><input type="text" placeholder="Destination" onchange="calculateTotals()"></td>
+                <td><input type="number" min="0" step="0.01" placeholder="0.00" onchange="calculateTotals()"></td>
+                <td><button class="btn btn-remove" onclick="removeRow(this, 'transport')">🗑️</button></td>
+            `;
+        }
+
+        function addLaborRow() {
+            const table = document.getElementById('laborTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="e.g., Carpentry, Electrical work, Plumbing" onchange="calculateTotals()"></td>
+                <td><input type="number" min="0" step="0.01" placeholder="0.00" onchange="calculateTotals()"></td>
+                <td><button class="btn btn-remove" onclick="removeRow(this, 'labor')">🗑️</button></td>
+            `;
+        }
+
+        function addOtherExpenseRow() {
+            const table = document.getElementById('otherExpensesTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="Description" onchange="calculateTotals()"></td>
+                <td><select onchange="calculateTotals()">
+                    <option value="permits">Permits</option>
+                    <option value="fees">Fees</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="miscellaneous">Miscellaneous</option>
+                </select></td>
+                <td><input type="number" min="0" step="0.01" placeholder="0.00" onchange="calculateTotals()"></td>
+                <td><input type="text" placeholder="Additional notes"></td>
+                <td><button class="btn btn-remove" onclick="removeRow(this, 'otherExpenses')">🗑️</button></td>
+            `;
+        }
+
+        function addFundingRow() {
+            const table = document.getElementById('fundingTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="text" placeholder="e.g., Bank Loan, Personal Investment, Grant" onchange="calculateTotals()"></td>
+                <td><input type="number" min="0" step="0.01" placeholder="0.00" onchange="calculateTotals()"></td>
+                <td><input type="text" placeholder="Additional notes"></td>
+                <td><button class="btn btn-remove" onclick="removeRow(this, 'funding')">🗑️</button></td>
+            `;
+        }
+
+        function removeRow(button, tableType) {
+            button.closest('tr').remove();
+            calculateTotals();
+        }
+
+        function calculateRowTotal(input) {
+            const row = input.closest('tr');
+            const cells = row.cells;
+            const tableName = row.closest('table').id;
+            
+            // Handle different table structures
+            if (tableName === 'materialsTable') {
+                // Materials: qty * price = total
+                const qty = parseFloat(cells[1].querySelector('input').value) || 0;
+                const price = parseFloat(cells[3].querySelector('input').value) || 0;
+                const total = qty * price;
+                cells[4].textContent = 'TZS ' + total.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+            // Note: Transport and Labor tables now just have direct cost inputs, no calculation needed
+            
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            // Format currency for TZS
+            function formatTZS(amount) {
+                return 'TZS ' + amount.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            // Calculate materials total
+            let materialsTotal = 0;
+            const materialRows = document.getElementById('materialsTable').getElementsByTagName('tbody')[0].rows;
+            for (let row of materialRows) {
+                const qty = parseFloat(row.cells[1].querySelector('input').value) || 0;
+                const price = parseFloat(row.cells[3].querySelector('input').value) || 0;
+                const total = qty * price;
+                row.cells[4].textContent = formatTZS(total);
+                materialsTotal += total;
+            }
+            document.getElementById('totalMaterialsCost').textContent = formatTZS(materialsTotal);
+
+            // Calculate transport total
+            let transportTotal = 0;
+            const transportRows = document.getElementById('transportTable').getElementsByTagName('tbody')[0].rows;
+            for (let row of transportRows) {
+                const cost = parseFloat(row.cells[3].querySelector('input').value) || 0;
+                transportTotal += cost;
+            }
+
+            // Calculate labor total
+            let laborTotal = 0;
+            const laborRows = document.getElementById('laborTable').getElementsByTagName('tbody')[0].rows;
+            for (let row of laborRows) {
+                const cost = parseFloat(row.cells[1].querySelector('input').value) || 0;
+                laborTotal += cost;
+            }
+
+            // Calculate other expenses total
+            let otherTotal = 0;
+            const otherRows = document.getElementById('otherExpensesTable').getElementsByTagName('tbody')[0].rows;
+            for (let row of otherRows) {
+                const amount = parseFloat(row.cells[2].querySelector('input').value) || 0;
+                otherTotal += amount;
+            }
+
+            const additionalTotal = transportTotal + laborTotal + otherTotal;
+            document.getElementById('totalAdditionalExpenses').textContent = formatTZS(additionalTotal);
+
+            // Calculate funding total
+            let fundingTotal = 0;
+            const fundingRows = document.getElementById('fundingTable').getElementsByTagName('tbody')[0].rows;
+            for (let row of fundingRows) {
+                const amount = parseFloat(row.cells[1].querySelector('input').value) || 0;
+                fundingTotal += amount;
+            }
+            document.getElementById('totalFunding').textContent = formatTZS(fundingTotal);
+
+            // Calculate project totals
+            const totalCosts = materialsTotal + additionalTotal;
+            document.getElementById('totalProjectCosts').textContent = formatTZS(totalCosts);
+
+            calculateProfitLoss();
+            calculatePaymentSummary();
+        }
+
+        function calculateProfitLoss() {
+            function formatTZS(amount) {
+                return 'TZS ' + amount.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            const totalCosts = parseFloat(document.getElementById('totalProjectCosts').textContent.replace('TZS ', '').replace(/,/g, '')) || 0;
+            const customerCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+            
+            document.getElementById('customerRevenue').textContent = formatTZS(customerCharge);
+            document.getElementById('displayTotalCharge').textContent = formatTZS(customerCharge);
+            
+            const profitLoss = customerCharge - totalCosts;
+            const profitLossElement = document.getElementById('profitLoss');
+            profitLossElement.textContent = formatTZS(profitLoss);
+            
+            // Update styling based on profit/loss
+            profitLossElement.className = profitLoss >= 0 ? 'amount profit' : 'amount loss';
+            
+            // Calculate profit margin
+            const margin = customerCharge > 0 ? ((profitLoss / customerCharge) * 100) : 0;
+            const marginElement = document.getElementById('profitMargin');
+            marginElement.textContent = margin.toFixed(1) + '%';
+            marginElement.className = margin >= 0 ? 'amount profit' : 'amount loss';
+            
+            // Update payment calculations
+            calculatePaymentSummary();
+            
+            // If installments exist, check if they need to be regenerated
+            const installments = document.querySelectorAll('.payment-installment');
+            if (installments.length > 0) {
+                // Check if user wants to auto-update installments when total charge changes
+                const currentTotal = installments.length > 0 ? 
+                    Array.from(installments).reduce((sum, inst) => {
+                        const amt = parseFloat(inst.querySelector('input[type="number"]').value) || 0;
+                        return sum + amt;
+                    }, 0) : 0;
+                
+                // If there's a significant difference, the warning will show via calculatePaymentSummary()
+            }
+        }
+
+        function generateInstallments() {
+            const count = parseInt(document.getElementById('installmentCount').value) || 1;
+            const totalCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+            const installmentAmount = totalCharge / count;
+            
+            const container = document.getElementById('installmentsContainer');
+            container.innerHTML = '<h3>💰 Payment Installments</h3>';
+            
+            for (let i = 1; i <= count; i++) {
+                const installmentDiv = document.createElement('div');
+                installmentDiv.className = 'payment-installment';
+                installmentDiv.innerHTML = `
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Installment ${i} Amount (TZS)</label>
+                            <input type="number" min="0" step="0.01" value="${installmentAmount.toFixed(2)}" 
+                                   onchange="calculatePaymentSummary()" 
+                                   oninput="validateInstallmentAmount(this)">
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" onchange="calculatePaymentSummary()">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <select onchange="calculatePaymentSummary()">
+                                <option value="">Select Method</option>
+                                <option value="cash">Cash</option>
+                                <option value="check">Check</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                                <option value="mobile_money">Mobile Money (M-Pesa, Tigo Pesa, etc.)</option>
+                                <option value="credit_card">Credit Card</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select onchange="calculatePaymentSummary(); console.log('Status changed to:', this.value);">
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="overdue">Overdue</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(installmentDiv);
+            }
+            
+            calculatePaymentSummary();
+        }
+
+        function redistributeInstallments() {
+            const totalCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+            const installments = document.querySelectorAll('.payment-installment');
+            const count = installments.length;
+            
+            if (count === 0) return;
+            
+            const equalAmount = totalCharge / count;
+            
+            installments.forEach(installment => {
+                const amountInput = installment.querySelector('input[type="number"]');
+                amountInput.value = equalAmount.toFixed(2);
+            });
+            
+            calculatePaymentSummary();
+        }
+
+        function validateInstallmentAmount(input) {
+            // Remove any non-numeric characters except decimal point and minus sign
+            let value = input.value.replace(/[^0-9.-]/g, '');
+            
+            // Ensure only one decimal point
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // Ensure no negative values
+            if (value.startsWith('-')) {
+                value = value.substring(1);
+            }
+            
+            input.value = value;
+        }
+
+        function handleTotalChargeChange() {
+            // Provide real-time updates as user types
+            const totalCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+            
+            // Update the display total charge immediately
+            document.getElementById('displayTotalCharge').textContent = 'TZS ' + totalCharge.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            // Trigger calculations after a short delay to avoid too many calculations while typing
+            clearTimeout(window.chargeChangeTimeout);
+            window.chargeChangeTimeout = setTimeout(() => {
+                calculateProfitLoss();
+            }, 500);
+        }
+
+        function redistributeInstallments() {
+            const totalCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+            const installments = document.querySelectorAll('.payment-installment');
+            const count = installments.length;
+            
+            if (count === 0) return;
+            
+            const equalAmount = totalCharge / count;
+            
+            installments.forEach(installment => {
+                const amountInput = installment.querySelector('input[type="number"]');
+                amountInput.value = equalAmount.toFixed(2);
+            });
+            
+            calculatePaymentSummary();
+        }
+
+        function calculatePaymentSummary() {
+            function formatTZS(amount) {
+                return 'TZS ' + amount.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            // Get the main total customer charge (this is the authoritative amount)
+            const mainTotalCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+            
+            const installments = document.querySelectorAll('.payment-installment');
+            let totalPaid = 0;
+            
+            installments.forEach(installment => {
+                const amountInput = installment.querySelector('input[type="number"]');
+                // Clean the input value - remove any non-numeric characters except decimal point
+                const cleanValue = amountInput.value.toString().replace(/[^0-9.-]/g, '');
+                const amount = parseFloat(cleanValue) || 0;
+                
+                // Get all select elements in this installment
+                const selectElements = installment.querySelectorAll('select');
+                // The status select is the last one (after payment method)
+                const statusSelect = selectElements[selectElements.length - 1];
+                const status = statusSelect ? statusSelect.value : '';
+                
+                console.log(`Installment amount: ${amount}, status: ${status}`); // Debug log
+                
+                // Count as paid if status is 'paid'
+                if (status === 'paid') {
+                    totalPaid += amount;
+                    console.log(`Added ${amount} to total paid. New total: ${totalPaid}`); // Debug log
+                }
+            });
+            
+            // Outstanding balance should be based on main total charge minus what's been paid
+            const outstanding = mainTotalCharge - totalPaid;
+            
+            console.log(`Main charge: ${mainTotalCharge}, Total paid: ${totalPaid}, Outstanding: ${outstanding}`); // Debug log
+            
+            // Update the display
+            document.getElementById('totalPaid').textContent = formatTZS(totalPaid);
+            document.getElementById('outstandingBalance').textContent = formatTZS(outstanding);
+        }
+
+        function generatePreview() {
+            const modal = document.getElementById('previewModal');
+            const content = document.getElementById('previewContent');
+            
+            // Collect all data
+            const projectData = {
+                title: document.getElementById('projectTitle').value || 'Untitled Project',
+                client: document.getElementById('clientName').value || 'Not specified',
+                date: document.getElementById('projectDate').value || 'Not specified',
+                preparedBy: document.getElementById('preparedBy').value || 'Not specified',
+                description: document.getElementById('projectDescription').value || 'No description provided'
+            };
+
+            // Collect materials data
+            let materialsHTML = '';
+            const materialRows = document.getElementById('materialsTable').getElementsByTagName('tbody')[0].rows;
+            let materialsTotal = 0;
+            for (let row of materialRows) {
+                const name = row.cells[0].querySelector('input').value || 'Not specified';
+                const qty = row.cells[1].querySelector('input').value || '0';
+                const unit = row.cells[2].querySelector('input').value || '';
+                const price = parseFloat(row.cells[3].querySelector('input').value) || 0;
+                const total = parseFloat(qty) * price;
+                materialsTotal += total;
+                if (name !== 'Not specified' || qty !== '0' || price > 0) {
+                    materialsHTML += `<li>${name} - ${qty} ${unit} @ TZS ${price.toLocaleString()} = TZS ${total.toLocaleString()}</li>`;
+                }
+            }
+
+            // Collect transportation data
+            let transportHTML = '';
+            const transportRows = document.getElementById('transportTable').getElementsByTagName('tbody')[0].rows;
+            let transportTotal = 0;
+            for (let row of transportRows) {
+                const type = row.cells[0].querySelector('input').value || '';
+                const from = row.cells[1].querySelector('input').value || '';
+                const to = row.cells[2].querySelector('input').value || '';
+                const cost = parseFloat(row.cells[3].querySelector('input').value) || 0;
+                transportTotal += cost;
+                if (type || from || to || cost > 0) {
+                    transportHTML += `<li>${type} from ${from} to ${to} - TZS ${cost.toLocaleString()}</li>`;
+                }
+            }
+
+            // Collect labor data
+            let laborHTML = '';
+            const laborRows = document.getElementById('laborTable').getElementsByTagName('tbody')[0].rows;
+            let laborTotal = 0;
+            for (let row of laborRows) {
+                const work = row.cells[0].querySelector('input').value || '';
+                const cost = parseFloat(row.cells[1].querySelector('input').value) || 0;
+                laborTotal += cost;
+                if (work || cost > 0) {
+                    laborHTML += `<li>${work} - TZS ${cost.toLocaleString()}</li>`;
+                }
+            }
+
+            // Collect other expenses data
+            let otherHTML = '';
+            const otherRows = document.getElementById('otherExpensesTable').getElementsByTagName('tbody')[0].rows;
+            let otherTotal = 0;
+            for (let row of otherRows) {
+                const desc = row.cells[0].querySelector('input').value || '';
+                const category = row.cells[1].querySelector('select').value || '';
+                const amount = parseFloat(row.cells[2].querySelector('input').value) || 0;
+                const notes = row.cells[3].querySelector('input').value || '';
+                otherTotal += amount;
+                if (desc || amount > 0) {
+                    otherHTML += `<li>${desc} (${category}) - TZS ${amount.toLocaleString()}${notes ? ' - ' + notes : ''}</li>`;
+                }
+            }
+
+            // Collect funding data
+            let fundingHTML = '';
+            const fundingRows = document.getElementById('fundingTable').getElementsByTagName('tbody')[0].rows;
+            let fundingTotal = 0;
+            for (let row of fundingRows) {
+                const source = row.cells[0].querySelector('input').value || '';
+                const amount = parseFloat(row.cells[1].querySelector('input').value) || 0;
+                const notes = row.cells[2].querySelector('input').value || '';
+                fundingTotal += amount;
+                if (source || amount > 0) {
+                    fundingHTML += `<li>${source} - TZS ${amount.toLocaleString()}${notes ? ' (' + notes + ')' : ''}</li>`;
+                }
+            }
+
+            // Collect payment data - Build installment list for display and calculate totals
+            let paymentHTML = '';
+            const installments = document.querySelectorAll('.payment-installment');
+            let totalPaidCalculated = 0;
+            
+            installments.forEach((installment, index) => {
+                const amount = parseFloat(installment.querySelector('input[type="number"]').value) || 0;
+                const dueDate = installment.querySelector('input[type="date"]').value || 'Not specified';
+                const methodSelect = installment.querySelector('select');
+                const method = methodSelect.options[methodSelect.selectedIndex].text || 'Not specified';
+                
+                // Get all select elements and find the status one (last select element)
+                const selectElements = installment.querySelectorAll('select');
+                const statusSelect = selectElements[selectElements.length - 1];
+                const status = statusSelect ? statusSelect.value : 'pending';
+                const statusText = statusSelect ? statusSelect.options[statusSelect.selectedIndex].text : 'Pending';
+                
+                console.log(`Preview - Installment ${index + 1}: amount=${amount}, status=${status}`); // Debug log
+                
+                // Count towards total paid if status is 'paid'
+                if (status === 'paid') {
+                    totalPaidCalculated += amount;
+                    console.log(`Preview - Added ${amount} to total paid. New total: ${totalPaidCalculated}`); // Debug log
+                }
+                
+                paymentHTML += `<li>Installment ${index + 1}: TZS ${amount.toLocaleString()} - Due: ${dueDate} - Method: ${method} - Status: ${statusText.toUpperCase()}</li>`;
+            });
+
+            // Use the main customer charge and calculated payment values
+            const totalCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+            const outstanding = totalCharge - totalPaidCalculated;
+
+            const totalCosts = materialsTotal + transportTotal + laborTotal + otherTotal;
+            const profit = totalCharge - totalCosts;
+
+            // Generate comprehensive preview HTML
+            content.innerHTML = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="display: inline-flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                            <img src="logo.png" alt="ADN Logo" style="width: 100px; height: 100px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(30,60,114,0.3); object-fit: cover;" />
+    
+                            <div>
+                                <h2 style="margin: 0; color: #2c3e50; font-size: 1.4rem;">ADN UPVC & ALUMINUM SOLUTIONS</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <h1 style="text-align: center; color: #2c3e50; border-bottom: 3px solid #667eea; padding-bottom: 15px; margin-bottom: 30px;">
+                        COMPREHENSIVE PROJECT FINANCIAL REPORT
+                    </h1>
+                    
+                    <div style="margin: 25px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; border-left: 5px solid #667eea;">
+                        <h2 style="color: #667eea; margin-bottom: 15px;">📋 PROJECT INFORMATION</h2>
+                        <p><strong>Project Title:</strong> ${projectData.title}</p>
+                        <p><strong>Client:</strong> ${projectData.client}</p>
+                        <p><strong>Project Date:</strong> ${projectData.date}</p>
+                        <p><strong>Report Prepared By:</strong> ${projectData.preparedBy}</p>
+                        <p><strong>Project Description:</strong> ${projectData.description}</p>
+                    </div>
+                    
+                    <div style="margin: 25px 0; padding: 20px; background: #fff3cd; border-radius: 10px; border-left: 5px solid #ffc107;">
+                        <h2 style="color: #856404; margin-bottom: 15px;">🔨 PROJECT COSTS BREAKDOWN</h2>
+                        
+                        <h3 style="color: #667eea; margin-top: 20px;">Materials Used</h3>
+                        <p>The following materials were required for this project:</p>
+                        <ul style="margin-left: 20px;">
+                            ${materialsHTML || '<li>No materials recorded</li>'}
+                        </ul>
+                        <p><strong>Total Materials Cost: TZS ${materialsTotal.toLocaleString()}</strong></p>
+                        
+                        <h3 style="color: #667eea; margin-top: 20px;">Transportation Costs</h3>
+                        <p>Transportation expenses for the project included:</p>
+                        <ul style="margin-left: 20px;">
+                            ${transportHTML || '<li>No transportation costs recorded</li>'}
+                        </ul>
+                        <p><strong>Total Transportation Cost: TZS ${transportTotal.toLocaleString()}</strong></p>
+                        
+                        <h3 style="color: #667eea; margin-top: 20px;">Labor Charges</h3>
+                        <p>The following labor costs were incurred:</p>
+                        <ul style="margin-left: 20px;">
+                            ${laborHTML || '<li>No labor costs recorded</li>'}
+                        </ul>
+                        <p><strong>Total Labor Cost: TZS ${laborTotal.toLocaleString()}</strong></p>
+                        
+                        <h3 style="color: #667eea; margin-top: 20px;">Other Expenses</h3>
+                        <p>Additional project expenses included:</p>
+                        <ul style="margin-left: 20px;">
+                            ${otherHTML || '<li>No other expenses recorded</li>'}
+                        </ul>
+                        <p><strong>Total Other Expenses: TZS ${otherTotal.toLocaleString()}</strong></p>
+                        
+                        <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            <h3 style="color: #495057;">TOTAL PROJECT COSTS: TZS ${totalCosts.toLocaleString()}</h3>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 25px 0; padding: 20px; background: #d1ecf1; border-radius: 10px; border-left: 5px solid #17a2b8;">
+                        <h2 style="color: #0c5460; margin-bottom: 15px;">💰 PROJECT FUNDING SOURCES</h2>
+                        <p>This project was funded through the following sources:</p>
+                        <ul style="margin-left: 20px;">
+                            ${fundingHTML || '<li>No funding sources recorded</li>'}
+                        </ul>
+                        <p><strong>Total Funding Available: TZS ${fundingTotal.toLocaleString()}</strong></p>
+                        <p style="font-style: italic; color: #0c5460;">This section shows where the project money came from, providing transparency about funding sources and amounts.</p>
+                    </div>
+                    
+                    <div style="margin: 25px 0; padding: 20px; background: #d4edda; border-radius: 10px; border-left: 5px solid #28a745;">
+                        <h2 style="color: #155724; margin-bottom: 15px;">💳 CUSTOMER PAYMENT INFORMATION</h2>
+                        <p><strong>Total Amount Charged to Customer: TZS ${totalCharge.toLocaleString()}</strong></p>
+                        
+                        <h3 style="color: #667eea; margin-top: 15px;">Payment Schedule</h3>
+                        <p>The customer payment has been structured as follows:</p>
+                        <ul style="margin-left: 20px;">
+                            ${paymentHTML || '<li>No payment schedule set</li>'}
+                        </ul>
+                        
+                        <div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            <p><strong>Total Amount Paid: TZS ${totalPaidCalculated.toLocaleString()}</strong></p>
+                            <p><strong>Outstanding Balance: TZS ${outstanding.toLocaleString()}</strong></p>
+                            
+                            ${outstanding > 0 ? 
+                                `<p style="color: #dc3545; font-weight: bold;">⚠️ PAYMENT STATUS: There is an outstanding balance of TZS ${outstanding.toLocaleString()} that needs to be collected from the customer.</p>` :
+                                outstanding === 0 && totalPaidCalculated > 0 ?
+                                `<p style="color: #28a745; font-weight: bold;">✅ PAYMENT STATUS: All payments have been completed. The project is fully paid.</p>` :
+                                `<p style="color: #ffc107; font-weight: bold;">⏳ PAYMENT STATUS: No payments have been received yet.</p>`
+                            }
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 25px 0; padding: 20px; background: #f8d7da; border-radius: 10px; border-left: 5px solid #dc3545;">
+                        <h2 style="color: #721c24; margin-bottom: 15px;">📊 FINANCIAL SUMMARY & ANALYSIS</h2>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0;">
+                            <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #e9ecef;">
+                                <h4 style="color: #495057; margin-bottom: 8px;">Total Project Costs</h4>
+                                <p style="font-size: 1.3em; font-weight: bold; color: #dc3545;">TZS ${totalCosts.toLocaleString()}</p>
+                            </div>
+                            <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid #e9ecef;">
+                                <h4 style="color: #495057; margin-bottom: 8px;">Customer Revenue</h4>
+                                <p style="font-size: 1.3em; font-weight: bold; color: #28a745;">TZS ${totalCharge.toLocaleString()}</p>
+                            </div>
+                            <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; border: 2px solid ${profit >= 0 ? '#28a745' : '#dc3545'};">
+                                <h4 style="color: #495057; margin-bottom: 8px;">Project Profit/Loss</h4>
+                                <p style="font-size: 1.3em; font-weight: bold; color: ${profit >= 0 ? '#28a745' : '#dc3545'};">TZS ${profit.toLocaleString()}</p>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #ffffff; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                            <h3 style="color: #667eea;">Financial Analysis</h3>
+                            ${profit > 0 ? 
+                                `<p style="color: #28a745;">✅ <strong>This project is PROFITABLE.</strong> The project generated a profit of TZS ${profit.toLocaleString()}, representing a ${((profit/totalCharge)*100).toFixed(1)}% profit margin. This indicates successful cost management and appropriate pricing.</p>` :
+                                profit < 0 ?
+                                `<p style="color: #dc3545;">⚠️ <strong>This project resulted in a LOSS.</strong> The project had a loss of TZS ${Math.abs(profit).toLocaleString()}, representing a ${((Math.abs(profit)/totalCharge)*100).toFixed(1)}% loss margin. Review costs and pricing strategies for future projects.</p>` :
+                                `<p style="color: #ffc107;">⚖️ <strong>This project BROKE EVEN.</strong> Total costs exactly match customer revenue with no profit or loss.</p>`
+                            }
+                            
+                            <p><strong>Cost Breakdown:</strong></p>
+                            <ul style="margin-left: 20px;">
+                                <li>Materials: TZS ${materialsTotal.toLocaleString()} (${((materialsTotal/totalCosts)*100).toFixed(1)}% of total costs)</li>
+                                <li>Transportation: TZS ${transportTotal.toLocaleString()} (${((transportTotal/totalCosts)*100).toFixed(1)}% of total costs)</li>
+                                <li>Labor: TZS ${laborTotal.toLocaleString()} (${((laborTotal/totalCosts)*100).toFixed(1)}% of total costs)</li>
+                                <li>Other Expenses: TZS ${otherTotal.toLocaleString()} (${((otherTotal/totalCosts)*100).toFixed(1)}% of total costs)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div style="border-top: 2px solid #667eea; padding-top: 20px; margin-top: 30px; text-align: center; color: #666;">
+                        <p style="font-style: italic;">This comprehensive report provides complete transparency of project finances, including detailed cost breakdowns, funding sources, payment status, and profitability analysis.</p>
+                        <p style="font-size: 0.9em; color: #999;">Report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+                        <p style="font-size: 0.9em; color: #667eea; font-weight: 600;">ADN UPVC & ALUMINUM SOLUTIONS</p>
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        function downloadPDF() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            
+            setTimeout(() => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Company Header with Branding
+                doc.setFontSize(18);
+                doc.setTextColor(44, 62, 80);
+                doc.text('ADN UPVC & ALUMINUM SOLUTIONS', 105, 15, { align: 'center' });
+                
+                doc.setFontSize(16);
+                doc.setTextColor(102, 126, 234);
+                doc.text('PROJECT REPORT', 105, 25, { align: 'center' });
+                
+                doc.setLineWidth(1);
+                doc.setDrawColor(102, 126, 234);
+                doc.line(20, 30, 190, 30);
+                
+                let yPos = 40;
+                
+                // Helper function to check if new page is needed
+                function checkNewPage() {
+                    if (yPos > 270) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                }
+                
+                // Collect all data first (same as preview)
+                const projectData = {
+                    title: document.getElementById('projectTitle').value || 'Untitled Project',
+                    client: document.getElementById('clientName').value || 'Not specified',
+                    date: document.getElementById('projectDate').value || 'Not specified',
+                    preparedBy: document.getElementById('preparedBy').value || 'Not specified',
+                    description: document.getElementById('projectDescription').value || 'No description provided'
+                };
+
+                // PROJECT INFORMATION SECTION
+                doc.setFontSize(14);
+                doc.setTextColor(102, 126, 234);
+                doc.text('PROJECT INFORMATION', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(10);
+                doc.setTextColor(51, 51, 51);
+                doc.text(`Project Title: ${projectData.title}`, 20, yPos); yPos += 5;
+                doc.text(`Client: ${projectData.client}`, 20, yPos); yPos += 5;
+                doc.text(`Project Date: ${projectData.date}`, 20, yPos); yPos += 5;
+                doc.text(`Report Prepared By: ${projectData.preparedBy}`, 20, yPos); yPos += 5;
+                doc.text(`Project Description: ${projectData.description}`, 20, yPos); yPos += 10;
+                
+                checkNewPage();
+                
+                // PROJECT COSTS BREAKDOWN SECTION
+                doc.setFontSize(14);
+                doc.setTextColor(102, 126, 234);
+                doc.text('PROJECT COSTS BREAKDOWN', 20, yPos);
+                yPos += 8;
+                
+                // Materials Used
+                doc.setFontSize(12);
+                doc.setTextColor(102, 126, 234);
+                doc.text('Materials Used', 20, yPos);
+                yPos += 6;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text('The following materials were required for this project:', 20, yPos);
+                yPos += 5;
+                
+                const materialRows = document.getElementById('materialsTable').getElementsByTagName('tbody')[0].rows;
+                let materialsTotal = 0;
+                let hasMaterials = false;
+                
+                for (let row of materialRows) {
+                    const name = row.cells[0].querySelector('input').value || '';
+                    const qty = row.cells[1].querySelector('input').value || '0';
+                    const unit = row.cells[2].querySelector('input').value || '';
+                    const price = parseFloat(row.cells[3].querySelector('input').value) || 0;
+                    const total = parseFloat(qty) * price;
+                    materialsTotal += total;
+                    
+                    if (name || qty !== '0' || price > 0) {
+                        doc.text(`- ${name} - ${qty} ${unit} @ TZS ${price.toLocaleString()} = TZS ${total.toLocaleString()}`, 25, yPos);
+                        yPos += 4;
+                        hasMaterials = true;
+                        checkNewPage();
+                    }
+                }
+                
+                if (!hasMaterials) {
+                    doc.text('- No materials recorded', 25, yPos);
+                    yPos += 4;
+                }
+                
+                doc.setFontSize(10);
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Total Materials Cost: TZS ${materialsTotal.toLocaleString()}`, 20, yPos);
+                yPos += 8;
+                
+                // Transportation Costs
+                doc.setFontSize(12);
+                doc.setTextColor(102, 126, 234);
+                doc.text('Transportation Costs', 20, yPos);
+                yPos += 6;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text('Transportation expenses for the project included:', 20, yPos);
+                yPos += 5;
+                
+                const transportRows = document.getElementById('transportTable').getElementsByTagName('tbody')[0].rows;
+                let transportTotal = 0;
+                let hasTransport = false;
+                
+                for (let row of transportRows) {
+                    const type = row.cells[0].querySelector('input').value || '';
+                    const from = row.cells[1].querySelector('input').value || '';
+                    const to = row.cells[2].querySelector('input').value || '';
+                    const cost = parseFloat(row.cells[3].querySelector('input').value) || 0;
+                    transportTotal += cost;
+                    
+                    if (type || from || to || cost > 0) {
+                        doc.text(`- ${type} from ${from} to ${to} - TZS ${cost.toLocaleString()}`, 25, yPos);
+                        yPos += 4;
+                        hasTransport = true;
+                        checkNewPage();
+                    }
+                }
+                
+                if (!hasTransport) {
+                    doc.text('- No transportation costs recorded', 25, yPos);
+                    yPos += 4;
+                }
+                
+                doc.setFontSize(10);
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Total Transportation Cost: TZS ${transportTotal.toLocaleString()}`, 20, yPos);
+                yPos += 8;
+                
+                checkNewPage();
+                
+                // Labor Charges
+                doc.setFontSize(12);
+                doc.setTextColor(102, 126, 234);
+                doc.text('Labor Charges', 20, yPos);
+                yPos += 6;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text('The following labor costs were incurred:', 20, yPos);
+                yPos += 5;
+                
+                const laborRows = document.getElementById('laborTable').getElementsByTagName('tbody')[0].rows;
+                let laborTotal = 0;
+                let hasLabor = false;
+                
+                for (let row of laborRows) {
+                    const work = row.cells[0].querySelector('input').value || '';
+                    const cost = parseFloat(row.cells[1].querySelector('input').value) || 0;
+                    laborTotal += cost;
+                    
+                    if (work || cost > 0) {
+                        doc.text(`- ${work} - TZS ${cost.toLocaleString()}`, 25, yPos);
+                        yPos += 4;
+                        hasLabor = true;
+                        checkNewPage();
+                    }
+                }
+                
+                if (!hasLabor) {
+                    doc.text('- No labor costs recorded', 25, yPos);
+                    yPos += 4;
+                }
+                
+                doc.setFontSize(10);
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Total Labor Cost: TZS ${laborTotal.toLocaleString()}`, 20, yPos);
+                yPos += 8;
+                
+                // Other Expenses
+                doc.setFontSize(12);
+                doc.setTextColor(102, 126, 234);
+                doc.text('Other Expenses', 20, yPos);
+                yPos += 6;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text('Additional project expenses included:', 20, yPos);
+                yPos += 5;
+                
+                const otherRows = document.getElementById('otherExpensesTable').getElementsByTagName('tbody')[0].rows;
+                let otherTotal = 0;
+                let hasOther = false;
+                
+                for (let row of otherRows) {
+                    const desc = row.cells[0].querySelector('input').value || '';
+                    const category = row.cells[1].querySelector('select').value || '';
+                    const amount = parseFloat(row.cells[2].querySelector('input').value) || 0;
+                    const notes = row.cells[3].querySelector('input').value || '';
+                    otherTotal += amount;
+                    
+                    if (desc || amount > 0) {
+                        doc.text(`- ${desc} (${category}) - TZS ${amount.toLocaleString()}${notes ? ' - ' + notes : ''}`, 25, yPos);
+                        yPos += 4;
+                        hasOther = true;
+                        checkNewPage();
+                    }
+                }
+                
+                if (!hasOther) {
+                    doc.text('- No other expenses recorded', 25, yPos);
+                    yPos += 4;
+                }
+                
+                doc.setFontSize(10);
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Total Other Expenses: TZS ${otherTotal.toLocaleString()}`, 20, yPos);
+                yPos += 8;
+                
+                // Total Project Costs
+                const totalCosts = materialsTotal + transportTotal + laborTotal + otherTotal;
+                doc.setFontSize(12);
+                doc.setTextColor(44, 62, 80);
+                doc.text(`TOTAL PROJECT COSTS: TZS ${totalCosts.toLocaleString()}`, 20, yPos);
+                yPos += 12;
+                
+                checkNewPage();
+                
+                // PROJECT FUNDING SOURCES
+                doc.setFontSize(14);
+                doc.setTextColor(102, 126, 234);
+                doc.text('PROJECT FUNDING SOURCES', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text('This project was funded through the following sources:', 20, yPos);
+                yPos += 5;
+                
+                const fundingRows = document.getElementById('fundingTable').getElementsByTagName('tbody')[0].rows;
+                let fundingTotal = 0;
+                let hasFunding = false;
+                
+                for (let row of fundingRows) {
+                    const source = row.cells[0].querySelector('input').value || '';
+                    const amount = parseFloat(row.cells[1].querySelector('input').value) || 0;
+                    const notes = row.cells[2].querySelector('input').value || '';
+                    fundingTotal += amount;
+                    
+                    if (source || amount > 0) {
+                        doc.text(`- ${source} - TZS ${amount.toLocaleString()}${notes ? ' (' + notes + ')' : ''}`, 25, yPos);
+                        yPos += 4;
+                        hasFunding = true;
+                        checkNewPage();
+                    }
+                }
+                
+                if (!hasFunding) {
+                    doc.text('- No funding sources recorded', 25, yPos);
+                    yPos += 4;
+                }
+                
+                doc.setFontSize(10);
+                doc.setTextColor(102, 126, 234);
+                doc.text(`Total Funding Available: TZS ${fundingTotal.toLocaleString()}`, 20, yPos);
+                yPos += 6;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text('This section shows where the project money came from, providing transparency about funding sources and amounts.', 20, yPos);
+                yPos += 10;
+                
+                checkNewPage();
+                
+                // CUSTOMER PAYMENT INFORMATION
+                doc.setFontSize(14);
+                doc.setTextColor(102, 126, 234);
+                doc.text('CUSTOMER PAYMENT INFORMATION', 20, yPos);
+                yPos += 8;
+                
+                const totalCharge = parseFloat(document.getElementById('totalCustomerCharge').value) || 0;
+                doc.setFontSize(10);
+                doc.setTextColor(51, 51, 51);
+                doc.text(`Total Amount Charged to Customer: TZS ${totalCharge.toLocaleString()}`, 20, yPos);
+                yPos += 8;
+                
+                // Payment Schedule
+                doc.setFontSize(12);
+                doc.setTextColor(102, 126, 234);
+                doc.text('Payment Schedule', 20, yPos);
+                yPos += 6;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text('The customer payment has been structured as follows:', 20, yPos);
+                yPos += 5;
+                
+                const installments = document.querySelectorAll('.payment-installment');
+                let totalPaidCalculated = 0;
+                
+                if (installments.length === 0) {
+                    doc.text('- No payment schedule set', 25, yPos);
+                    yPos += 4;
+                } else {
+                    installments.forEach((installment, index) => {
+                        const amount = parseFloat(installment.querySelector('input[type="number"]').value) || 0;
+                        const dueDate = installment.querySelector('input[type="date"]').value || 'Not specified';
+                        const selectElements = installment.querySelectorAll('select');
+                        const methodSelect = selectElements[0];
+                        const statusSelect = selectElements[selectElements.length - 1];
+                        const method = methodSelect ? methodSelect.options[methodSelect.selectedIndex].text : 'Not specified';
+                        const status = statusSelect ? statusSelect.value : 'pending';
+                        const statusText = statusSelect ? statusSelect.options[statusSelect.selectedIndex].text : 'Pending';
+                        
+                        if (status === 'paid') {
+                            totalPaidCalculated += amount;
+                        }
+                        
+                        doc.text(`- Installment ${index + 1}: TZS ${amount.toLocaleString()} - Due: ${dueDate}`, 25, yPos);
+                        yPos += 4;
+                        doc.text(`  Method: ${method} - Status: ${statusText.toUpperCase()}`, 27, yPos);
+                        yPos += 4;
+                        checkNewPage();
+                    });
+                }
+                
+                const outstanding = totalCharge - totalPaidCalculated;
+                
+                yPos += 3;
+                doc.setFontSize(10);
+                doc.setTextColor(44, 62, 80);
+                doc.text(`Total Amount Paid: TZS ${totalPaidCalculated.toLocaleString()}`, 20, yPos); yPos += 5;
+                doc.text(`Outstanding Balance: TZS ${outstanding.toLocaleString()}`, 20, yPos); yPos += 8;
+                
+                // Payment Status
+                doc.setFontSize(9);
+                if (outstanding > 0) {
+                    doc.setTextColor(220, 53, 69);
+                    doc.text(`PAYMENT STATUS: There is an outstanding balance of TZS ${outstanding.toLocaleString()}`, 20, yPos);
+                    yPos += 4;
+                    doc.text('that needs to be collected from the customer.', 20, yPos);
+                } else if (outstanding === 0 && totalPaidCalculated > 0) {
+                    doc.setTextColor(40, 167, 69);
+                    doc.text('PAYMENT STATUS: All payments have been completed. The project is fully paid.', 20, yPos);
+                } else {
+                    doc.setTextColor(255, 193, 7);
+                    doc.text('PAYMENT STATUS: No payments have been received yet.', 20, yPos);
+                }
+                yPos += 10;
+                
+                checkNewPage();
+                
+                // FINANCIAL SUMMARY & ANALYSIS
+                doc.setFontSize(14);
+                doc.setTextColor(102, 126, 234);
+                doc.text('FINANCIAL SUMMARY & ANALYSIS', 20, yPos);
+                yPos += 8;
+                
+                const profit = totalCharge - totalCosts;
+                
+                doc.setFontSize(11);
+                doc.setTextColor(44, 62, 80);
+                doc.text(`Total Project Costs: TZS ${totalCosts.toLocaleString()}`, 20, yPos); yPos += 6;
+                doc.text(`Customer Revenue: TZS ${totalCharge.toLocaleString()}`, 20, yPos); yPos += 6;
+                doc.text(`Project Profit/Loss: TZS ${profit.toLocaleString()}`, 20, yPos); yPos += 8;
+                
+                // Financial Analysis
+                doc.setFontSize(12);
+                doc.setTextColor(102, 126, 234);
+                doc.text('Financial Analysis', 20, yPos);
+                yPos += 6;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                if (profit > 0) {
+                    doc.text(`This project is PROFITABLE. The project generated a profit of TZS ${profit.toLocaleString()},`, 20, yPos); yPos += 4;
+                    doc.text(`representing a ${((profit/totalCharge)*100).toFixed(1)}% profit margin. This indicates successful cost management`, 20, yPos); yPos += 4;
+                    doc.text('and appropriate pricing.', 20, yPos); yPos += 6;
+                } else if (profit < 0) {
+                    doc.text(`This project resulted in a LOSS. The project had a loss of TZS ${Math.abs(profit).toLocaleString()},`, 20, yPos); yPos += 4;
+                    doc.text(`representing a ${((Math.abs(profit)/totalCharge)*100).toFixed(1)}% loss margin. Review costs and pricing`, 20, yPos); yPos += 4;
+                    doc.text('strategies for future projects.', 20, yPos); yPos += 6;
+                } else {
+                    doc.text('This project BROKE EVEN. Total costs exactly match customer revenue', 20, yPos); yPos += 4;
+                    doc.text('with no profit or loss.', 20, yPos); yPos += 6;
+                }
+                
+                // Cost Breakdown
+                doc.setFontSize(10);
+                doc.setTextColor(44, 62, 80);
+                doc.text('Cost Breakdown:', 20, yPos); yPos += 5;
+                
+                doc.setFontSize(9);
+                doc.setTextColor(51, 51, 51);
+                doc.text(`- Materials: TZS ${materialsTotal.toLocaleString()} (${((materialsTotal/totalCosts)*100).toFixed(1)}% of total costs)`, 25, yPos); yPos += 4;
+                doc.text(`- Transportation: TZS ${transportTotal.toLocaleString()} (${((transportTotal/totalCosts)*100).toFixed(1)}% of total costs)`, 25, yPos); yPos += 4;
+                doc.text(`- Labor: TZS ${laborTotal.toLocaleString()} (${((laborTotal/totalCosts)*100).toFixed(1)}% of total costs)`, 25, yPos); yPos += 4;
+                doc.text(`- Other Expenses: TZS ${otherTotal.toLocaleString()} (${((otherTotal/totalCosts)*100).toFixed(1)}% of total costs)`, 25, yPos); yPos += 10;
+                
+                checkNewPage();
+                
+                // Footer
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text('This comprehensive report provides complete transparency of project finances, including detailed cost', 20, yPos); yPos += 4;
+                doc.text('breakdowns, funding sources, payment status, and profitability analysis.', 20, yPos); yPos += 8;
+                
+                doc.text(`Report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 105, 280, { align: 'center' });
+                doc.text('ADN UPVC & ALUMINUM SOLUTIONS', 105, 285, { align: 'center' });
+                
+                // Save the PDF
+                const fileName = `Project_Report_${(document.getElementById('projectTitle').value || 'Project').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+                
+                loading.style.display = 'none';
+            }, 1500);
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
