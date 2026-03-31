@@ -10,151 +10,468 @@
 {% endif %}
 {% endblock %}
 
+{% block extra_css %}
+<style>
+/* ── Two-pane layout ──────────────────────── */
+.invoice-app {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 120px);
+  background: #e8f0f8;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 32px rgba(26,46,90,.15);
+}
+
+/* ── Sidebar ──────────────────────────────── */
+.inv-sidebar {
+  background: var(--adn-navy);
+  padding: 24px 20px 32px;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+  position: sticky;
+  top: 0;
+}
+.inv-sidebar .logo-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #2a4070;
+  margin-bottom: 20px;
+}
+.inv-sidebar .logo-bar .brand {
+  font-family: 'DM Serif Display', serif;
+  color: var(--adn-sky);
+  font-size: 13px; line-height: 1.4;
+}
+.inv-sidebar .logo-bar .brand small { color: rgba(255,255,255,.35); font-size: 10px; display:block; }
+
+.sec-title {
+  font-size: 8.5px; letter-spacing: 1.6px; text-transform: uppercase;
+  color: var(--adn-sky); font-weight: 700;
+  margin: 18px 0 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #2a4070;
+}
+
+.inv-field { margin-bottom: 9px; }
+.inv-field label {
+  display: block; font-size: 10px; color: #7aaac8;
+  font-weight: 600; margin-bottom: 3px; letter-spacing: .3px;
+}
+.inv-field input, .inv-field textarea, .inv-field select {
+  width: 100%; background: #0f1f42;
+  border: 1px solid #2a4070; border-radius: 7px;
+  padding: 7px 10px; color: white;
+  font-family: 'Inter', sans-serif; font-size: 12px;
+  transition: border-color .2s; outline: none;
+}
+.inv-field input:focus, .inv-field textarea:focus, .inv-field select:focus {
+  border-color: var(--adn-sky);
+}
+.inv-field textarea { resize: vertical; min-height: 50px; }
+.inv-field input::placeholder, .inv-field textarea::placeholder { color: #2a4070; }
+.inv-field select option { background: #1a2e5a; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.btn-save {
+  width: 100%; padding: 12px; background: var(--adn-sky);
+  border: none; border-radius: 9px;
+  color: var(--adn-navy); font-size: 13px; font-weight: 700;
+  cursor: pointer; margin-top: 6px; transition: background .2s;
+}
+.btn-save:hover { background: #5bbde0; }
+
+.btn-pdf {
+  width: 100%; padding: 10px; background: transparent;
+  border: 1px solid #2a4070; border-radius: 9px;
+  color: var(--adn-sky); font-size: 12px; font-weight: 500;
+  cursor: pointer; margin-top: 8px; transition: all .2s;
+}
+.btn-pdf:hover { background: #0f1f42; border-color: var(--adn-sky); }
+
+/* ── Preview Area ─────────────────────────── */
+.inv-preview {
+  padding: 28px 32px;
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+.preview-label {
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: #4a6a8a; font-weight: 700; margin-bottom: 16px;
+}
+
+/* ── Invoice Document ─────────────────────── */
+.inv-doc {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 28px rgba(26,46,90,.13);
+  overflow: hidden;
+  max-width: 720px;
+}
+
+.inv-doc-header {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--adn-navy);
+  padding: 18px 24px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.inv-doc-header .co-brand {
+  font-family: 'DM Serif Display', serif;
+  color: var(--adn-sky); font-size: 15px; line-height: 1.3;
+}
+.inv-doc-header .co-sub { color: rgba(255,255,255,.45); font-size: 10px; margin-top: 2px; }
+.inv-doc-header .title-block { text-align: right; }
+.inv-doc-header .title-block .inv-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px; color: white; letter-spacing: -.5px;
+}
+.inv-doc-header .title-block .inv-title span { color: var(--adn-sky); }
+.inv-doc-header .inv-no { color: var(--adn-sky); font-weight: 600; font-size: 12px; margin-top: 2px; }
+
+.inv-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 2px solid var(--adn-navy);
+}
+.inv-info-cell {
+  padding: 14px 18px;
+  border-right: 1px solid #b8d4e8;
+}
+.inv-info-cell:last-child { border-right: none; }
+.inv-info-cell .cell-label {
+  font-size: 7.5px; letter-spacing: 1.3px; text-transform: uppercase;
+  color: #2176ae; font-weight: 700; margin-bottom: 6px;
+  padding-bottom: 3px; border-bottom: 2px solid var(--adn-sky);
+  display: inline-block;
+}
+.inv-info-cell .cell-val { font-size: 11.5px; color: var(--adn-navy); font-weight: 500; line-height: 1.6; }
+.inv-info-cell .cell-val small { font-size: 10px; color: #4a6a8a; }
+
+.inv-desc-banner {
+  padding: 11px 20px;
+  background: #e6f4fb;
+  font-size: 11px; color: var(--adn-navy); line-height: 1.6;
+  border-bottom: 1px solid #b8d4e8;
+  border-left: 4px solid var(--adn-sky);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.inv-summary-table { width: 100%; border-collapse: collapse; }
+.inv-summary-table thead tr {
+  background: var(--adn-navy);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.inv-summary-table thead th {
+  padding: 9px 16px; text-align: left;
+  font-size: 8.5px; letter-spacing: 1px; text-transform: uppercase;
+  color: white; font-weight: 600;
+}
+.inv-summary-table thead th:last-child { text-align: right; }
+.inv-summary-table tbody td {
+  padding: 10px 16px; font-size: 12px;
+  border-bottom: 1px solid #e8f0f8;
+  color: var(--adn-navy);
+}
+.inv-summary-table tbody td:last-child { text-align: right; font-weight: 600; }
+
+.inv-totals {
+  padding: 16px 20px;
+  background: #f0f6fc;
+  border-top: 1px solid #b8d4e8;
+}
+.inv-totals .total-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; margin-bottom: 6px;
+  color: var(--adn-navy);
+}
+.inv-totals .total-row.balance {
+  font-size: 16px; font-weight: 700;
+  padding-top: 10px; margin-top: 6px;
+  border-top: 2px solid var(--adn-navy);
+}
+.inv-totals .total-row.balance .amount { color: #dc2626; }
+
+.inv-footer-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  padding: 16px 20px;
+  border-top: 1px solid #b8d4e8;
+  gap: 20px;
+}
+.inv-footer-col .foot-label {
+  font-size: 8px; letter-spacing: 1.3px; text-transform: uppercase;
+  color: #4a6a8a; font-weight: 700; margin-bottom: 7px;
+}
+.inv-footer-col .bank-detail { font-size: 11px; color: var(--adn-navy); line-height: 1.75; }
+
+@media (max-width: 900px) {
+  .invoice-app { grid-template-columns: 1fr; }
+  .inv-sidebar, .inv-preview { max-height: none; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<form method="post">
-  {% csrf_token %}
-  <div class="row g-3">
-    <div class="col-lg-8">
+<form method="post" id="invForm">
+{% csrf_token %}
 
-      <!-- Client Info -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="section-heading">Client Information</div>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Client Name *</label>
-              {{ form.client_name }}
-              {% if form.client_name.errors %}<div class="text-danger small">{{ form.client_name.errors.0 }}</div>{% endif %}
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Phone Number</label>
-              {{ form.client_phone }}
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Email</label>
-              {{ form.client_email }}
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Address / Location</label>
-              {{ form.client_address }}
-            </div>
-          </div>
-        </div>
+<div class="invoice-app">
+  <!-- ── SIDEBAR ── -->
+  <aside class="inv-sidebar">
+    <div class="logo-bar">
+      <div class="brand">
+        ADN uPVC &amp; Aluminum Solutions
+        <small>Arusha, Tanzania</small>
       </div>
-
-      <!-- Work Description -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="section-heading">Work Description</div>
-          {{ form.description }}
-        </div>
-      </div>
-
-      <!-- Financials -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="section-heading">Financial Summary</div>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Contract Amount (TZS) *</label>
-              {{ form.contract_amount }}
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Advance Paid (TZS)</label>
-              {{ form.advance_paid }}
-            </div>
-          </div>
-          <div class="mt-3 p-3 rounded" style="background:#f8fafc;border:1px dashed var(--adn-border);">
-            <div class="d-flex justify-content-between">
-              <span class="text-muted small">Contract Amount:</span>
-              <span class="fw-semibold" id="previewContract">TZS 0</span>
-            </div>
-            <div class="d-flex justify-content-between">
-              <span class="text-muted small">Advance Paid:</span>
-              <span class="fw-semibold text-success" id="previewAdvance">TZS 0</span>
-            </div>
-            <hr class="my-2">
-            <div class="d-flex justify-content-between">
-              <span class="fw-bold">Balance Due:</span>
-              <span class="fw-bold fs-5 text-danger" id="previewBalance">TZS 0</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notes -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="section-heading">Internal Notes</div>
-          {{ form.notes }}
-        </div>
-      </div>
-
     </div>
 
-    <!-- Right column -->
-    <div class="col-lg-4">
-      <div class="card mb-3">
-        <div class="card-body">
-          <div class="section-heading">Invoice Details</div>
-          <div class="mb-3">
-            <label class="form-label">Quote Reference</label>
-            {{ form.quote_ref }}
+    <!-- Client -->
+    <div class="sec-title">Taarifa za Mteja</div>
+    <div class="inv-field">
+      <label>Jina la Mteja *</label>
+      <input name="client_name" id="f_client" value="{{ form.client_name.value|default:'' }}" placeholder="Jina kamili la mteja" oninput="livePreview()">
+    </div>
+    <div class="inv-field">
+      <label>Namba ya Simu</label>
+      <input name="client_phone" id="f_phone" value="{{ form.client_phone.value|default:'' }}" placeholder="+255 7XX XXX XXX" oninput="livePreview()">
+    </div>
+    <div class="inv-field">
+      <label>Anwani</label>
+      <textarea name="client_address" id="f_address" placeholder="Mtaa, Wilaya, Arusha" oninput="livePreview()">{{ form.client_address.value|default:'' }}</textarea>
+    </div>
+    <div class="inv-field">
+      <label>Barua Pepe</label>
+      <input name="client_email" value="{{ form.client_email.value|default:'' }}" placeholder="email@example.com">
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="sec-title">Maelezo ya Invoice</div>
+    <div class="grid2">
+      <div class="inv-field">
+        <label>Invoice No.</label>
+        <input name="x_inv_no" id="f_invno" value="{{ invoice.invoice_no|default:'' }}" placeholder="ADN-2026-0001" oninput="livePreview()" readonly style="opacity:.7;">
+      </div>
+      <div class="inv-field">
+        <label>Quotation Ref.</label>
+        <input name="quote_ref" id="f_quotref" value="{{ form.quote_ref.value|default:'' }}" placeholder="QT-2026-0001" oninput="livePreview()">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="inv-field">
+        <label>Tarehe ya Invoice</label>
+        <input type="date" name="invoice_date" id="f_date" value="{{ form.invoice_date.value|default:'' }}" oninput="livePreview()">
+      </div>
+      <div class="inv-field">
+        <label>Due Date</label>
+        <input type="date" name="due_date" id="f_duedate" value="{{ form.due_date.value|default:'' }}" oninput="livePreview()">
+      </div>
+    </div>
+    <div class="inv-field">
+      <label>Completion Date</label>
+      <input type="date" name="completion_date" id="f_compdate" value="{{ form.completion_date.value|default:'' }}" oninput="livePreview()">
+    </div>
+
+    <!-- Work Description -->
+    <div class="sec-title">Maelezo ya Kazi</div>
+    <div class="inv-field">
+      <textarea name="description" id="f_desc" rows="3" oninput="livePreview()">{{ form.description.value|default:'Installation of windows and/or doors as per quotation reference above.' }}</textarea>
+    </div>
+
+    <!-- Financials -->
+    <div class="sec-title">Fedha (TZS)</div>
+    <div class="inv-field">
+      <label>Jumla ya Mkataba (Contract Amount)</label>
+      <input type="number" name="contract_amount" id="f_subtotal" value="{{ form.contract_amount.value|default:'0' }}" placeholder="0" oninput="livePreview()">
+    </div>
+    <div class="inv-field">
+      <label>Malipo ya Awali (Advance Paid)</label>
+      <input type="number" name="advance_paid" id="f_advance" value="{{ form.advance_paid.value|default:'0' }}" placeholder="0" oninput="livePreview()">
+    </div>
+
+    <!-- Status -->
+    <div class="sec-title">Hali (Status)</div>
+    <div class="inv-field">
+      <select name="status">
+        {% for val, label in form.status.field.choices %}
+        <option value="{{ val }}" {% if form.status.value == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Notes -->
+    <div class="inv-field" style="margin-top:4px;">
+      <label>Maelezo Zaidi (Internal Notes)</label>
+      <textarea name="notes" rows="2" placeholder="Maelezo ya ziada...">{{ form.notes.value|default:'' }}</textarea>
+    </div>
+
+    <!-- Hidden: linked quotation -->
+    {% if form.quotation.value %}<input type="hidden" name="quotation" value="{{ form.quotation.value }}">{% endif %}
+
+    <button type="submit" class="btn-save">
+      💾 {{ action }} Invoice – Hifadhi kwenye DB
+    </button>
+    {% if invoice %}
+    <button type="button" class="btn-pdf" onclick="window.open('{% url 'invoices:pdf' invoice.pk %}','_blank')">
+      ⬇ Fungua PDF / Print
+    </button>
+    {% endif %}
+
+    {% if form.errors %}
+    <div style="margin-top:12px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px;font-size:11px;color:#b91c1c;">
+      {% for field, errors in form.errors.items %}{% for e in errors %}<div>⚠ {{ e }}</div>{% endfor %}{% endfor %}
+    </div>
+    {% endif %}
+  </aside>
+
+  <!-- ── LIVE PREVIEW ── -->
+  <main class="inv-preview">
+    <div class="preview-label">Preview ya Invoice – Inabadilika Moja kwa Moja</div>
+    <div class="inv-doc" id="invDoc">
+
+      <div class="inv-doc-header">
+        <div>
+          <div class="co-brand">ADN uPVC &amp; Aluminum Solutions</div>
+          <div class="co-sub">Arusha, Tanzania · +255 XXX XXX XXX</div>
+        </div>
+        <div class="title-block">
+          <div class="inv-title">INV<span>OICE</span></div>
+          <div class="inv-no" id="p_invno">ADN-2026-XXXX</div>
+        </div>
+      </div>
+
+      <div class="inv-info-grid">
+        <div class="inv-info-cell">
+          <div class="cell-label">Bill To</div>
+          <div class="cell-val" id="p_client">—</div>
+        </div>
+        <div class="inv-info-cell">
+          <div class="cell-label">Invoice Details</div>
+          <div class="cell-val" id="p_dates">—</div>
+        </div>
+        <div class="inv-info-cell">
+          <div class="cell-label">Quotation Ref</div>
+          <div class="cell-val" id="p_quotref">—</div>
+        </div>
+      </div>
+
+      <div class="inv-desc-banner" id="p_desc">
+        Installation of windows and/or doors as per quotation reference above.
+      </div>
+
+      <table class="inv-summary-table">
+        <thead>
+          <tr>
+            <th>Maelezo / Description</th>
+            <th style="text-align:right">Kiasi / Amount (TZS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="p_descRow">Installation works</td>
+            <td id="p_subtotalRow">0</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="inv-totals">
+        <div class="total-row">
+          <span>Sub Total</span>
+          <span id="p_subtotal">TZS 0</span>
+        </div>
+        <div class="total-row" style="color:#16a34a;">
+          <span>Less: Advance Paid</span>
+          <span id="p_advance">– TZS 0</span>
+        </div>
+        <div class="total-row balance">
+          <span>Balance Due</span>
+          <span class="amount" id="p_balance">TZS 0</span>
+        </div>
+      </div>
+
+      <div class="inv-footer-grid">
+        <div class="inv-footer-col">
+          <div class="foot-label">Malipo – Bank Transfer</div>
+          <div class="bank-detail">
+            <strong>ADN uPVC &amp; Aluminum Solutions</strong><br>
+            Benki: CRDB Bank<br>
+            Akaunti: XXXXXXXXXXXXXXX<br>
+            Tawi: Arusha Branch
           </div>
-          <div class="mb-3">
-            <label class="form-label">Linked Quotation</label>
-            {{ form.quotation }}
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Invoice Date *</label>
-            {{ form.invoice_date }}
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Due Date</label>
-            {{ form.due_date }}
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Completion Date</label>
-            {{ form.completion_date }}
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Status</label>
-            {{ form.status }}
+        </div>
+        <div class="inv-footer-col">
+          <div class="foot-label">Remarks</div>
+          <div class="bank-detail" id="p_notes">
+            Asante kwa biashara yako.<br>
+            Tafadhali lipa ndani ya muda uliowekwa.
           </div>
         </div>
       </div>
 
-      <button type="submit" class="btn btn-adn w-100 py-2">
-        <i class="bi bi-check-lg me-1"></i>{{ action }} Invoice
-      </button>
-    </div>
-  </div>
+    </div><!-- /inv-doc -->
+  </main>
+</div>
 </form>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+function fmt(n) {
+  const v = parseFloat(n) || 0;
+  return 'TZS ' + v.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+function fmtDate(v) {
+  if (!v) return '—';
+  const d = new Date(v + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+}
+function g(id) { return document.getElementById(id); }
+
+function livePreview() {
+  // Client block
+  const client  = g('f_client').value.trim() || '—';
+  const phone   = g('f_phone').value.trim();
+  const address = g('f_address').value.trim();
+  let clientHtml = `<strong>${client}</strong>`;
+  if (phone)   clientHtml += `<br><small>${phone}</small>`;
+  if (address) clientHtml += `<br><small>${address}</small>`;
+  g('p_client').innerHTML = clientHtml;
+
+  // Invoice number
+  g('p_invno').textContent = g('f_invno').value || 'ADN-2026-XXXX';
+
+  // Dates
+  const date     = fmtDate(g('f_date').value);
+  const duedate  = fmtDate(g('f_duedate').value);
+  const compdate = fmtDate(g('f_compdate').value);
+  g('p_dates').innerHTML = `Tarehe: <strong>${date}</strong><br>Due: <strong>${duedate}</strong>${compdate !== '—' ? '<br>Completed: <strong>'+compdate+'</strong>' : ''}`;
+
+  // Quotation ref
+  g('p_quotref').textContent = g('f_quotref').value || '—';
+
+  // Description
+  g('p_desc').textContent = g('f_desc').value || '—';
+  g('p_descRow').textContent = g('f_desc').value || 'Installation works';
+
+  // Financials
+  const subtotal = parseFloat(g('f_subtotal').value) || 0;
+  const advance  = parseFloat(g('f_advance').value)  || 0;
+  const balance  = subtotal - advance;
+
+  g('p_subtotalRow').textContent = subtotal.toLocaleString('en-US');
+  g('p_subtotal').textContent    = fmt(subtotal);
+  g('p_advance').textContent     = '– ' + fmt(advance);
+  g('p_balance').textContent     = fmt(balance);
+  g('p_balance').style.color     = balance > 0 ? '#dc2626' : '#16a34a';
+}
+
+// Set today's date if empty
 document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('input[type=text],input[type=email],input[type=number],input[type=date],select,textarea')
-    .forEach(el => {
-      if (el.tagName === 'SELECT') el.classList.add('form-select', 'form-select-sm');
-      else el.classList.add('form-control', 'form-control-sm');
-    });
-
-  function updatePreview() {
-    const contract = parseFloat(document.querySelector('[name=contract_amount]')?.value) || 0;
-    const advance  = parseFloat(document.querySelector('[name=advance_paid]')?.value) || 0;
-    const balance  = contract - advance;
-    const fmt = n => 'TZS ' + n.toLocaleString('en-US', {minimumFractionDigits:0});
-    document.getElementById('previewContract').textContent = fmt(contract);
-    document.getElementById('previewAdvance').textContent  = fmt(advance);
-    document.getElementById('previewBalance').textContent  = fmt(balance);
-    document.getElementById('previewBalance').className = 'fw-bold fs-5 ' + (balance > 0 ? 'text-danger' : 'text-success');
-  }
-
-  document.querySelector('[name=contract_amount]')?.addEventListener('input', updatePreview);
-  document.querySelector('[name=advance_paid]')?.addEventListener('input', updatePreview);
-  updatePreview();
+  const today = new Date().toISOString().slice(0,10);
+  if (!g('f_date').value) g('f_date').value = today;
+  livePreview();
 });
 </script>
 {% endblock %}
