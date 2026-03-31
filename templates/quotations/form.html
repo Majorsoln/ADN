@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Quotation – ADN Solutions{% endblock %}
+{% block page_title %}{{ action }} Quotation {% if quotation %}– {{ quotation.quote_no }}{% endif %}{% endblock %}
+
+{% block topbar_actions %}
+{% if quotation %}
+<a href="{% url 'quotations:detail' quotation.pk %}" class="btn btn-sm btn-outline-secondary me-2">
+  <i class="bi bi-arrow-left me-1"></i>Back
+</a>
+{% else %}
+<a href="{% url 'quotations:list' %}" class="btn btn-sm btn-outline-secondary me-2">
+  <i class="bi bi-arrow-left me-1"></i>Back
+</a>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .item-row td { padding: .4rem .5rem; }
+  .mat-row td  { padding: .4rem .5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="mainForm">
+  {% csrf_token %}
+  <input type="hidden" name="items_data"     id="items_data">
+  <input type="hidden" name="materials_data" id="materials_data">
+
+  <div class="row g-3">
+    <!-- Left column -->
+    <div class="col-lg-8">
+
+      <!-- Client & Project -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Client & Project Details</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Client Name *</label>
+              {{ form.client_name }}
+              {% if form.client_name.errors %}<div class="text-danger small">{{ form.client_name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone Number</label>
+              {{ form.client_phone }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              {{ form.client_email }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Address / Location</label>
+              {{ form.client_address }}
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Project Name</label>
+              {{ form.project_name }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Installation Days</label>
+              {{ form.installation_days }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items table -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-heading mb-0">Windows &amp; Doors</div>
+            <button type="button" class="btn btn-sm btn-adn" onclick="addItem()">
+              <i class="bi bi-plus-lg me-1"></i>Add Item
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered mb-0" id="itemsTable">
+              <thead class="table-light">
+                <tr>
+                  <th style="min-width:160px">Type / Description</th>
+                  <th style="width:90px">Width (cm)</th>
+                  <th style="width:90px">Height (cm)</th>
+                  <th style="width:70px">Qty</th>
+                  <th style="width:90px">Area (m²)</th>
+                  <th style="width:40px"></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody">
+              </tbody>
+              <tfoot>
+                <tr class="table-light fw-bold">
+                  <td colspan="4" class="text-end">Total Area:</td>
+                  <td id="totalArea">0.00 m²</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Materials -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-heading mb-0">Material Options &amp; Pricing</div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addMaterial()">
+              <i class="bi bi-plus-lg me-1"></i>Add Material
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered mb-0" id="matsTable">
+              <thead class="table-light">
+                <tr>
+                  <th>Material Name</th>
+                  <th style="width:150px">Price / m² (TZS)</th>
+                  <th>Notes</th>
+                  <th style="width:40px"></th>
+                </tr>
+              </thead>
+              <tbody id="matsBody">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Internal Notes</div>
+          {{ form.notes }}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-4">
+
+      <!-- Quote details -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Quotation Details</div>
+          <div class="mb-3">
+            <label class="form-label">Quote Date *</label>
+            {{ form.quote_date }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Valid Until</label>
+            {{ form.valid_until }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            {{ form.status }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Discount -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Discount</div>
+          <div class="mb-2">
+            <label class="form-label">Discount Label</label>
+            {{ form.discount_name }}
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Valid For (e.g. 7 days)</label>
+            {{ form.discount_duration }}
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">Type</label>
+              {{ form.discount_type }}
+            </div>
+            <div class="col-6">
+              <label class="form-label">Value</label>
+              {{ form.discount_value }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Taxes -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Applicable Taxes</div>
+          {% for tax_enabled, tax_rate, label in tax_fields %}
+          <div class="mb-2">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              {{ tax_enabled }}
+              <label class="form-label mb-0">{{ label }}</label>
+            </div>
+            <div class="input-group input-group-sm">
+              {{ tax_rate }}
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          {% endfor %}
+
+          <!-- Inline tax toggles for rendering -->
+          <div class="mt-2 pt-2" style="border-top:1px solid var(--adn-border)">
+            <div class="row g-2 align-items-center mb-2">
+              <div class="col-auto">{{ form.vat_enabled }}</div>
+              <div class="col"><label class="form-label mb-0 small">VAT</label></div>
+              <div class="col-5">
+                <div class="input-group input-group-sm">{{ form.vat_rate }}<span class="input-group-text">%</span></div>
+              </div>
+            </div>
+            <div class="row g-2 align-items-center mb-2">
+              <div class="col-auto">{{ form.service_levy_enabled }}</div>
+              <div class="col"><label class="form-label mb-0 small">Service Levy</label></div>
+              <div class="col-5">
+                <div class="input-group input-group-sm">{{ form.service_levy_rate }}<span class="input-group-text">%</span></div>
+              </div>
+            </div>
+            <div class="row g-2 align-items-center mb-2">
+              <div class="col-auto">{{ form.skills_levy_enabled }}</div>
+              <div class="col"><label class="form-label mb-0 small">Skills Levy</label></div>
+              <div class="col-5">
+                <div class="input-group input-group-sm">{{ form.skills_levy_rate }}<span class="input-group-text">%</span></div>
+              </div>
+            </div>
+            <div class="row g-2 align-items-center mb-2">
+              <div class="col-auto">{{ form.withholding_enabled }}</div>
+              <div class="col"><label class="form-label mb-0 small">Withholding Tax</label></div>
+              <div class="col-5">
+                <div class="input-group input-group-sm">{{ form.withholding_rate }}<span class="input-group-text">%</span></div>
+              </div>
+            </div>
+            <div class="row g-2 align-items-center mb-2">
+              <div class="col-auto">{{ form.custom1_enabled }}</div>
+              <div class="col"><input type="text" name="custom1_name" value="{{ form.custom1_name.value|default:'' }}" class="form-control form-control-sm" placeholder="Custom Tax 1"></div>
+              <div class="col-5">
+                <div class="input-group input-group-sm">{{ form.custom1_rate }}<span class="input-group-text">%</span></div>
+              </div>
+            </div>
+            <div class="row g-2 align-items-center">
+              <div class="col-auto">{{ form.custom2_enabled }}</div>
+              <div class="col"><input type="text" name="custom2_name" value="{{ form.custom2_name.value|default:'' }}" class="form-control form-control-sm" placeholder="Custom Tax 2"></div>
+              <div class="col-5">
+                <div class="input-group input-group-sm">{{ form.custom2_rate }}<span class="input-group-text">%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-adn w-100 py-2">
+        <i class="bi bi-check-lg me-1"></i>{{ action }} Quotation
+      </button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Pre-existing data (for edit mode)
+let existingItems     = {{ items|default:"[]"|safe }};
+let existingMaterials = {{ materials|default:"[]"|safe }};
+const defaultMaterials = {{ default_materials|default:"[]"|safe }};
+
+function fmt(n) {
+  return Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ── Items ───────────────────────────────────────────────────────────────────
+function addItem(data) {
+  const body = document.getElementById('itemsBody');
+  const row  = document.createElement('tr');
+  row.innerHTML = `
+    <td><input type="text" class="form-control form-control-sm item-type" value="${data?.item_type||''}" placeholder="e.g. Casement Window"></td>
+    <td><input type="number" class="form-control form-control-sm item-w" value="${data?.width||''}" step="0.01" min="0" placeholder="cm" oninput="calcArea(this)"></td>
+    <td><input type="number" class="form-control form-control-sm item-h" value="${data?.height||''}" step="0.01" min="0" placeholder="cm" oninput="calcArea(this)"></td>
+    <td><input type="number" class="form-control form-control-sm item-q" value="${data?.quantity||1}" min="1" oninput="calcArea(this)"></td>
+    <td class="item-area text-end">—</td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove();updateTotal()"><i class="bi bi-trash"></i></button></td>`;
+  body.appendChild(row);
+  if (data) calcArea(row.querySelector('.item-w'));
+}
+
+function calcArea(input) {
+  const row = input.closest('tr');
+  const w = parseFloat(row.querySelector('.item-w').value) || 0;
+  const h = parseFloat(row.querySelector('.item-h').value) || 0;
+  const q = parseInt(row.querySelector('.item-q').value) || 0;
+  const area = (w * h * q) / 10000;
+  row.querySelector('.item-area').textContent = area > 0 ? fmt(area) + ' m²' : '—';
+  updateTotal();
+}
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('#itemsBody tr').forEach(row => {
+    const w = parseFloat(row.querySelector('.item-w')?.value) || 0;
+    const h = parseFloat(row.querySelector('.item-h')?.value) || 0;
+    const q = parseInt(row.querySelector('.item-q')?.value) || 0;
+    total += (w * h * q) / 10000;
+  });
+  document.getElementById('totalArea').textContent = fmt(total) + ' m²';
+}
+
+// ── Materials ──────────────────────────────────────────────────────────────
+function addMaterial(data) {
+  const body = document.getElementById('matsBody');
+  const row  = document.createElement('tr');
+  row.innerHTML = `
+    <td><input type="text" class="form-control form-control-sm mat-name" value="${data?.material_name||''}" placeholder="Material name"></td>
+    <td><input type="number" class="form-control form-control-sm mat-price" value="${data?.price_per_sqm||''}" step="1000" min="0" placeholder="120000"></td>
+    <td><input type="text" class="form-control form-control-sm mat-notes" value="${data?.notes||''}" placeholder="Optional notes"></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>`;
+  body.appendChild(row);
+}
+
+// ── Form submit: serialize items & materials ───────────────────────────────
+document.getElementById('mainForm').addEventListener('submit', function() {
+  const items = [];
+  document.querySelectorAll('#itemsBody tr').forEach(row => {
+    const t = row.querySelector('.item-type')?.value?.trim();
+    const w = row.querySelector('.item-w')?.value;
+    const h = row.querySelector('.item-h')?.value;
+    const q = row.querySelector('.item-q')?.value;
+    if (t && w && h) items.push({ item_type: t, width: w, height: h, quantity: q || 1 });
+  });
+  document.getElementById('items_data').value = JSON.stringify(items);
+
+  const mats = [];
+  document.querySelectorAll('#matsBody tr').forEach(row => {
+    const n = row.querySelector('.mat-name')?.value?.trim();
+    const p = row.querySelector('.mat-price')?.value;
+    const nt = row.querySelector('.mat-notes')?.value?.trim();
+    if (n && p) mats.push({ material_name: n, price_per_sqm: p, notes: nt||'' });
+  });
+  document.getElementById('materials_data').value = JSON.stringify(mats);
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function() {
+  // Apply Bootstrap classes to form fields
+  document.querySelectorAll('input[type=text],input[type=email],input[type=number],input[type=date],select,textarea')
+    .forEach(el => {
+      if (!el.closest('#itemsBody') && !el.closest('#matsBody')) {
+        if (el.tagName === 'SELECT') el.classList.add('form-select', 'form-select-sm');
+        else el.classList.add('form-control', 'form-control-sm');
+      }
+    });
+
+  if (existingItems.length) {
+    existingItems.forEach(addItem);
+  }
+
+  if (existingMaterials.length) {
+    existingMaterials.forEach(addMaterial);
+  } else {
+    defaultMaterials.forEach(([name, price]) => addMaterial({ material_name: name, price_per_sqm: price }));
+  }
+});
+</script>
+{% endblock %}

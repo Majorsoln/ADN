@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quotation {{ quotation.quote_no }} – ADN Solutions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      font-size: 11pt;
+      color: #1e293b;
+      background: #fff;
+      padding: 0;
+    }
+
+    /* ── Page layout ───────────────────────────── */
+    .page { max-width: 800px; margin: 0 auto; padding: 40px; }
+
+    /* ── Header ────────────────────────────────── */
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #1a2e5a;
+      margin-bottom: 28px;
+    }
+    .company-block h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20pt;
+      color: #1a2e5a;
+      line-height: 1.2;
+    }
+    .company-block h1 span { color: #3aacdc; }
+    .company-block .company-meta {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 4px;
+      line-height: 1.6;
+    }
+    .doc-title-block { text-align: right; }
+    .doc-title-block .doc-type {
+      font-size: 22pt;
+      font-weight: 700;
+      color: #1a2e5a;
+      letter-spacing: -.5px;
+    }
+    .doc-title-block .doc-no {
+      font-size: 13pt;
+      color: #3aacdc;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .doc-title-block .doc-dates {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 6px;
+      line-height: 1.7;
+    }
+
+    /* ── Client + project bar ───────────────────── */
+    .meta-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .meta-box {
+      flex: 1;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .meta-box .box-label {
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .meta-box .box-name {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #1a2e5a;
+    }
+    .meta-box .box-detail {
+      font-size: 9pt;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.5;
+    }
+
+    /* ── Section headings ───────────────────────── */
+    .sec-heading {
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    /* ── Items table ────────────────────────────── */
+    table.items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table.items thead tr {
+      background: #1a2e5a;
+      color: #fff;
+    }
+    table.items thead th {
+      padding: 8px 10px;
+      font-size: 8.5pt;
+      font-weight: 600;
+      text-align: left;
+    }
+    table.items thead th.right { text-align: right; }
+    table.items tbody tr:nth-child(even) { background: #f8fafc; }
+    table.items tbody td {
+      padding: 7px 10px;
+      font-size: 9.5pt;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    table.items tbody td.right { text-align: right; }
+    table.items tfoot tr { background: #eef2ff; }
+    table.items tfoot td {
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 10pt;
+    }
+    table.items tfoot td.right { text-align: right; }
+
+    /* ── Pricing options ────────────────────────── */
+    .pricing-section { margin-bottom: 24px; }
+    table.pricing {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table.pricing thead tr { background: #1a2e5a; color: #fff; }
+    table.pricing thead th {
+      padding: 8px 10px;
+      font-size: 8.5pt;
+      font-weight: 600;
+      text-align: right;
+    }
+    table.pricing thead th:first-child { text-align: left; }
+    table.pricing tbody tr:nth-child(even) { background: #f8fafc; }
+    table.pricing tbody td {
+      padding: 7px 10px;
+      font-size: 9.5pt;
+      text-align: right;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    table.pricing tbody td:first-child { text-align: left; font-weight: 600; }
+    table.pricing tfoot td {
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 11pt;
+      text-align: right;
+      background: #eef2ff;
+      border-top: 2px solid #1a2e5a;
+      color: #1a2e5a;
+    }
+    table.pricing tfoot td:first-child { text-align: left; }
+
+    /* ── Selected option highlight ──────────────── */
+    .selected-option {
+      border: 2px solid #1a2e5a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      background: #f0f4ff;
+    }
+    .selected-option .opt-label {
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .selected-option .opt-name { font-size: 13pt; font-weight: 700; color: #1a2e5a; }
+    .selected-option .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9.5pt;
+      margin-top: 6px;
+    }
+    .selected-option .summary-row.total {
+      font-size: 13pt;
+      font-weight: 700;
+      border-top: 1px solid #c7d2fe;
+      padding-top: 8px;
+      margin-top: 8px;
+      color: #1a2e5a;
+    }
+    .text-red { color: #dc2626; }
+    .text-green { color: #16a34a; }
+
+    /* ── Terms & Bank ───────────────────────────── */
+    .footer-grid {
+      display: flex;
+      gap: 24px;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .footer-col { flex: 1; }
+    .bank-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 9pt;
+      line-height: 1.7;
+    }
+    .terms-list {
+      font-size: 9pt;
+      color: #64748b;
+      line-height: 1.7;
+      padding-left: 14px;
+    }
+
+    /* ── Signature ──────────────────────────────── */
+    .signature-row {
+      display: flex;
+      gap: 40px;
+      margin-top: 32px;
+    }
+    .sig-block { flex: 1; }
+    .sig-line {
+      border-top: 1px solid #94a3b8;
+      margin-top: 36px;
+      padding-top: 4px;
+      font-size: 8.5pt;
+      color: #64748b;
+    }
+
+    /* ── Print ──────────────────────────────────── */
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+      .page { padding: 20px; max-width: 100%; }
+    }
+
+    /* ── Print button ───────────────────────────── */
+    .print-bar {
+      background: #1a2e5a;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .print-bar button {
+      background: #3aacdc;
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 10pt;
+    }
+    .print-bar button:hover { background: #2d9bc7; }
+    .print-bar a { color: #94ccde; text-decoration: none; font-size: 9pt; }
+  </style>
+</head>
+<body>
+
+<!-- Print toolbar -->
+<div class="print-bar no-print">
+  <div>
+    <span style="font-family:'DM Serif Display',serif;font-size:14pt;">ADN uPVC &amp; Aluminum Solutions</span>
+    <span style="margin-left:12px;font-size:9pt;opacity:.6;">– Quotation {{ quotation.quote_no }}</span>
+  </div>
+  <div class="d-flex gap-2 align-items-center" style="display:flex;gap:8px;">
+    {% if all_options and all_options|length > 1 %}
+    <select onchange="window.location='{% url 'quotations:pdf' quotation.pk %}?mat='+this.value"
+            style="background:#fff;color:#1a2e5a;border:none;padding:5px 10px;border-radius:6px;font-size:9pt;cursor:pointer;">
+      {% for opt in all_options %}
+      <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == request.GET.mat|default:0|add:0 %}selected{% endif %}>
+        {{ opt.material.material_name }}
+      </option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    <a href="{% url 'quotations:detail' quotation.pk %}">← Back</a>
+    <button onclick="window.print()">⬇ Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <div class="doc-header">
+    <div class="company-block">
+      <h1>ADN <span>uPVC</span> &amp; Aluminum<br>Solutions</h1>
+      <div class="company-meta">
+        Arusha, Tanzania<br>
+        +255 XXX XXX XXX · info@adnarusha.com<br>
+        TIN: XXX-XXX-XXX
+      </div>
+    </div>
+    <div class="doc-title-block">
+      <div class="doc-type">QUOTATION</div>
+      <div class="doc-no">{{ quotation.quote_no }}</div>
+      <div class="doc-dates">
+        Date: {{ quotation.quote_date|date:"d F Y" }}<br>
+        Valid Until: <strong>{{ quotation.valid_until|date:"d F Y" }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Client / Project ────────────────────────────────────── -->
+  <div class="meta-row">
+    <div class="meta-box">
+      <div class="box-label">Prepared For</div>
+      <div class="box-name">{{ quotation.client_name }}</div>
+      <div class="box-detail">
+        {% if quotation.client_phone %}📞 {{ quotation.client_phone }}<br>{% endif %}
+        {% if quotation.client_email %}✉ {{ quotation.client_email }}<br>{% endif %}
+        {% if quotation.client_address %}📍 {{ quotation.client_address }}{% endif %}
+      </div>
+    </div>
+    {% if quotation.project_name %}
+    <div class="meta-box">
+      <div class="box-label">Project</div>
+      <div class="box-name">{{ quotation.project_name }}</div>
+      <div class="box-detail">
+        Installation: {{ quotation.installation_days }} working days
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Items ────────────────────────────────────────────────── -->
+  <div class="sec-heading">Specification of Works</div>
+  <table class="items">
+    <thead>
+      <tr>
+        <th style="width:30px">#</th>
+        <th>Item / Description</th>
+        <th class="right" style="width:80px">W (cm)</th>
+        <th class="right" style="width:80px">H (cm)</th>
+        <th class="right" style="width:50px">Qty</th>
+        <th class="right" style="width:90px">Area (m²)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>
+          {{ item.item_type }}
+          {% if item.description %}<br><span style="font-size:8.5pt;color:#64748b;">{{ item.description }}</span>{% endif %}
+        </td>
+        <td class="right">{{ item.width|floatformat:0 }}</td>
+        <td class="right">{{ item.height|floatformat:0 }}</td>
+        <td class="right">{{ item.quantity }}</td>
+        <td class="right">{{ item.area_display }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" class="right">Total Area:</td>
+        <td class="right">{{ quotation.total_area|floatformat:4 }} m²</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- ── Selected material pricing highlight ─────────────────── -->
+  {% if selected_option %}
+  <div class="sec-heading">Pricing – {{ selected_option.material.material_name }}</div>
+  <div class="selected-option">
+    <div class="opt-label">Selected Material</div>
+    <div class="opt-name">{{ selected_option.material.material_name }}</div>
+    <div style="font-size:9pt;color:#64748b;margin-top:2px;">
+      TZS {{ selected_option.material.price_per_sqm|floatformat:0 }} / m²
+      {% if selected_option.material.notes %} · {{ selected_option.material.notes }}{% endif %}
+    </div>
+    <div class="summary-row" style="margin-top:10px;">
+      <span>Subtotal ({{ quotation.total_area|floatformat:2 }} m²)</span>
+      <span>TZS {{ selected_option.subtotal|floatformat:0 }}</span>
+    </div>
+    {% if quotation.discount_value %}
+    <div class="summary-row text-red">
+      <span>
+        {{ quotation.discount_name|default:"Discount" }}
+        ({% if quotation.discount_type == 'percentage' %}{{ quotation.discount_value }}%{% else %}Fixed{% endif %})
+        {% if quotation.discount_duration %} – {{ quotation.discount_duration }}{% endif %}
+      </span>
+      <span>– TZS {{ selected_option.discount|floatformat:0 }}</span>
+    </div>
+    <div class="summary-row">
+      <span>After Discount</span>
+      <span>TZS {{ selected_option.after_disc|floatformat:0 }}</span>
+    </div>
+    {% endif %}
+    {% for tax in selected_option.taxes %}
+    <div class="summary-row">
+      <span>{{ tax.name }}</span>
+      <span>TZS {{ tax.amount|floatformat:0 }}</span>
+    </div>
+    {% endfor %}
+    <div class="summary-row total">
+      <span>TOTAL AMOUNT</span>
+      <span>TZS {{ selected_option.grand|floatformat:0 }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── All Options Comparison ──────────────────────────────── -->
+  {% if all_options|length > 1 %}
+  <div class="pricing-section">
+    <div class="sec-heading">All Material Options – Price Comparison</div>
+    <table class="pricing">
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th>Price/m²</th>
+          <th>Subtotal</th>
+          {% if quotation.discount_value %}<th>Discount</th><th>After Disc.</th>{% endif %}
+          <th>Tax</th>
+          <th>Total (TZS)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for opt in all_options %}
+        <tr>
+          <td>{{ opt.material.material_name }}</td>
+          <td>{{ opt.material.price_per_sqm|floatformat:0 }}</td>
+          <td>{{ opt.subtotal|floatformat:0 }}</td>
+          {% if quotation.discount_value %}
+          <td style="color:#dc2626;">–{{ opt.discount|floatformat:0 }}</td>
+          <td>{{ opt.after_disc|floatformat:0 }}</td>
+          {% endif %}
+          <td>{{ opt.tax_total|floatformat:0 }}</td>
+          <td style="font-weight:700;color:#1a2e5a;">{{ opt.grand|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ── Footer grid ─────────────────────────────────────────── -->
+  <div class="footer-grid">
+    <div class="footer-col">
+      <div class="sec-heading">Payment – Bank Transfer</div>
+      <div class="bank-box">
+        <strong>ADN uPVC &amp; Aluminum Solutions</strong><br>
+        Bank: CRDB Bank<br>
+        Account No: XXXXXXXXXXXXXXX<br>
+        Branch: Arusha Branch
+      </div>
+    </div>
+    <div class="footer-col">
+      <div class="sec-heading">Terms &amp; Conditions</div>
+      <ul class="terms-list">
+        <li>This quotation is valid for 30 days from the date above.</li>
+        <li>50% advance payment required to commence work.</li>
+        <li>Balance due upon project completion.</li>
+        <li>All prices are in Tanzanian Shillings (TZS).</li>
+        {% if quotation.installation_days %}
+        <li>Estimated installation: {{ quotation.installation_days }} working days.</li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  {% if quotation.notes %}
+  <div style="margin-top:16px;padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:9pt;color:#92400e;">
+    <strong>Note:</strong> {{ quotation.notes }}
+  </div>
+  {% endif %}
+
+  <!-- ── Signatures ───────────────────────────────────────────── -->
+  <div class="signature-row">
+    <div class="sig-block">
+      <div class="sig-line">
+        Authorized Signatory – ADN Solutions
+      </div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">
+        Client Acceptance – {{ quotation.client_name }}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ───────────────────────────────────────────────── -->
+  <div style="margin-top:24px;text-align:center;font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;">
+    ADN uPVC &amp; Aluminum Solutions · Arusha, Tanzania · Thank you for your business.
+  </div>
+
+</div>
+</body>
+</html>

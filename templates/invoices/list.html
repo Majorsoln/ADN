@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Invoices – ADN Solutions{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'invoices:create' %}" class="btn btn-sm btn-adn">
+  <i class="bi bi-plus-lg me-1"></i>New Invoice
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label mb-1">Search</label>
+        <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Client name, invoice no…">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-1">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All Statuses</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-adn w-100">Filter</button>
+      </div>
+      {% if search or status_filter %}
+      <div class="col-md-2">
+        <a href="{% url 'invoices:list' %}" class="btn btn-sm btn-outline-secondary w-100">Clear</a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Invoice #</th>
+          <th>Client</th>
+          <th>Quote Ref</th>
+          <th>Invoice Date</th>
+          <th>Due Date</th>
+          <th>Amount (TZS)</th>
+          <th>Balance (TZS)</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        <tr>
+          <td>
+            <a href="{% url 'invoices:detail' inv.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">
+              {{ inv.invoice_no }}
+            </a>
+          </td>
+          <td>
+            <div class="fw-semibold">{{ inv.client_name }}</div>
+            {% if inv.client_phone %}<div class="text-muted" style="font-size:.75rem;">{{ inv.client_phone }}</div>{% endif %}
+          </td>
+          <td>{{ inv.quote_ref|default:"—" }}</td>
+          <td>{{ inv.invoice_date|date:"d M Y" }}</td>
+          <td>
+            {{ inv.due_date|date:"d M Y"|default:"—" }}
+            {% if inv.is_overdue %}<span class="badge badge-overdue rounded-pill ms-1 small">Overdue</span>{% endif %}
+          </td>
+          <td class="fw-semibold">{{ inv.contract_amount|floatformat:0 }}</td>
+          <td class="{% if inv.balance_due > 0 %}text-danger fw-bold{% else %}text-success fw-bold{% endif %}">
+            {{ inv.balance_due|floatformat:0 }}
+          </td>
+          <td><span class="badge rounded-pill badge-{{ inv.status }} px-2 py-1">{{ inv.get_status_display }}</span></td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'invoices:detail' inv.pk %}" class="btn btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'invoices:edit' inv.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+              <a href="{% url 'invoices:pdf' inv.pk %}" class="btn btn-outline-secondary" title="Print" target="_blank"><i class="bi bi-printer"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center py-5">
+            <i class="bi bi-receipt fs-1 text-muted d-block mb-2"></i>
+            <div class="text-muted">No invoices found.</div>
+            <a href="{% url 'invoices:create' %}" class="btn btn-sm btn-adn mt-3">Create First Invoice</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

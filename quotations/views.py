@@ -1,0 +1,206 @@
+import json
+from decimal import Decimal
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_POST
+from django.template.loader import render_to_string
+
+from .models import Quotation, QuotationItem, QuotationMaterial, Material
+from .forms import QuotationForm, QuotationItemForm, QuotationMaterialForm
+
+DEFAULT_MATERIALS = [
+    ('Aluminium White 8cm',   120000),
+    ('Aluminium Grey 8cm',    125000),
+    ('Aluminium Bronze 10cm', 150000),
+    ('uPVC White 98',          90000),
+    ('uPVC Grey 115',          95000),
+]
+
+
+def list_view(request):
+    qs = Quotation.objects.all()
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('q', '')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if search:
+        qs = qs.filter(
+            client_name__icontains=search
+        ) | qs.filter(quote_no__icontains=search) | qs.filter(project_name__icontains=search)
+    context = {
+        'quotations': qs,
+        'status_filter': status_filter,
+        'search': search,
+        'status_choices': Quotation.STATUS_CHOICES,
+    }
+    return render(request, 'quotations/list.html', context)
+
+
+def create_view(request):
+    if request.method == 'POST':
+        form = QuotationForm(request.POST)
+        if form.is_valid():
+            quotation = form.save()
+
+            # Save items from JSON payload
+            items_json = request.POST.get('items_data', '[]')
+            try:
+                items = json.loads(items_json)
+                for i, item in enumerate(items):
+                    if item.get('item_type') and item.get('width') and item.get('height'):
+                        QuotationItem.objects.create(
+                            quotation=quotation,
+                            item_type=item['item_type'],
+                            description=item.get('description', ''),
+                            width=Decimal(str(item['width'])),
+                            height=Decimal(str(item['height'])),
+                            quantity=int(item.get('quantity', 1)),
+                            order=i,
+                        )
+            except (json.JSONDecodeError, KeyError, Exception):
+                pass
+
+            # Save materials from JSON payload
+            mats_json = request.POST.get('materials_data', '[]')
+            try:
+                mats = json.loads(mats_json)
+                for i, mat in enumerate(mats):
+                    if mat.get('material_name') and mat.get('price_per_sqm'):
+                        QuotationMaterial.objects.create(
+                            quotation=quotation,
+                            material_name=mat['material_name'],
+                            price_per_sqm=Decimal(str(mat['price_per_sqm'])),
+                            notes=mat.get('notes', ''),
+                            order=i,
+                        )
+            except (json.JSONDecodeError, KeyError, Exception):
+                pass
+
+            # If no materials were provided, add defaults
+            if not quotation.quote_materials.exists():
+                for i, (name, price) in enumerate(DEFAULT_MATERIALS):
+                    QuotationMaterial.objects.create(
+                        quotation=quotation,
+                        material_name=name,
+                        price_per_sqm=Decimal(str(price)),
+                        order=i,
+                    )
+
+            messages.success(request, f'Quotation {quotation.quote_no} created successfully.')
+            return redirect('quotations:detail', pk=quotation.pk)
+    else:
+        form = QuotationForm()
+
+    context = {
+        'form': form,
+        'default_materials': DEFAULT_MATERIALS,
+        'action': 'Create',
+    }
+    return render(request, 'quotations/form.html', context)
+
+
+def detail_view(request, pk):
+    quotation = get_object_or_404(Quotation, pk=pk)
+    context = {
+        'quotation': quotation,
+        'items': quotation.items.all(),
+        'material_options': quotation.material_options,
+    }
+    return render(request, 'quotations/detail.html', context)
+
+
+def edit_view(request, pk):
+    quotation = get_object_or_404(Quotation, pk=pk)
+    if request.method == 'POST':
+        form = QuotationForm(request.POST, instance=quotation)
+        if form.is_valid():
+            quotation = form.save()
+
+            # Rebuild items
+            items_json = request.POST.get('items_data', '[]')
+            try:
+                items = json.loads(items_json)
+                quotation.items.all().delete()
+                for i, item in enumerate(items):
+                    if item.get('item_type') and item.get('width') and item.get('height'):
+                        QuotationItem.objects.create(
+                            quotation=quotation,
+                            item_type=item['item_type'],
+                            description=item.get('description', ''),
+                            width=Decimal(str(item['width'])),
+                            height=Decimal(str(item['height'])),
+                            quantity=int(item.get('quantity', 1)),
+                            order=i,
+                        )
+            except Exception:
+                pass
+
+            # Rebuild materials
+            mats_json = request.POST.get('materials_data', '[]')
+            try:
+                mats = json.loads(mats_json)
+                quotation.quote_materials.all().delete()
+                for i, mat in enumerate(mats):
+                    if mat.get('material_name') and mat.get('price_per_sqm'):
+                        QuotationMaterial.objects.create(
+                            quotation=quotation,
+                            material_name=mat['material_name'],
+                            price_per_sqm=Decimal(str(mat['price_per_sqm'])),
+                            notes=mat.get('notes', ''),
+                            order=i,
+                        )
+            except Exception:
+                pass
+
+            messages.success(request, f'Quotation {quotation.quote_no} updated.')
+            return redirect('quotations:detail', pk=quotation.pk)
+    else:
+        form = QuotationForm(instance=quotation)
+
+    context = {
+        'form': form,
+        'quotation': quotation,
+        'items': list(quotation.items.values('item_type', 'description', 'width', 'height', 'quantity')),
+        'materials': list(quotation.quote_materials.values('material_name', 'price_per_sqm', 'notes')),
+        'action': 'Edit',
+    }
+    return render(request, 'quotations/form.html', context)
+
+
+def delete_view(request, pk):
+    quotation = get_object_or_404(Quotation, pk=pk)
+    if request.method == 'POST':
+        no = quotation.quote_no
+        quotation.delete()
+        messages.success(request, f'Quotation {no} deleted.')
+        return redirect('quotations:list')
+    return render(request, 'quotations/confirm_delete.html', {'quotation': quotation})
+
+
+def pdf_view(request, pk):
+    quotation = get_object_or_404(Quotation, pk=pk)
+    # Selected material index from query param
+    mat_idx = int(request.GET.get('mat', 0))
+    options = quotation.material_options
+    selected = options[mat_idx] if options and mat_idx < len(options) else (options[0] if options else None)
+    context = {
+        'quotation': quotation,
+        'items': quotation.items.all(),
+        'selected_option': selected,
+        'all_options': options,
+        'for_pdf': True,
+    }
+    return render(request, 'quotations/pdf.html', context)
+
+
+@require_POST
+def update_status(request, pk):
+    quotation = get_object_or_404(Quotation, pk=pk)
+    new_status = request.POST.get('status')
+    valid = [s[0] for s in Quotation.STATUS_CHOICES]
+    if new_status in valid:
+        quotation.status = new_status
+        quotation.save(update_fields=['status'])
+        messages.success(request, f'Status updated to {quotation.get_status_display()}.')
+    return redirect('quotations:detail', pk=pk)

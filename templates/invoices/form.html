@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Invoice – ADN Solutions{% endblock %}
+{% block page_title %}{{ action }} Invoice {% if invoice %}– {{ invoice.invoice_no }}{% endif %}{% endblock %}
+
+{% block topbar_actions %}
+{% if invoice %}
+<a href="{% url 'invoices:detail' invoice.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% else %}
+<a href="{% url 'invoices:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <div class="row g-3">
+    <div class="col-lg-8">
+
+      <!-- Client Info -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Client Information</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Client Name *</label>
+              {{ form.client_name }}
+              {% if form.client_name.errors %}<div class="text-danger small">{{ form.client_name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone Number</label>
+              {{ form.client_phone }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              {{ form.client_email }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Address / Location</label>
+              {{ form.client_address }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Description -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Work Description</div>
+          {{ form.description }}
+        </div>
+      </div>
+
+      <!-- Financials -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Financial Summary</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Contract Amount (TZS) *</label>
+              {{ form.contract_amount }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Advance Paid (TZS)</label>
+              {{ form.advance_paid }}
+            </div>
+          </div>
+          <div class="mt-3 p-3 rounded" style="background:#f8fafc;border:1px dashed var(--adn-border);">
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Contract Amount:</span>
+              <span class="fw-semibold" id="previewContract">TZS 0</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Advance Paid:</span>
+              <span class="fw-semibold text-success" id="previewAdvance">TZS 0</span>
+            </div>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between">
+              <span class="fw-bold">Balance Due:</span>
+              <span class="fw-bold fs-5 text-danger" id="previewBalance">TZS 0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Internal Notes</div>
+          {{ form.notes }}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="section-heading">Invoice Details</div>
+          <div class="mb-3">
+            <label class="form-label">Quote Reference</label>
+            {{ form.quote_ref }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Linked Quotation</label>
+            {{ form.quotation }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Invoice Date *</label>
+            {{ form.invoice_date }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Due Date</label>
+            {{ form.due_date }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Completion Date</label>
+            {{ form.completion_date }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            {{ form.status }}
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-adn w-100 py-2">
+        <i class="bi bi-check-lg me-1"></i>{{ action }} Invoice
+      </button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input[type=text],input[type=email],input[type=number],input[type=date],select,textarea')
+    .forEach(el => {
+      if (el.tagName === 'SELECT') el.classList.add('form-select', 'form-select-sm');
+      else el.classList.add('form-control', 'form-control-sm');
+    });
+
+  function updatePreview() {
+    const contract = parseFloat(document.querySelector('[name=contract_amount]')?.value) || 0;
+    const advance  = parseFloat(document.querySelector('[name=advance_paid]')?.value) || 0;
+    const balance  = contract - advance;
+    const fmt = n => 'TZS ' + n.toLocaleString('en-US', {minimumFractionDigits:0});
+    document.getElementById('previewContract').textContent = fmt(contract);
+    document.getElementById('previewAdvance').textContent  = fmt(advance);
+    document.getElementById('previewBalance').textContent  = fmt(balance);
+    document.getElementById('previewBalance').className = 'fw-bold fs-5 ' + (balance > 0 ? 'text-danger' : 'text-success');
+  }
+
+  document.querySelector('[name=contract_amount]')?.addEventListener('input', updatePreview);
+  document.querySelector('[name=advance_paid]')?.addEventListener('input', updatePreview);
+  updatePreview();
+});
+</script>
+{% endblock %}
