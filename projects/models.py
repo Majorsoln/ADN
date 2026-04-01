@@ -55,10 +55,10 @@ class Project(models.Model):
 
     @property
     def materials_cost(self):
-        """Sum of all received/completed material orders."""
+        """Sum of all finalised material orders (not draft/cancelled)."""
         return sum(
             o.total_cost for o in self.orders.filter(
-                status__in=['received', 'ordered', 'partially_received']
+                status__in=['ordered', 'partially_received', 'received']
             )
         )
 
@@ -76,3 +76,62 @@ class Project(models.Model):
     def days_elapsed(self):
         end = self.completion_date or timezone.now().date()
         return (end - self.start_date).days if self.start_date else 0
+
+    # ── Status step index (for progress bar) ─────────────────────────────────
+
+    STATUS_STEPS = ['planning', 'ordered', 'in_progress', 'completed']
+
+    @property
+    def status_step(self):
+        try:
+            return self.STATUS_STEPS.index(self.status)
+        except ValueError:
+            return 0
+
+    @property
+    def progress_pct(self):
+        steps = len(self.STATUS_STEPS) - 1
+        return int((self.status_step / steps) * 100)
+
+
+class ProjectEvent(models.Model):
+    """Immutable audit log for every meaningful project action."""
+
+    TYPE_CHOICES = [
+        ('created',      'Project Created'),
+        ('status',       'Status Change'),
+        ('order_new',    'Order Added'),
+        ('order_status', 'Order Status Update'),
+        ('order_edit',   'Order Edited'),
+        ('order_del',    'Order Removed'),
+        ('invoice',      'Invoice Linked'),
+        ('note',         'Note'),
+        ('completed',    'Project Completed'),
+    ]
+
+    ICON = {
+        'created':      'bi-flag-fill text-primary',
+        'status':       'bi-arrow-right-circle-fill text-warning',
+        'order_new':    'bi-cart-plus-fill text-info',
+        'order_status': 'bi-cart-check-fill text-success',
+        'order_edit':   'bi-pencil-fill text-secondary',
+        'order_del':    'bi-trash-fill text-danger',
+        'invoice':      'bi-receipt-cutoff text-success',
+        'note':         'bi-chat-left-text-fill text-muted',
+        'completed':    'bi-check-circle-fill text-success',
+    }
+
+    project     = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='events')
+    event_type  = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    description = models.TextField()
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.event_type}] {self.project.name}"
+
+    @property
+    def icon_class(self):
+        return self.ICON.get(self.event_type, 'bi-circle-fill text-muted')
