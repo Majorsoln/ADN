@@ -120,9 +120,10 @@ def rate_list(request):
     if request.method == 'POST':
         form = OfficeServiceRateForm(request.POST)
         if form.is_valid():
-            # Deactivate old active rates
             OfficeServiceRate.objects.filter(is_active=True).update(is_active=False)
-            rate = form.save()
+            rate = form.save(commit=False)
+            rate.is_active = True   # force active regardless of form checkbox
+            rate.save()
             messages.success(request, f'New rate set: TZS {rate.rate_per_window}/window · TZS {rate.rate_per_door}/door')
             return redirect('office:rates')
     else:

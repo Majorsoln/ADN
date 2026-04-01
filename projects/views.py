@@ -53,11 +53,10 @@ def create_view(request):
         form = ProjectForm(request.POST)
         if form.is_valid():
             project = form.save()
-            _log(project, 'created',
-                 f'Project "{project.name}" created for client {project.client_name}.')
+            desc = f'Project "{project.name}" created for client {project.client_name}.'
             if project.quotation:
-                _log(project, 'invoice',
-                     f'Quotation {project.quotation.quote_no} linked at creation.')
+                desc += f' Linked to quotation {project.quotation.quote_no}.'
+            _log(project, 'created', desc)
             messages.success(request, f'Project "{project.name}" created.')
             return redirect('projects:detail', pk=project.pk)
     else:
@@ -68,11 +67,12 @@ def create_view(request):
 def detail_view(request, pk):
     project = get_object_or_404(Project, pk=pk)
     orders  = project.orders.prefetch_related('items').all()
-    events  = project.events.all()[:40]
+    all_events = project.events.all()
     return render(request, 'projects/detail.html', {
-        'project': project,
-        'orders':  orders,
-        'events':  events,
+        'project':      project,
+        'orders':       orders,
+        'events':       all_events[:40],
+        'events_total': all_events.count(),
     })
 
 

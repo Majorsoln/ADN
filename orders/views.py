@@ -2,6 +2,7 @@ import json
 from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from projects.models import Project, ProjectEvent
@@ -122,7 +123,6 @@ def update_status(request, pk):
         old_label = order.get_status_display()
         order.status = new_status
         if new_status == 'received':
-            from django.utils import timezone
             order.actual_delivery = timezone.now().date()
         order.save()
 

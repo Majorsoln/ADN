@@ -151,7 +151,10 @@
     {% for step_val, step_label in project.STATUS_CHOICES %}
     {% if step_val != 'cancelled' %}
     <div class="step">
-      {% if not forloop.last %}<div class="step-line {% if project.status_step > forloop.counter0 %}done{% endif %}"></div>{% endif %}
+      {# Show connector line for all steps except the last visible one (completed) #}
+      {% if step_val != 'completed' %}
+      <div class="step-line {% if project.status_step > forloop.counter0 %}done{% endif %}"></div>
+      {% endif %}
       <div class="step-dot {% if project.status_step >= forloop.counter0 %}done{% endif %}
         {% if project.status_step == forloop.counter0 and project.status != 'completed' %}active{% endif %}">
         {{ forloop.counter }}

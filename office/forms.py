@@ -5,7 +5,7 @@ from .models import OfficeServiceRecord, OfficeServicePayment, OfficeServiceRate
 class OfficeServiceRateForm(forms.ModelForm):
     class Meta:
         model = OfficeServiceRate
-        fields = ['rate_per_window', 'rate_per_door', 'effective_from', 'notes', 'is_active']
+        fields = ['rate_per_window', 'rate_per_door', 'effective_from', 'notes']
         widgets = {'effective_from': forms.DateInput(attrs={'type': 'date'})}
 
 
