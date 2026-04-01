@@ -14,6 +14,32 @@ def _log(project, event_type, description):
     ProjectEvent.objects.create(project=project, event_type=event_type, description=description)
 
 
+def list_view(request):
+    """All material orders across all projects."""
+    qs = MaterialOrder.objects.select_related('project').prefetch_related('items')
+
+    status_filter = request.GET.get('status', '')
+    search        = request.GET.get('q', '')
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if search:
+        qs = qs.filter(supplier_name__icontains=search) | qs.filter(project__name__icontains=search)
+
+    # Summary counts
+    totals = {s: 0 for s, _ in MaterialOrder.STATUS_CHOICES}
+    for o in MaterialOrder.objects.all():
+        totals[o.status] = totals.get(o.status, 0) + 1
+
+    return render(request, 'orders/list.html', {
+        'orders':        qs,
+        'status_filter': status_filter,
+        'search':        search,
+        'status_choices': MaterialOrder.STATUS_CHOICES,
+        'totals':        totals,
+        'today':         timezone.now().date(),
+    })
+
+
 def _save_items(order, items_json):
     """Parse JSON and create MaterialOrderItem rows."""
     try:

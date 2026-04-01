@@ -226,6 +226,9 @@
     <a href="{% url 'projects:create' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> New Project
     </a>
+    <a href="{% url 'orders:list' %}" class="nav-link {% if 'orders' in request.path and 'project' not in request.path %}active{% endif %}">
+      <i class="bi bi-cart3"></i> Material Orders
+    </a>
 
     <div class="nav-section mt-2">Office</div>
     <a href="{% url 'office:service_list' %}" class="nav-link {% if 'office/service' in request.path %}active{% endif %}">
