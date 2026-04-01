@@ -148,6 +148,11 @@ def update_status(request, pk):
     if new_status in valid and new_status != order.status:
         old_label = order.get_status_display()
         order.status = new_status
+        # Capture payment_source when order is being finalized (draft → ordered)
+        payment_source = request.POST.get('payment_source', '')
+        valid_sources = [c[0] for c in MaterialOrder.PAYMENT_SOURCE_CHOICES]
+        if payment_source in valid_sources:
+            order.payment_source = payment_source
         if new_status == 'received':
             order.actual_delivery = timezone.now().date()
         order.save()

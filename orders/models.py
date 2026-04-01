@@ -11,14 +11,24 @@ class MaterialOrder(models.Model):
         ('received',            'Received'),
         ('cancelled',           'Cancelled'),
     ]
+    PAYMENT_SOURCE_CHOICES = [
+        ('cash',        'Cash'),
+        ('bank',        'Bank Transfer'),
+        ('mpesa',       'M-Pesa / Mobile Money'),
+        ('cheque',      'Cheque'),
+        ('unspecified', 'Not specified'),
+    ]
 
-    project         = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='orders')
-    supplier_name   = models.CharField(max_length=200)
-    order_date      = models.DateField(default=timezone.now)
+    project           = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='orders')
+    supplier_name     = models.CharField(max_length=200)
+    order_date        = models.DateField(default=timezone.now)
     expected_delivery = models.DateField(null=True, blank=True)
     actual_delivery   = models.DateField(null=True, blank=True)
-    status          = models.CharField(max_length=25, choices=STATUS_CHOICES, default='draft')
-    notes           = models.TextField(blank=True)
+    status            = models.CharField(max_length=25, choices=STATUS_CHOICES, default='draft')
+    payment_source    = models.CharField(max_length=15, choices=PAYMENT_SOURCE_CHOICES,
+                                         default='unspecified',
+                                         help_text='Where did the money come from to pay for this order?')
+    notes             = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -120,11 +120,15 @@
           <div class="col-md-4">
             <div class="section-heading">Financials</div>
             <div class="small mb-1">Revenue: <strong>TZS {{ project.revenue|floatformat:0 }}</strong></div>
+            <div class="small mb-1">Received: <strong class="text-primary">TZS {{ funding.total_client_received|floatformat:0 }}</strong></div>
             <div class="small mb-1 text-danger">Materials: <strong>TZS {{ project.materials_cost|floatformat:0 }}</strong></div>
             <div class="small fw-bold {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
               Profit: TZS {{ project.gross_profit|floatformat:0 }}
               {% if project.revenue > 0 %}({{ project.profit_margin|floatformat:0 }}%){% endif %}
             </div>
+            {% if funding.own_funds_message %}
+            <div class="mt-1 small text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i>Own funds used</div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -148,6 +152,7 @@
               <th>Date</th>
               <th>Expected</th>
               <th>Status</th>
+              <th>Paid From</th>
               <th class="text-end">Total (TZS)</th>
               <th></th>
             </tr>
@@ -176,13 +181,34 @@
                   {{ order.get_status_display }}
                 </span>
                 {% if order.status == 'draft' %}
-                <form method="post" action="{% url 'orders:update_status' order.pk %}" class="d-inline ms-1">
+                <form method="post" action="{% url 'orders:update_status' order.pk %}" class="d-inline ms-1 mt-1">
                   {% csrf_token %}
                   <input type="hidden" name="status" value="ordered">
-                  <button type="submit" class="btn btn-xs btn-outline-primary" style="font-size:.65rem;padding:1px 6px;"
-                    title="Finalise order">Finalise</button>
+                  <select name="payment_source" class="form-select form-select-sm d-inline-block"
+                          style="width:auto;font-size:.68rem;">
+                    {% for val, label in payment_source_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="btn btn-xs btn-outline-primary"
+                          style="font-size:.65rem;padding:2px 8px;">Finalise</button>
                 </form>
                 {% endif %}
+              </td>
+              <td>
+                {% if order.status != 'draft' and order.status != 'cancelled' %}
+                  {% if order.payment_source == 'cash' %}
+                    <span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-cash-coin me-1"></i>Cash</span>
+                  {% elif order.payment_source == 'bank' %}
+                    <span class="badge bg-primary" style="font-size:.65rem;"><i class="bi bi-bank me-1"></i>Bank</span>
+                  {% elif order.payment_source == 'mpesa' %}
+                    <span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-phone me-1"></i>M-Pesa</span>
+                  {% elif order.payment_source == 'cheque' %}
+                    <span class="badge bg-secondary" style="font-size:.65rem;">Cheque</span>
+                  {% else %}
+                    <span class="badge bg-light text-muted" style="font-size:.65rem;">—</span>
+                  {% endif %}
+                {% else %}—{% endif %}
               </td>
               <td class="text-end fw-semibold">{{ order.total_cost|floatformat:0 }}</td>
               <td class="text-end">
@@ -194,7 +220,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="6" class="text-center text-muted py-4">
+              <td colspan="7" class="text-center text-muted py-4">
                 <i class="bi bi-cart-x d-block fs-3 mb-1"></i>
                 No material orders yet.
                 <a href="{% url 'orders:create' project.pk %}">Add the first order</a>
@@ -205,7 +231,7 @@
           {% if orders %}
           <tfoot class="table-light">
             <tr>
-              <td colspan="4" class="text-end fw-bold">Total Materials Cost:</td>
+              <td colspan="5" class="text-end fw-bold">Total Materials Cost:</td>
               <td class="text-end fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</td>
               <td></td>
             </tr>
@@ -229,18 +255,64 @@
   <!-- RIGHT: Timeline + Actions -->
   <div class="col-lg-4">
 
-    <!-- Financial Summary Card -->
+    <!-- Financial Summary Card (with full funding breakdown) -->
     <div class="card mb-3">
       <div class="card-header py-2 px-4"><i class="bi bi-graph-up me-2 text-success"></i>Financial Summary</div>
       <div class="card-body">
-        <div class="d-flex justify-content-between mb-2">
-          <span class="text-muted small">Revenue (Invoice)</span>
+
+        {# ── Revenue & Client Payments ── #}
+        <div class="section-heading">Client Income</div>
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">Contract Value</span>
           <span class="fw-semibold">TZS {{ project.revenue|floatformat:0 }}</span>
         </div>
-        <div class="d-flex justify-content-between mb-2">
-          <span class="text-muted small">Materials Cost</span>
-          <span class="fw-semibold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</span>
+        {% if funding.advance_paid %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">Advance Paid</span>
+          <span class="fw-semibold text-primary">TZS {{ funding.advance_paid|floatformat:0 }}</span>
         </div>
+        {% endif %}
+        {% for pay in funding.inv_payments %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">
+            Payment {{ forloop.counter }}
+            <span class="badge bg-light text-dark ms-1" style="font-size:.62rem;">
+              {% if pay.payment_method == 'bank_transfer' %}Bank
+              {% elif pay.payment_method == 'mobile_money' %}M-Pesa
+              {% elif pay.payment_method == 'cash' %}Cash
+              {% else %}{{ pay.get_payment_method_display }}{% endif %}
+            </span>
+          </span>
+          <span class="fw-semibold text-success">TZS {{ pay.amount|floatformat:0 }}</span>
+        </div>
+        {% endfor %}
+        <div class="d-flex justify-content-between mb-2 small border-top pt-1">
+          <span class="fw-semibold">Total Received</span>
+          <span class="fw-bold text-primary">TZS {{ funding.total_client_received|floatformat:0 }}</span>
+        </div>
+
+        {# ── Materials Outflow ── #}
+        <div class="section-heading mt-2">Materials Paid From</div>
+        {% for item in funding.mat_breakdown %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">
+            {% if item.key == 'cash' %}<i class="bi bi-cash-coin text-success me-1"></i>
+            {% elif item.key == 'bank' %}<i class="bi bi-bank text-primary me-1"></i>
+            {% elif item.key == 'mpesa' %}<i class="bi bi-phone text-success me-1"></i>
+            {% endif %}
+            {{ item.label }}
+          </span>
+          <span class="fw-semibold text-danger">TZS {{ item.amount|floatformat:0 }}</span>
+        </div>
+        {% empty %}
+        <div class="small text-muted">No finalised orders yet.</div>
+        {% endfor %}
+        <div class="d-flex justify-content-between mb-2 small border-top pt-1">
+          <span class="fw-semibold">Total Materials</span>
+          <span class="fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</span>
+        </div>
+
+        {# ── Gross Profit ── #}
         <hr class="my-2">
         <div class="d-flex justify-content-between">
           <span class="fw-bold">Gross Profit</span>
@@ -251,6 +323,21 @@
         {% if project.revenue > 0 %}
         <div class="text-muted small text-end mt-1">Margin: {{ project.profit_margin|floatformat:1 }}%</div>
         {% endif %}
+
+        {# ── Own funds alert ── #}
+        {% if funding.own_funds_message %}
+        <div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          {{ funding.own_funds_message }}
+        </div>
+        {% endif %}
+        {% if funding.surplus and funding.surplus > 0 %}
+        <div class="alert alert-success py-2 px-3 mt-2 mb-0 small">
+          <i class="bi bi-check-circle me-1"></i>
+          Client payments exceed materials cost by TZS {{ funding.surplus|floatformat:0 }} — profit well-covered.
+        </div>
+        {% endif %}
+
         {% if project.status != 'completed' and project.status != 'cancelled' %}
         <hr class="my-2">
         <a href="{% url 'projects:complete' project.pk %}" class="btn btn-sm btn-success w-100">

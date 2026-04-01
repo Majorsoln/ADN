@@ -301,7 +301,7 @@
   <!-- Orders summary table -->
   <table class="tbl" style="margin-bottom:0;">
     <thead><tr>
-      <th>Supplier</th><th>Order Date</th><th>Status</th><th class="r">Items</th><th class="r">Total (TZS)</th>
+      <th>Supplier</th><th>Order Date</th><th>Status</th><th>Paid From</th><th class="r">Items</th><th class="r">Total (TZS)</th>
     </tr></thead>
     <tbody>
       {% for order in orders %}
@@ -309,13 +309,21 @@
         <td style="font-weight:600;">{{ order.supplier_name }}</td>
         <td>{{ order.order_date|date:"d M Y" }}</td>
         <td>{{ order.get_status_display }}</td>
+        <td>
+          {% if order.status == 'draft' or order.status == 'cancelled' %}—
+          {% elif order.payment_source == 'cash' %}Cash
+          {% elif order.payment_source == 'bank' %}Bank
+          {% elif order.payment_source == 'mpesa' %}M-Pesa
+          {% elif order.payment_source == 'cheque' %}Cheque
+          {% else %}Unspecified{% endif %}
+        </td>
         <td class="r">{{ order.items.count }}</td>
         <td class="r">{{ order.total_cost|floatformat:0 }}</td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot><tr>
-      <td colspan="4" style="text-align:right;">Total Materials Cost:</td>
+      <td colspan="5" style="text-align:right;">Total Materials Cost:</td>
       <td class="r text-red">{{ project.materials_cost|floatformat:0 }}</td>
     </tr></tfoot>
   </table>
@@ -323,21 +331,73 @@
 
   <!-- ── Financial Summary ── -->
   <div class="fin-box">
-    <div class="sec">Financial Summary</div>
-    <div class="fin-row">
-      <span>Contract Revenue <span style="font-size:8pt;color:#94a3b8;">(Invoice {{ project.invoice.invoice_no|default:"—" }})</span></span>
-      <span style="font-weight:600;">TZS {{ project.revenue|floatformat:0 }}</span>
+    <div class="sec">Financial Summary — Money In / Money Out</div>
+
+    {# ── Client Payments (Money In) ── #}
+    <div style="margin-bottom:14px;">
+      <div style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#16a34a;margin-bottom:6px;">
+        ▲ Money In (Client Payments)
+      </div>
+      <div class="fin-row" style="font-size:10pt;">
+        <span>Contract Value <span style="font-size:8pt;color:#94a3b8;">(Invoice {{ project.invoice.invoice_no|default:"—" }})</span></span>
+        <span style="font-weight:600;">TZS {{ project.revenue|floatformat:0 }}</span>
+      </div>
+      {% if funding.advance_paid %}
+      <div class="fin-row" style="font-size:9pt;color:#1d4ed8;margin-bottom:3px;">
+        <span>&nbsp;&nbsp;&nbsp;Advance paid</span>
+        <span>TZS {{ funding.advance_paid|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+      {% for pay in funding.inv_payments %}
+      <div class="fin-row" style="font-size:9pt;color:#1d4ed8;margin-bottom:3px;">
+        <span>&nbsp;&nbsp;&nbsp;Payment {{ forloop.counter }}
+          ({% if pay.payment_method == 'bank_transfer' %}Bank
+          {% elif pay.payment_method == 'mobile_money' %}M-Pesa
+          {% elif pay.payment_method == 'cash' %}Cash
+          {% else %}{{ pay.get_payment_method_display }}{% endif %})
+          {{ pay.payment_date|date:"d M Y" }}
+        </span>
+        <span>TZS {{ pay.amount|floatformat:0 }}</span>
+      </div>
+      {% endfor %}
+      <div class="fin-row" style="font-size:9.5pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:5px;margin-top:3px;">
+        <span>Total Received from Client</span>
+        <span class="text-green">TZS {{ funding.total_client_received|floatformat:0 }}</span>
+      </div>
+      {% if project.invoice %}
+      <div class="fin-row" style="font-size:8.5pt;color:#64748b;">
+        <span>Balance Still Owed by Client</span>
+        <span>TZS {{ project.invoice.balance_due|floatformat:0 }}</span>
+      </div>
+      {% endif %}
     </div>
-    {% if project.invoice %}
-    <div class="fin-row" style="font-size:9pt;color:#64748b;margin-bottom:4px;">
-      <span>&nbsp;&nbsp;&nbsp;Advance Paid: TZS {{ project.invoice.advance_paid|floatformat:0 }}</span>
-      <span>Balance Due: TZS {{ project.invoice.balance_due|floatformat:0 }}</span>
+
+    {# ── Materials Payment Sources (Money Out) ── #}
+    <div style="margin-bottom:14px;">
+      <div style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626;margin-bottom:6px;">
+        ▼ Money Out (Materials Payments)
+      </div>
+      {% for item in funding.mat_breakdown %}
+      <div class="fin-row" style="font-size:9pt;color:#dc2626;margin-bottom:3px;">
+        <span>&nbsp;&nbsp;&nbsp;
+          {% if item.key == 'cash' %}Cash
+          {% elif item.key == 'bank' %}Bank Transfer
+          {% elif item.key == 'mpesa' %}M-Pesa
+          {% elif item.key == 'cheque' %}Cheque
+          {% else %}Unspecified{% endif %}
+        </span>
+        <span>TZS {{ item.amount|floatformat:0 }}</span>
+      </div>
+      {% empty %}
+      <div style="font-size:9pt;color:#94a3b8;">No finalised orders.</div>
+      {% endfor %}
+      <div class="fin-row text-red" style="font-size:9.5pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:5px;margin-top:3px;">
+        <span>Total Materials Cost <span style="font-size:8pt;color:#94a3b8;">({{ orders|length }} order{{ orders|length|pluralize }})</span></span>
+        <span>– TZS {{ project.materials_cost|floatformat:0 }}</span>
+      </div>
     </div>
-    {% endif %}
-    <div class="fin-row text-red">
-      <span>Total Materials Cost <span style="font-size:8pt;color:#94a3b8;">({{ orders|length }} order{{ orders|length|pluralize }})</span></span>
-      <span>– TZS {{ project.materials_cost|floatformat:0 }}</span>
-    </div>
+
+    {# ── Net Profit ── #}
     <div class="fin-row total {% if project.gross_profit >= 0 %}text-green{% else %}text-red{% endif %}">
       <span>GROSS PROFIT</span>
       <span>TZS {{ project.gross_profit|floatformat:0 }}</span>
@@ -345,6 +405,18 @@
     {% if project.revenue > 0 %}
     <div style="text-align:right;font-size:8.5pt;color:#64748b;margin-top:4px;">
       Profit Margin: <strong>{{ project.profit_margin|floatformat:1 }}%</strong>
+    </div>
+    {% endif %}
+
+    {# ── Own funds / shortfall alert ── #}
+    {% if funding.own_funds_message %}
+    <div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:6px;font-size:9pt;color:#92400e;">
+      <strong>⚠ Other Source Contributed:</strong> {{ funding.own_funds_message }}
+    </div>
+    {% endif %}
+    {% if funding.surplus and funding.surplus > 0 %}
+    <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:6px;font-size:9pt;color:#15803d;">
+      <strong>✓ Fully Covered:</strong> Client payments exceed materials cost by TZS {{ funding.surplus|floatformat:0 }}.
     </div>
     {% endif %}
   </div>
