@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Income Overview – ADN Solutions{% endblock %}
+{% block page_title %}Income Overview{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-sm btn-adn" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+  <i class="bi bi-plus-lg me-1"></i>Add Other Income
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Project Profits</div>
+          <div class="fw-bold mt-1 text-primary" style="font-size:1.1rem;">TZS {{ project_total|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-building"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Office Service</div>
+          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ service_total|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-grid-3x3-gap"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Other Income</div>
+          <div class="fw-bold mt-1" style="font-size:1.1rem;">TZS {{ other_total|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#fef9c3;color:#ca8a04;"><i class="bi bi-three-dots"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card" style="border-left:3px solid var(--adn-sky);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Revenue</div>
+          <div class="fw-bold mt-1" style="font-size:1.3rem;color:var(--adn-navy);">TZS {{ grand_total|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#e0e7ff;color:#4338ca;"><i class="bi bi-graph-up-arrow"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Breakdown Chart Visual -->
+{% if grand_total > 0 %}
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <div class="section-heading mb-2">Revenue Breakdown</div>
+    <div class="d-flex align-items-center gap-3 mb-2">
+      <div class="small text-muted" style="width:120px;">Project Profits</div>
+      <div class="flex-grow-1">
+        {% widthratio project_total grand_total 100 as proj_pct %}
+        <div class="progress" style="height:18px;">
+          <div class="progress-bar" style="width:{{ proj_pct }}%;background:#2563eb;">{{ proj_pct }}%</div>
+        </div>
+      </div>
+      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ project_total|floatformat:0 }}</div>
+    </div>
+    <div class="d-flex align-items-center gap-3 mb-2">
+      <div class="small text-muted" style="width:120px;">Office Service</div>
+      <div class="flex-grow-1">
+        {% widthratio service_total grand_total 100 as svc_pct %}
+        <div class="progress" style="height:18px;">
+          <div class="progress-bar bg-success" style="width:{{ svc_pct }}%;">{{ svc_pct }}%</div>
+        </div>
+      </div>
+      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ service_total|floatformat:0 }}</div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <div class="small text-muted" style="width:120px;">Other</div>
+      <div class="flex-grow-1">
+        {% widthratio other_total grand_total 100 as other_pct %}
+        <div class="progress" style="height:18px;">
+          <div class="progress-bar bg-warning" style="width:{{ other_pct }}%;">{{ other_pct }}%</div>
+        </div>
+      </div>
+      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ other_total|floatformat:0 }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Income Ledger Table -->
+<div class="card">
+  <div class="card-header py-2 px-4 d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-journal-text me-2"></i>Income Ledger</span>
+    <span class="badge bg-secondary rounded-pill">{{ income_entries|length }} entries</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Source</th>
+          <th>Description</th>
+          <th class="text-end">Amount (TZS)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in income_entries %}
+        <tr>
+          <td>{{ entry.date|date:"d M Y" }}</td>
+          <td>
+            <span class="badge rounded-pill px-2
+              {% if entry.source == 'project_profit' %}bg-primary
+              {% elif entry.source == 'office_service' %}bg-success
+              {% else %}bg-warning text-dark{% endif %}">
+              {{ entry.get_source_display }}
+            </span>
+          </td>
+          <td class="text-muted small">
+            {% if entry.project %}
+            <a href="{% url 'projects:detail' entry.project.pk %}" class="text-decoration-none">
+              {{ entry.project.name }}
+            </a>
+            {% elif entry.office_record %}
+            <a href="{% url 'office:service_detail' entry.office_record.pk %}" class="text-decoration-none">
+              {{ entry.office_record.client_name }}
+            </a>
+            {% else %}
+            {{ entry.description|default:"—" }}
+            {% endif %}
+          </td>
+          <td class="text-end fw-semibold text-success">{{ entry.amount|floatformat:0 }}</td>
+          <td class="text-end">
+            {% if entry.source == 'other' %}
+            <form method="post" action="{% url 'office:income_delete' entry.pk %}" class="d-inline"
+              onsubmit="return confirm('Delete this income entry?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">
+            <i class="bi bi-graph-up fs-1 d-block mb-2"></i>
+            No income recorded yet.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% if income_entries %}
+      <tfoot class="table-light">
+        <tr>
+          <td colspan="3" class="text-end fw-bold">Grand Total:</td>
+          <td class="text-end fw-bold text-success fs-6">TZS {{ grand_total|floatformat:0 }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+<!-- Add Other Income Modal -->
+<div class="modal fade" id="addIncomeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Add Other Income</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'office:income_add' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Description *</label>
+            <input type="text" name="description" class="form-control form-control-sm" required
+              placeholder="e.g. Equipment rental, consulting fee…">
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">Amount (TZS) *</label>
+              <input type="number" name="amount" class="form-control form-control-sm" required min="1" step="100">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Date *</label>
+              <input type="date" name="date" id="incomeDate" class="form-control form-control-sm" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-adn">Save Income</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('incomeDate').value = new Date().toISOString().slice(0,10);
+</script>
+{% endblock %}

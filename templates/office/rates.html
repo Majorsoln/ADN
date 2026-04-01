@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Service Rates – ADN Solutions{% endblock %}
+{% block page_title %}Office Service Rates{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'office:service_list' %}" class="btn btn-sm btn-outline-secondary">
+  <i class="bi bi-arrow-left me-1"></i>Back
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <!-- Set New Rate -->
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header py-2 px-4">
+        <i class="bi bi-sliders me-2"></i>Set New Rate
+      </div>
+      <div class="card-body">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} py-2 small">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Rate per Window (TZS) *</label>
+            <input type="number" name="rate_per_window" class="form-control form-control-sm"
+              value="{{ active_rate.rate_per_window|default:'' }}" required min="0" step="100"
+              placeholder="e.g. 5000">
+            <div class="form-text">Charge per window cleaned/serviced</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rate per Door (TZS) *</label>
+            <input type="number" name="rate_per_door" class="form-control form-control-sm"
+              value="{{ active_rate.rate_per_door|default:'' }}" required min="0" step="100"
+              placeholder="e.g. 3000">
+            <div class="form-text">Charge per door cleaned/serviced</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Effective From *</label>
+            <input type="date" name="effective_from" id="effective_from" class="form-control form-control-sm" required>
+          </div>
+          <button type="submit" class="btn btn-adn w-100">
+            <i class="bi bi-check-lg me-1"></i>Save Rate
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if active_rate %}
+    <div class="card border-success">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="section-heading text-success mb-0">Current Active Rate</div>
+          <span class="badge bg-success rounded-pill">Active</span>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-6">
+            <div class="p-3 rounded text-center" style="background:#dbeafe;">
+              <div class="fw-bold" style="font-size:1.4rem;color:#2563eb;">TZS {{ active_rate.rate_per_window|floatformat:0 }}</div>
+              <div class="small text-muted">per Window</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-3 rounded text-center" style="background:#e0e7ff;">
+              <div class="fw-bold" style="font-size:1.4rem;color:#4338ca;">TZS {{ active_rate.rate_per_door|floatformat:0 }}</div>
+              <div class="small text-muted">per Door</div>
+            </div>
+          </div>
+        </div>
+        <div class="text-muted small mt-2 text-center">
+          <i class="bi bi-calendar me-1"></i>Effective from {{ active_rate.effective_from|date:"d M Y" }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Rate History -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header py-2 px-4">
+        <i class="bi bi-clock-history me-2"></i>Rate History
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Effective From</th>
+              <th class="text-end">Per Window (TZS)</th>
+              <th class="text-end">Per Door (TZS)</th>
+              <th class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rate in all_rates %}
+            <tr {% if rate.is_active %}class="table-success"{% endif %}>
+              <td class="fw-semibold">{{ rate.effective_from|date:"d M Y" }}</td>
+              <td class="text-end">{{ rate.rate_per_window|floatformat:0 }}</td>
+              <td class="text-end">{{ rate.rate_per_door|floatformat:0 }}</td>
+              <td class="text-center">
+                {% if rate.is_active %}
+                <span class="badge bg-success rounded-pill">Active</span>
+                {% else %}
+                <span class="badge bg-secondary rounded-pill">Superseded</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted py-4">No rates set yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('effective_from').value = new Date().toISOString().slice(0,10);
+</script>
+{% endblock %}

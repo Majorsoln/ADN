@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Project – ADN Solutions{% endblock %}
+{% block page_title %}{{ action }} Project{% endblock %}
+
+{% block topbar_actions %}
+{% if project %}
+<a href="{% url 'projects:detail' project.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% else %}
+<a href="{% url 'projects:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post">
+{% csrf_token %}
+<div class="row g-3">
+  <div class="col-lg-8">
+
+    <!-- Project Info -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Project Information</div>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Project Name *</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Client Name *</label>
+            {{ form.client_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Client Phone</label>
+            {{ form.client_phone }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Linked Documents</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Linked Quotation</label>
+            {{ form.quotation }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Linked Invoice</label>
+            {{ form.invoice }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Notes</div>
+        {{ form.notes }}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Timeline & Status</div>
+        <div class="mb-3">
+          <label class="form-label">Status</label>
+          {{ form.status }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Start Date *</label>
+          {{ form.start_date }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Target Completion</label>
+          {{ form.target_date }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Actual Completion</label>
+          {{ form.completion_date }}
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-adn w-100 py-2">
+      <i class="bi bi-check-lg me-1"></i>{{ action }} Project
+    </button>
+  </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input,select,textarea').forEach(el => {
+    if (el.tagName === 'SELECT') el.classList.add('form-select','form-select-sm');
+    else el.classList.add('form-control','form-control-sm');
+  });
+  const sd = document.querySelector('[name=start_date]');
+  if (sd && !sd.value) sd.value = new Date().toISOString().slice(0,10);
+});
+</script>
+{% endblock %}

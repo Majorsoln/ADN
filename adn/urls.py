@@ -8,4 +8,7 @@ urlpatterns = [
     path('', include('core.urls')),
     path('quotations/', include('quotations.urls')),
     path('invoices/', include('invoices.urls')),
+    path('projects/', include('projects.urls')),
+    path('orders/', include('orders.urls')),
+    path('office/', include('office.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

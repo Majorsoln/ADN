@@ -20,6 +20,9 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'quotations',
     'invoices',
+    'projects',
+    'orders',
+    'office',
     'core',
 ]
 

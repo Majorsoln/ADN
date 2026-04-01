@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} – ADN Solutions{% endblock %}
+{% block page_title %}{{ project.name }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2">
+  <a href="{% url 'projects:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a href="{% url 'projects:edit' project.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+  <a href="{% url 'orders:create' project.pk %}" class="btn btn-sm btn-adn-sky"><i class="bi bi-cart-plus me-1"></i>Order Materials</a>
+  {% if project.status != 'completed' %}
+  <a href="{% url 'projects:complete' project.pk %}" class="btn btn-sm btn-adn"><i class="bi bi-check2-circle me-1"></i>Complete</a>
+  {% else %}
+  <a href="{% url 'projects:report' project.pk %}" class="btn btn-sm btn-adn" target="_blank"><i class="bi bi-file-earmark-bar-graph me-1"></i>Report</a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <!-- Left -->
+  <div class="col-lg-8">
+
+    <!-- Header card -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h4 class="fw-bold mb-1" style="color:var(--adn-navy)">{{ project.name }}</h4>
+            <div class="text-muted small">
+              <i class="bi bi-person me-1"></i>{{ project.client_name }}
+              {% if project.client_phone %} · <i class="bi bi-telephone me-1"></i>{{ project.client_phone }}{% endif %}
+            </div>
+          </div>
+          <span class="badge rounded-pill px-3 py-2 fs-6
+            {% if project.status == 'completed' %}badge-accepted
+            {% elif project.status == 'in_progress' %}badge-sent
+            {% elif project.status == 'ordered' %}badge-expired
+            {% elif project.status == 'cancelled' %}badge-rejected
+            {% else %}badge-draft{% endif %}">
+            {{ project.get_status_display }}
+          </span>
+        </div>
+
+        {% if project.description %}
+        <div class="text-muted small mb-3" style="border-left:3px solid var(--adn-sky);padding-left:10px;">{{ project.description }}</div>
+        {% endif %}
+
+        <!-- Timeline -->
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="section-heading">Timeline</div>
+            <div class="text-muted small mb-1">Start: <strong>{{ project.start_date|date:"d M Y" }}</strong></div>
+            {% if project.target_date %}<div class="text-muted small mb-1">Target: <strong>{{ project.target_date|date:"d M Y" }}</strong></div>{% endif %}
+            {% if project.completion_date %}<div class="text-success small">Completed: <strong>{{ project.completion_date|date:"d M Y" }}</strong></div>{% endif %}
+            <div class="text-muted small">Days elapsed: <strong>{{ project.days_elapsed }}</strong></div>
+          </div>
+          <div class="col-md-4">
+            <div class="section-heading">Linked Documents</div>
+            {% if project.quotation %}
+            <div class="small mb-1">
+              <i class="bi bi-file-earmark-text me-1 text-primary"></i>
+              <a href="{% url 'quotations:detail' project.quotation.pk %}">{{ project.quotation.quote_no }}</a>
+            </div>
+            {% endif %}
+            {% if project.invoice %}
+            <div class="small">
+              <i class="bi bi-receipt me-1 text-success"></i>
+              <a href="{% url 'invoices:detail' project.invoice.pk %}">{{ project.invoice.invoice_no }}</a>
+            </div>
+            {% endif %}
+            {% if not project.quotation and not project.invoice %}
+            <div class="text-muted small">No linked documents</div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <div class="section-heading">Progress</div>
+            {% with pct=project.status %}
+            <div class="progress" style="height:8px;border-radius:4px;">
+              <div class="progress-bar
+                {% if project.status == 'completed' %}bg-success
+                {% elif project.status == 'in_progress' %}bg-primary
+                {% elif project.status == 'ordered' %}bg-warning
+                {% else %}bg-secondary{% endif %}"
+                style="width:
+                  {% if project.status == 'completed' %}100%
+                  {% elif project.status == 'in_progress' %}60%
+                  {% elif project.status == 'ordered' %}30%
+                  {% elif project.status == 'planning' %}10%
+                  {% else %}0%{% endif %}">
+              </div>
+            </div>
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Material Orders -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center py-2 px-4">
+        <span><i class="bi bi-cart me-2 text-warning"></i>Material Orders</span>
+        <a href="{% url 'orders:create' project.pk %}" class="btn btn-sm btn-adn-sky">
+          <i class="bi bi-plus-lg me-1"></i>Add Order
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Order Date</th>
+              <th>Expected</th>
+              <th>Status</th>
+              <th class="text-end">Total (TZS)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td>
+                <a href="{% url 'orders:detail' order.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">{{ order.supplier_name }}</a>
+                <div class="text-muted" style="font-size:.72rem;">{{ order.items.count }} item(s)</div>
+              </td>
+              <td>{{ order.order_date|date:"d M Y" }}</td>
+              <td>
+                {{ order.expected_delivery|date:"d M Y"|default:"—" }}
+                {% if order.is_overdue %}<span class="badge badge-overdue rounded-pill ms-1" style="font-size:.65rem;">Overdue</span>{% endif %}
+              </td>
+              <td>
+                <span class="badge rounded-pill px-2
+                  {% if order.status == 'received' %}badge-accepted
+                  {% elif order.status == 'ordered' %}badge-sent
+                  {% elif order.status == 'partially_received' %}badge-expired
+                  {% elif order.status == 'cancelled' %}badge-rejected
+                  {% else %}badge-draft{% endif %}">
+                  {{ order.get_status_display }}
+                </span>
+              </td>
+              <td class="text-end fw-semibold">{{ order.total_cost|floatformat:0 }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                  <a href="{% url 'orders:edit' order.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No material orders yet</td></tr>
+            {% endfor %}
+          </tbody>
+          {% if orders %}
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="4" class="text-end fw-bold">Total Materials Cost:</td>
+              <td class="text-end fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="col-lg-4">
+
+    <!-- Financial Summary -->
+    <div class="card mb-3">
+      <div class="card-header py-2 px-4"><i class="bi bi-graph-up me-2 text-success"></i>Financial Summary</div>
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Revenue (Invoice)</span>
+          <span class="fw-semibold">TZS {{ project.revenue|floatformat:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Materials Cost</span>
+          <span class="fw-semibold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</span>
+        </div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between">
+          <span class="fw-bold">Gross Profit</span>
+          <span class="fw-bold fs-5 {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+            TZS {{ project.gross_profit|floatformat:0 }}
+          </span>
+        </div>
+        {% if project.revenue > 0 %}
+        <div class="text-muted small text-end mt-1">Margin: {{ project.profit_margin|floatformat:1 }}%</div>
+        {% endif %}
+        {% if not project.invoice %}
+        <div class="mt-3">
+          <a href="{% url 'invoices:create' %}{% if project.quotation %}?from_quote={{ project.quotation.pk }}{% endif %}" class="btn btn-sm btn-adn w-100">
+            <i class="bi bi-receipt me-1"></i>Create Invoice
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Complete Project -->
+    {% if project.status != 'completed' and project.status != 'cancelled' %}
+    <div class="card mb-3 border-success">
+      <div class="card-body">
+        <div class="section-heading text-success">Complete Project</div>
+        <p class="text-muted small mb-3">Mark this project as completed. Gross profit will be recorded to office income automatically.</p>
+        <a href="{% url 'projects:complete' project.pk %}" class="btn btn-sm btn-success w-100">
+          <i class="bi bi-check2-circle me-1"></i>Mark as Completed
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if project.notes %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Notes</div>
+        <div class="text-muted small">{{ project.notes }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-danger">
+      <div class="card-body">
+        <div class="section-heading text-danger">Danger Zone</div>
+        <a href="{% url 'projects:delete' project.pk %}" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-trash me-1"></i>Delete Project
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

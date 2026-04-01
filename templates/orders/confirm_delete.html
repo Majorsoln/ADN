@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Delete Order{% endblock %}
+{% block page_title %}Delete Order{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card border-danger">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:3rem;"></i>
+        <h4 class="mt-3 fw-bold">Delete Order from {{ order.supplier_name }}?</h4>
+        <p class="text-muted">This will permanently delete this material order and all its line items.</p>
+        <div class="d-flex gap-2 justify-content-center mt-4">
+          <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <form method="post">{% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

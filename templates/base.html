@@ -218,6 +218,28 @@
     <a href="{% url 'invoices:create' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> New Invoice
     </a>
+
+    <div class="nav-section mt-2">Projects</div>
+    <a href="{% url 'projects:list' %}" class="nav-link {% if 'projects' in request.path %}active{% endif %}">
+      <i class="bi bi-kanban"></i> All Projects
+    </a>
+    <a href="{% url 'projects:create' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> New Project
+    </a>
+
+    <div class="nav-section mt-2">Office</div>
+    <a href="{% url 'office:service_list' %}" class="nav-link {% if 'office/service' in request.path %}active{% endif %}">
+      <i class="bi bi-people"></i> Office Service
+    </a>
+    <a href="{% url 'office:service_create' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> New Service Record
+    </a>
+    <a href="{% url 'office:income' %}" class="nav-link {% if 'income' in request.path %}active{% endif %}">
+      <i class="bi bi-graph-up-arrow"></i> Income Overview
+    </a>
+    <a href="{% url 'office:rates' %}" class="nav-link {% if 'rates' in request.path %}active{% endif %}">
+      <i class="bi bi-currency-dollar"></i> Service Rates
+    </a>
   </div>
 
   <div class="mt-auto p-3" style="border-top:1px solid rgba(255,255,255,.08);">

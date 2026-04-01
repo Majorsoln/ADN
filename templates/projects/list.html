@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Projects – ADN Solutions{% endblock %}
+{% block page_title %}Projects{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'projects:create' %}" class="btn btn-sm btn-adn">
+  <i class="bi bi-plus-lg me-1"></i>New Project
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Search project name or client…">
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All Statuses</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-adn w-100">Filter</button>
+      </div>
+      {% if search or status_filter %}
+      <div class="col-md-2">
+        <a href="{% url 'projects:list' %}" class="btn btn-sm btn-outline-secondary w-100">Clear</a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Client</th>
+          <th>Status</th>
+          <th>Start</th>
+          <th>Target</th>
+          <th>Revenue</th>
+          <th>Mat. Cost</th>
+          <th>Profit</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projects %}
+        <tr>
+          <td>
+            <a href="{% url 'projects:detail' p.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">{{ p.name }}</a>
+            {% if p.quotation %}<div class="text-muted" style="font-size:.72rem;">Ref: {{ p.quotation.quote_no }}</div>{% endif %}
+          </td>
+          <td>
+            <div class="fw-semibold">{{ p.client_name }}</div>
+            {% if p.client_phone %}<div class="text-muted" style="font-size:.72rem;">{{ p.client_phone }}</div>{% endif %}
+          </td>
+          <td>
+            <span class="badge rounded-pill px-2 py-1
+              {% if p.status == 'completed' %}badge-accepted
+              {% elif p.status == 'in_progress' %}badge-sent
+              {% elif p.status == 'ordered' %}badge-expired
+              {% elif p.status == 'cancelled' %}badge-rejected
+              {% else %}badge-draft{% endif %}">
+              {{ p.get_status_display }}
+            </span>
+          </td>
+          <td>{{ p.start_date|date:"d M Y" }}</td>
+          <td>{{ p.target_date|date:"d M Y"|default:"—" }}</td>
+          <td class="fw-semibold">{% if p.revenue %}{{ p.revenue|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td class="text-danger">{% if p.materials_cost %}{{ p.materials_cost|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td class="fw-bold {% if p.gross_profit > 0 %}text-success{% elif p.gross_profit < 0 %}text-danger{% endif %}">
+            {% if p.status == 'completed' %}{{ p.gross_profit|floatformat:0 }}{% else %}—{% endif %}
+          </td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'projects:detail' p.pk %}" class="btn btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'projects:edit' p.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+              {% if p.status == 'completed' %}
+              <a href="{% url 'projects:report' p.pk %}" class="btn btn-outline-secondary" title="Report" target="_blank"><i class="bi bi-file-earmark-bar-graph"></i></a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center py-5">
+            <i class="bi bi-kanban fs-1 text-muted d-block mb-2"></i>
+            <div class="text-muted">No projects yet.</div>
+            <a href="{% url 'projects:create' %}" class="btn btn-sm btn-adn mt-3">Create First Project</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

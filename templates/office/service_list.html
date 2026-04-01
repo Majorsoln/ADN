@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Office Service – ADN Solutions{% endblock %}
+{% block page_title %}Office Service Records{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'office:service_create' %}" class="btn btn-sm btn-adn">
+  <i class="bi bi-plus-lg me-1"></i>New Record
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Charged</div>
+          <div class="fw-bold mt-1" style="font-size:1.1rem;">TZS {{ total_charged|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-receipt"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Collected</div>
+          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ total_paid|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-cash-coin"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Outstanding Debt</div>
+          <div class="fw-bold mt-1 text-danger" style="font-size:1.1rem;">TZS {{ total_balance|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-exclamation-circle"></i></div>
+      </div>
+      {% if active_rate %}
+      <div class="text-muted mt-2" style="font-size:.72rem;">
+        Rate: TZS {{ active_rate.rate_per_window|floatformat:0 }}/window · TZS {{ active_rate.rate_per_door|floatformat:0 }}/door
+        <a href="{% url 'office:rates' %}" class="ms-1" style="font-size:.7rem;">Change</a>
+      </div>
+      {% else %}
+      <div class="text-warning mt-2" style="font-size:.72rem;">
+        <i class="bi bi-exclamation-triangle me-1"></i>No rate set. <a href="{% url 'office:rates' %}">Set Rate</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Search client name…">
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All Statuses</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><button type="submit" class="btn btn-sm btn-adn w-100">Filter</button></div>
+      {% if search or status_filter %}
+      <div class="col-md-2"><a href="{% url 'office:service_list' %}" class="btn btn-sm btn-outline-secondary w-100">Clear</a></div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Work</th>
+          <th class="text-center">Windows</th>
+          <th class="text-center">Doors</th>
+          <th>Date</th>
+          <th>Due</th>
+          <th class="text-end">Charge (TZS)</th>
+          <th class="text-end">Paid (TZS)</th>
+          <th class="text-end">Balance (TZS)</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>
+            <a href="{% url 'office:service_detail' r.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">{{ r.client_name }}</a>
+            {% if r.client_phone %}<div class="text-muted" style="font-size:.72rem;">{{ r.client_phone }}</div>{% endif %}
+          </td>
+          <td class="text-muted small">{{ r.work_description|truncatechars:40|default:"—" }}</td>
+          <td class="text-center">
+            {% if r.num_windows %}<span class="badge bg-primary rounded-pill">{{ r.num_windows }}</span>{% else %}—{% endif %}
+          </td>
+          <td class="text-center">
+            {% if r.num_doors %}<span class="badge bg-secondary rounded-pill">{{ r.num_doors }}</span>{% else %}—{% endif %}
+          </td>
+          <td>{{ r.date_recorded|date:"d M Y" }}</td>
+          <td>
+            {{ r.due_date|date:"d M Y"|default:"—" }}
+            {% if r.is_overdue %}<span class="badge badge-overdue rounded-pill ms-1" style="font-size:.65rem;">Late</span>{% endif %}
+          </td>
+          <td class="text-end fw-semibold">{{ r.total_charge|floatformat:0 }}</td>
+          <td class="text-end text-success fw-semibold">{{ r.total_paid|floatformat:0 }}</td>
+          <td class="text-end fw-bold {% if r.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+            {{ r.balance|floatformat:0 }}
+          </td>
+          <td><span class="badge rounded-pill px-2
+            {% if r.status == 'paid' %}badge-accepted
+            {% elif r.status == 'partial' %}badge-expired
+            {% else %}badge-draft{% endif %}">
+            {{ r.get_status_display }}</span>
+          </td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'office:service_detail' r.pk %}" class="btn btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'office:service_edit' r.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11" class="text-center py-5">
+            <i class="bi bi-people fs-1 text-muted d-block mb-2"></i>
+            <div class="text-muted">No service records yet.</div>
+            <a href="{% url 'office:service_create' %}" class="btn btn-sm btn-adn mt-3">Add First Record</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

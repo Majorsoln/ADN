@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Order – {{ order.supplier_name }}{% endblock %}
+{% block page_title %}Order – {{ order.supplier_name }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2">
+  <a href="{% url 'projects:detail' order.project.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Project</a>
+  <a href="{% url 'orders:edit' order.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="fw-bold mb-1" style="color:var(--adn-navy)">{{ order.supplier_name }}</h5>
+            <div class="text-muted small">Project: <a href="{% url 'projects:detail' order.project.pk %}">{{ order.project.name }}</a></div>
+          </div>
+          <span class="badge rounded-pill px-3 py-2
+            {% if order.status == 'received' %}badge-accepted
+            {% elif order.status == 'ordered' %}badge-sent
+            {% elif order.status == 'partially_received' %}badge-expired
+            {% elif order.status == 'cancelled' %}badge-rejected
+            {% else %}badge-draft{% endif %}">
+            {{ order.get_status_display }}
+          </span>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <div class="section-heading">Order Date</div>
+            <div class="fw-semibold">{{ order.order_date|date:"d M Y" }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="section-heading">Expected Delivery</div>
+            <div class="fw-semibold {% if order.is_overdue %}text-danger{% endif %}">
+              {{ order.expected_delivery|date:"d M Y"|default:"—" }}
+              {% if order.is_overdue %}<i class="bi bi-exclamation-circle ms-1"></i>{% endif %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="section-heading">Actual Delivery</div>
+            <div class="fw-semibold text-success">{{ order.actual_delivery|date:"d M Y"|default:"—" }}</div>
+          </div>
+        </div>
+
+        {% if order.notes %}
+        <div class="p-3 rounded" style="background:#fffbeb;border-left:3px solid #f59e0b;font-size:.875rem;">{{ order.notes }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card">
+      <div class="card-header py-2 px-4"><i class="bi bi-list-ul me-2"></i>Order Items</div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Material</th>
+              <th>Description</th>
+              <th class="text-end">Qty</th>
+              <th>Unit</th>
+              <th class="text-end">Unit Cost (TZS)</th>
+              <th class="text-end">Total (TZS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in order.items.all %}
+            <tr>
+              <td class="text-muted">{{ forloop.counter }}</td>
+              <td class="fw-semibold">{{ item.material_name }}</td>
+              <td class="text-muted">{{ item.description|default:"—" }}</td>
+              <td class="text-end">{{ item.quantity }}</td>
+              <td>{{ item.get_unit_display }}</td>
+              <td class="text-end">{{ item.unit_cost|floatformat:0 }}</td>
+              <td class="text-end fw-bold">{{ item.total|floatformat:0 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-3">No items</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="6" class="text-end fw-bold">Order Total:</td>
+              <td class="text-end fw-bold text-danger fs-6">TZS {{ order.total_cost|floatformat:0 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Update status -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Update Status</div>
+        <form method="post" action="{% url 'orders:update_status' order.pk %}">
+          {% csrf_token %}
+          <div class="input-group">
+            <select name="status" class="form-select form-select-sm">
+              {% for val, label in order.STATUS_CHOICES %}
+              <option value="{{ val }}" {% if order.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-adn">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card border-danger">
+      <div class="card-body">
+        <div class="section-heading text-danger">Danger Zone</div>
+        <a href="{% url 'orders:delete' order.pk %}" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-trash me-1"></i>Delete Order
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
