@@ -24,11 +24,28 @@ def list_view(request):
         qs = qs.filter(status=status_filter)
     if search:
         qs = qs.filter(name__icontains=search) | qs.filter(client_name__icontains=search)
+
+    projects = list(qs)
+
+    # Pre-group for pipeline view
+    STAGES = [
+        ('planning',    'Planning',          '#64748b'),
+        ('ordered',     'Materials Ordered', '#d97706'),
+        ('in_progress', 'In Progress',       '#2563eb'),
+        ('completed',   'Completed',         '#16a34a'),
+    ]
+    pipeline = [
+        (val, label, color, [p for p in projects if p.status == val])
+        for val, label, color in STAGES
+    ]
+
     return render(request, 'projects/list.html', {
-        'projects': qs,
+        'projects':      projects,
+        'pipeline':      pipeline,
         'status_filter': status_filter,
-        'search': search,
+        'search':        search,
         'status_choices': Project.STATUS_CHOICES,
+        'today':         timezone.now().date(),
     })
 
 
