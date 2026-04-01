@@ -142,6 +142,10 @@ def complete_view(request, pk):
     """Mark project completed and record gross profit to OfficeIncome."""
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
+        payment_method = request.POST.get('payment_method', 'unspecified')
+        valid_methods = [c[0] for c in OfficeIncome.ACCOUNT_CHOICES]
+        if payment_method not in valid_methods:
+            payment_method = 'unspecified'
         project.status = 'completed'
         project.completion_date = timezone.now().date()
         project.save()
@@ -151,16 +155,21 @@ def complete_view(request, pk):
                 project=project,
                 source='project_profit',
                 defaults={
-                    'amount':      profit,
-                    'date':        project.completion_date,
-                    'description': f'Profit from project: {project.name}',
+                    'amount':          profit,
+                    'date':            project.completion_date,
+                    'description':     f'Profit from project: {project.name}',
+                    'payment_method':  payment_method,
                 }
             )
+        method_label = dict(OfficeIncome.ACCOUNT_CHOICES).get(payment_method, '')
         _log(project, 'completed',
-             f'Project marked completed. Gross profit TZS {profit:,.0f} recorded to office income.')
-        messages.success(request, f'Project completed. Gross profit TZS {profit:,.0f} recorded.')
+             f'Project marked completed. Gross profit TZS {profit:,.0f} recorded to office income ({method_label}).')
+        messages.success(request, f'Project completed. TZS {profit:,.0f} profit recorded ({method_label}).')
         return redirect('projects:report', pk=pk)
-    return render(request, 'projects/confirm_complete.html', {'project': project})
+    return render(request, 'projects/confirm_complete.html', {
+        'project': project,
+        'payment_choices': OfficeIncome.ACCOUNT_CHOICES,
+    })
 
 
 @require_POST

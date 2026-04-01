@@ -93,14 +93,20 @@ def service_add_payment(request, pk):
         total_paid = sum(p.amount for p in record.payments.all())
         if total_paid >= record.total_charge:
             record.status = 'paid'
-            # Record to office income
+            # Map OfficeServicePayment method → OfficeIncome account
+            _method_map = {
+                'cash': 'cash', 'bank_transfer': 'bank',
+                'mobile_money': 'mpesa', 'cheque': 'cheque',
+            }
+            income_pm = _method_map.get(payment.payment_method, 'unspecified')
             OfficeIncome.objects.get_or_create(
                 office_record=record,
                 source='office_service',
                 defaults={
-                    'amount': record.total_charge,
-                    'date': timezone.now().date(),
-                    'description': f'Office service – {record.client_name} ({record.num_windows}W/{record.num_doors}D)',
+                    'amount':         record.total_charge,
+                    'date':           timezone.now().date(),
+                    'description':    f'Office service – {record.client_name} ({record.num_windows}W/{record.num_doors}D)',
+                    'payment_method': income_pm,
                 }
             )
         elif total_paid > 0:
@@ -140,10 +146,17 @@ def rate_list(request):
 def income_overview(request):
     all_incomes = OfficeIncome.objects.select_related('project', 'office_record').order_by('-date')
 
-    project_total = all_incomes.filter(source='project_profit').aggregate(t=Sum('amount'))['t'] or 0
-    service_total = all_incomes.filter(source='office_service').aggregate(t=Sum('amount'))['t'] or 0
-    other_total   = all_incomes.filter(source='other').aggregate(t=Sum('amount'))['t'] or 0
+    def _sum(qs): return qs.aggregate(t=Sum('amount'))['t'] or 0
+
+    project_total = _sum(all_incomes.filter(source='project_profit'))
+    service_total = _sum(all_incomes.filter(source='office_service'))
+    other_total   = _sum(all_incomes.filter(source='other'))
     grand_total   = project_total + service_total + other_total
+
+    # Cash / Bank breakdown
+    cash_total  = _sum(all_incomes.filter(payment_method='cash'))
+    bank_total  = _sum(all_incomes.filter(payment_method='bank'))
+    mpesa_total = _sum(all_incomes.filter(payment_method='mpesa'))
 
     return render(request, 'office/income.html', {
         'income_entries': all_incomes[:100],
@@ -151,20 +164,29 @@ def income_overview(request):
         'service_total':  service_total,
         'other_total':    other_total,
         'grand_total':    grand_total,
+        'cash_total':     cash_total,
+        'bank_total':     bank_total,
+        'mpesa_total':    mpesa_total,
+        'account_choices': OfficeIncome.ACCOUNT_CHOICES,
     })
 
 
 @require_POST
 def income_add(request):
-    description = request.POST.get('description', '').strip()
-    amount      = request.POST.get('amount')
-    date        = request.POST.get('date')
+    description    = request.POST.get('description', '').strip()
+    amount         = request.POST.get('amount')
+    date           = request.POST.get('date')
+    payment_method = request.POST.get('payment_method', 'unspecified')
+    valid_methods  = [c[0] for c in OfficeIncome.ACCOUNT_CHOICES]
+    if payment_method not in valid_methods:
+        payment_method = 'unspecified'
     if description and amount and date:
         OfficeIncome.objects.create(
             source='other',
             description=description,
             amount=amount,
             date=date,
+            payment_method=payment_method,
         )
         messages.success(request, 'Income record added.')
     else:

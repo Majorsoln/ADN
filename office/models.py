@@ -115,15 +115,23 @@ class OfficeIncome(models.Model):
         ('office_service',  'Office Service Charge'),
         ('other',           'Other'),
     ]
+    ACCOUNT_CHOICES = [
+        ('cash',        'Cash'),
+        ('bank',        'Bank Transfer'),
+        ('mpesa',       'M-Pesa / Mobile Money'),
+        ('cheque',      'Cheque'),
+        ('unspecified', 'Unspecified'),
+    ]
 
-    source       = models.CharField(max_length=20, choices=SOURCE_CHOICES)
-    amount       = models.DecimalField(max_digits=14, decimal_places=2)
-    date         = models.DateField(default=timezone.now)
-    description  = models.TextField(blank=True)
+    source          = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    amount          = models.DecimalField(max_digits=14, decimal_places=2)
+    date            = models.DateField(default=timezone.now)
+    description     = models.TextField(blank=True)
+    payment_method  = models.CharField(max_length=15, choices=ACCOUNT_CHOICES, default='unspecified')
     # Optional links
-    project      = models.ForeignKey('projects.Project', on_delete=models.SET_NULL, null=True, blank=True)
-    office_record = models.ForeignKey(OfficeServiceRecord, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at   = models.DateTimeField(auto_now_add=True)
+    project         = models.ForeignKey('projects.Project', on_delete=models.SET_NULL, null=True, blank=True)
+    office_record   = models.ForeignKey(OfficeServiceRecord, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at      = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-date']

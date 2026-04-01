@@ -3,11 +3,21 @@ from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.template.loader import render_to_string
 
 from .models import Quotation, QuotationItem, QuotationMaterial, Material
 from .forms import QuotationForm, QuotationItemForm, QuotationMaterialForm
+
+
+def _auto_expire():
+    """Bulk-expire any draft/sent quotations whose valid_until date has passed."""
+    today = timezone.now().date()
+    Quotation.objects.filter(
+        status__in=['draft', 'sent'],
+        valid_until__lt=today,
+    ).update(status='expired')
 
 DEFAULT_MATERIALS = [
     ('Aluminium White 8cm',   120000),
@@ -19,6 +29,7 @@ DEFAULT_MATERIALS = [
 
 
 def list_view(request):
+    _auto_expire()
     qs = Quotation.objects.all()
     status_filter = request.GET.get('status', '')
     search = request.GET.get('q', '')
@@ -102,6 +113,10 @@ def create_view(request):
 
 def detail_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
+    # Auto-expire this quote if its valid_until date has passed
+    if quotation.status in ('draft', 'sent') and quotation.valid_until and quotation.valid_until < timezone.now().date():
+        quotation.status = 'expired'
+        quotation.save(update_fields=['status'])
     context = {
         'quotation': quotation,
         'items': quotation.items.all(),

@@ -27,7 +27,7 @@
     /* ── Sidebar ──────────────────────────────────────────── */
     #sidebar {
       width: var(--sidebar-w);
-      min-height: 100vh;
+      height: 100vh;
       background: var(--adn-navy);
       position: fixed;
       top: 0; left: 0;
@@ -35,6 +35,7 @@
       flex-direction: column;
       z-index: 1000;
       transition: transform .25s ease;
+      overflow-y: auto;
     }
     #sidebar .brand {
       padding: 1.25rem 1.5rem;

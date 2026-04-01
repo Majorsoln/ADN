@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- Summary Cards -->
+<!-- ── Source breakdown ──────────────────────────────────────────────────── -->
 <div class="row g-3 mb-3">
   <div class="col-md-3">
     <div class="stat-card">
@@ -57,7 +57,51 @@
   </div>
 </div>
 
-<!-- Breakdown Chart Visual -->
+<!-- ── Where is the money? (Cash vs Bank) ────────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-safe2 me-2 text-success"></i>Money Location (Cash / Bank)
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#dcfce7;">
+          <div class="stat-icon flex-shrink-0" style="background:#bbf7d0;color:#15803d;">
+            <i class="bi bi-cash-stack"></i>
+          </div>
+          <div>
+            <div class="text-muted small fw-semibold">CASH</div>
+            <div class="fw-bold fs-5 text-success">TZS {{ cash_total|floatformat:0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#dbeafe;">
+          <div class="stat-icon flex-shrink-0" style="background:#bfdbfe;color:#1d4ed8;">
+            <i class="bi bi-bank"></i>
+          </div>
+          <div>
+            <div class="text-muted small fw-semibold">BANK</div>
+            <div class="fw-bold fs-5 text-primary">TZS {{ bank_total|floatformat:0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f0fdf4;">
+          <div class="stat-icon flex-shrink-0" style="background:#bbf7d0;color:#15803d;">
+            <i class="bi bi-phone"></i>
+          </div>
+          <div>
+            <div class="text-muted small fw-semibold">M-PESA</div>
+            <div class="fw-bold fs-5 text-success">TZS {{ mpesa_total|floatformat:0 }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Revenue breakdown bar chart ───────────────────────────────────────── -->
 {% if grand_total > 0 %}
 <div class="card mb-3">
   <div class="card-body py-3">
@@ -96,7 +140,7 @@
 </div>
 {% endif %}
 
-<!-- Income Ledger Table -->
+<!-- ── Income Ledger ──────────────────────────────────────────────────────── -->
 <div class="card">
   <div class="card-header py-2 px-4 d-flex justify-content-between align-items-center">
     <span><i class="bi bi-journal-text me-2"></i>Income Ledger</span>
@@ -109,6 +153,7 @@
           <th>Date</th>
           <th>Source</th>
           <th>Description</th>
+          <th>Account</th>
           <th class="text-end">Amount (TZS)</th>
           <th></th>
         </tr>
@@ -138,6 +183,19 @@
             {{ entry.description|default:"—" }}
             {% endif %}
           </td>
+          <td>
+            {% if entry.payment_method == 'cash' %}
+              <span class="badge bg-success"><i class="bi bi-cash-coin me-1"></i>Cash</span>
+            {% elif entry.payment_method == 'bank' %}
+              <span class="badge bg-primary"><i class="bi bi-bank me-1"></i>Bank</span>
+            {% elif entry.payment_method == 'mpesa' %}
+              <span class="badge bg-success"><i class="bi bi-phone me-1"></i>M-Pesa</span>
+            {% elif entry.payment_method == 'cheque' %}
+              <span class="badge bg-secondary"><i class="bi bi-file-earmark-text me-1"></i>Cheque</span>
+            {% else %}
+              <span class="badge bg-light text-muted">—</span>
+            {% endif %}
+          </td>
           <td class="text-end fw-semibold text-success">{{ entry.amount|floatformat:0 }}</td>
           <td class="text-end">
             {% if entry.source == 'other' %}
@@ -153,7 +211,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-center py-5 text-muted">
+          <td colspan="6" class="text-center py-5 text-muted">
             <i class="bi bi-graph-up fs-1 d-block mb-2"></i>
             No income recorded yet.
           </td>
@@ -163,7 +221,7 @@
       {% if income_entries %}
       <tfoot class="table-light">
         <tr>
-          <td colspan="3" class="text-end fw-bold">Grand Total:</td>
+          <td colspan="4" class="text-end fw-bold">Grand Total:</td>
           <td class="text-end fw-bold text-success fs-6">TZS {{ grand_total|floatformat:0 }}</td>
           <td></td>
         </tr>
@@ -173,7 +231,7 @@
   </div>
 </div>
 
-<!-- Add Other Income Modal -->
+<!-- ── Add Other Income Modal ──────────────────────────────────────────────── -->
 <div class="modal fade" id="addIncomeModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -197,6 +255,14 @@
             <div class="col-6">
               <label class="form-label">Date *</label>
               <input type="date" name="date" id="incomeDate" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Received via</label>
+              <select name="payment_method" class="form-select form-select-sm">
+                {% for val, label in account_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+              </select>
             </div>
           </div>
         </div>

@@ -3,38 +3,73 @@
 {% block page_title %}Complete Project{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-5">
-    <div class="card border-success">
-      <div class="card-body text-center py-5">
-        <i class="bi bi-check2-circle text-success" style="font-size:3rem;"></i>
-        <h4 class="mt-3 fw-bold">Mark "{{ project.name }}" as Completed?</h4>
-        <p class="text-muted mt-2">
-          This will set the project status to <strong>Completed</strong> and automatically record the gross profit to office income.
-        </p>
-        <div class="card bg-light mt-3 mb-4">
+  <div class="col-md-6">
+    <div class="card border-success shadow-sm">
+      <div class="card-body py-4 px-4">
+        <div class="text-center mb-3">
+          <i class="bi bi-check2-circle text-success" style="font-size:3rem;"></i>
+          <h4 class="mt-3 fw-bold">Complete "{{ project.name }}"?</h4>
+          <p class="text-muted mt-1 small">
+            Marks this project as <strong>Completed</strong> and automatically records the gross profit to office income.
+          </p>
+        </div>
+
+        <!-- Financial summary -->
+        <div class="card bg-light border-0 mb-3">
           <div class="card-body py-3">
-            <div class="d-flex justify-content-between small mb-1">
-              <span class="text-muted">Revenue</span>
+            <div class="d-flex justify-content-between small mb-2">
+              <span class="text-muted">Contract Revenue</span>
               <span class="fw-semibold">TZS {{ project.revenue|floatformat:0 }}</span>
             </div>
-            <div class="d-flex justify-content-between small mb-1">
+            <div class="d-flex justify-content-between small mb-2">
               <span class="text-muted">Materials Cost</span>
-              <span class="text-danger fw-semibold">TZS {{ project.materials_cost|floatformat:0 }}</span>
+              <span class="fw-semibold text-danger">− TZS {{ project.materials_cost|floatformat:0 }}</span>
             </div>
             <hr class="my-2">
-            <div class="d-flex justify-content-between">
-              <span class="fw-bold">Gross Profit to Record</span>
-              <span class="fw-bold text-success">TZS {{ project.gross_profit|floatformat:0 }}</span>
+            <div class="d-flex justify-content-between fw-bold">
+              <span>Gross Profit to Record</span>
+              <span class="text-success fs-5">TZS {{ project.gross_profit|floatformat:0 }}</span>
             </div>
           </div>
         </div>
-        <div class="d-flex gap-2 justify-content-center">
-          <a href="{% url 'projects:detail' project.pk %}" class="btn btn-outline-secondary">Cancel</a>
-          <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success px-4">Complete &amp; Record Profit</button>
-          </form>
-        </div>
+
+        <form method="post">
+          {% csrf_token %}
+
+          <!-- Where is the money? -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Where was this payment received?</label>
+            <div class="row g-2">
+              {% for val, label in payment_choices %}
+              <div class="col-6">
+                <div class="form-check border rounded p-3 h-100 {% if val == 'cash' %}border-success{% endif %}">
+                  <input class="form-check-input" type="radio" name="payment_method"
+                         id="pm_{{ val }}" value="{{ val }}"
+                         {% if val == 'cash' %}checked{% endif %}>
+                  <label class="form-check-label fw-semibold small" for="pm_{{ val }}">
+                    {% if val == 'cash' %}<i class="bi bi-cash-coin text-success me-1"></i>
+                    {% elif val == 'bank' %}<i class="bi bi-bank text-primary me-1"></i>
+                    {% elif val == 'mpesa' %}<i class="bi bi-phone text-success me-1"></i>
+                    {% elif val == 'cheque' %}<i class="bi bi-file-earmark-text text-warning me-1"></i>
+                    {% else %}<i class="bi bi-question-circle text-muted me-1"></i>{% endif %}
+                    {{ label }}
+                  </label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 justify-content-center">
+            <a href="{% url 'projects:detail' project.pk %}" class="btn btn-outline-secondary">
+              <i class="bi bi-x me-1"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-success px-4">
+              <i class="bi bi-check2-circle me-1"></i>Complete &amp; Record Profit
+            </button>
+          </div>
+        </form>
+
       </div>
     </div>
   </div>
