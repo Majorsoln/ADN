@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Daily Snapshot – {{ for_date }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="mb-0"><i class="bi bi-speedometer2 text-primary me-2"></i>Daily Snapshot</h2>
+    <small class="text-muted">Owner view — money in, money out, balance</small>
+  </div>
+  <!-- Date navigator -->
+  <div class="d-flex align-items-center gap-2">
+    <a href="?date={{ prev_date|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-chevron-left"></i>
+    </a>
+    <form method="get" class="d-flex align-items-center gap-1">
+      <input type="date" name="date" value="{{ for_date|date:'Y-m-d' }}"
+             class="form-control form-control-sm" onchange="this.form.submit()">
+    </form>
+    {% if not is_today %}
+    <a href="?date={{ for_date|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-chevron-right"></i>
+    </a>
+    {% endif %}
+    {% if not is_today %}
+    <a href="?" class="btn btn-primary btn-sm">Today</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if data.alerts %}
+<div class="mb-3">
+  {% for alert in data.alerts %}
+  <div class="alert alert-{{ alert.level }} d-flex align-items-center gap-2 py-2 mb-2">
+    <i class="bi {{ alert.icon }}"></i>
+    <span>{{ alert.message }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Top KPI cards ────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="text-success fw-semibold small mb-1">MONEY IN</div>
+        <div class="fs-3 fw-bold text-success">TZS {{ data.total_in|floatformat:0 }}</div>
+        <div class="small text-muted mt-1">
+          Invoice: {{ data.invoice_income|floatformat:0 }} &nbsp;|&nbsp;
+          Office: {{ data.office_income|floatformat:0 }}
+          {% if data.other_income %} &nbsp;|&nbsp; Other: {{ data.other_income|floatformat:0 }}{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="text-danger fw-semibold small mb-1">MONEY OUT</div>
+        <div class="fs-3 fw-bold text-danger">TZS {{ data.total_out|floatformat:0 }}</div>
+        <div class="small text-muted mt-1">{{ data.expenses|length }} expense(s) recorded today</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body text-center">
+        <div class="fw-semibold small mb-1 {% if data.net_today >= 0 %}text-primary{% else %}text-danger{% endif %}">NET BALANCE</div>
+        <div class="fs-3 fw-bold {% if data.net_today >= 0 %}text-primary{% else %}text-danger{% endif %}">
+          TZS {{ data.net_today|floatformat:0 }}
+        </div>
+        <div class="small text-muted mt-1">For {{ for_date|date:"d M Y" }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- ── Income Detail ──────────────────────────────────────────────────── -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-success bg-opacity-10 fw-semibold text-success">
+        <i class="bi bi-arrow-down-circle-fill me-2"></i>Payments Received
+      </div>
+      <div class="card-body p-0">
+        {% if data.inv_payments or data.off_payments %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr><th>Source</th><th>Client</th><th class="text-end">Amount (TZS)</th></tr>
+            </thead>
+            <tbody>
+              {% for p in data.inv_payments %}
+              <tr>
+                <td><span class="badge bg-info text-dark">Invoice</span> {{ p.invoice.invoice_no }}</td>
+                <td>{{ p.invoice.client_name }}</td>
+                <td class="text-end fw-semibold text-success">{{ p.amount|floatformat:0 }}</td>
+              </tr>
+              {% endfor %}
+              {% for p in data.off_payments %}
+              <tr>
+                <td><span class="badge bg-secondary">Office</span></td>
+                <td>{{ p.record.client_name }}</td>
+                <td class="text-end fw-semibold text-success">{{ p.amount|floatformat:0 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">No payments recorded today.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Expenses ────────────────────────────────────────────────────────── -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-danger bg-opacity-10 fw-semibold text-danger d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-arrow-up-circle-fill me-2"></i>Expenses Today</span>
+        <a href="{% url 'finance:expense_add' %}" class="btn btn-sm btn-danger">
+          <i class="bi bi-plus"></i> Add
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if data.expenses %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+              <tr><th>Category</th><th>Description</th><th class="text-end">Amount (TZS)</th></tr>
+            </thead>
+            <tbody>
+              {% for e in data.expenses %}
+              <tr>
+                <td>
+                  <i class="bi {{ e.category.icon }}" style="color:{{ e.category.color }}"></i>
+                  {{ e.category.name }}
+                </td>
+                <td class="text-muted small">{{ e.description|truncatechars:40 }}</td>
+                <td class="text-end fw-semibold text-danger">{{ e.amount|floatformat:0 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">No expenses recorded today.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Receivables summary ────────────────────────────────────────────── -->
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-wallet2 me-2 text-warning"></i>Outstanding Receivables
+        <span class="float-end text-warning fw-bold">TZS {{ data.total_receivable|floatformat:0 }}</span>
+      </div>
+      <div class="card-body py-2">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted small">Invoice Balances</span>
+              <span class="fw-semibold">TZS {{ data.invoice_receivable|floatformat:0 }}</span>
+            </div>
+            {% if data.invoice_overdue_count %}
+            <div class="small text-danger mt-1">
+              <i class="bi bi-exclamation-circle"></i>
+              {{ data.invoice_overdue_count }} overdue — TZS {{ data.invoice_overdue_amount|floatformat:0 }}
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted small">Office Service Balances</span>
+              <span class="fw-semibold">TZS {{ data.service_receivable|floatformat:0 }}</span>
+            </div>
+            {% if data.service_overdue_count %}
+            <div class="small text-danger mt-1">
+              <i class="bi bi-exclamation-circle"></i>
+              {{ data.service_overdue_count }} overdue — TZS {{ data.service_overdue_amount|floatformat:0 }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent text-end">
+        <a href="{% url 'finance:report' %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-bar-chart-line me-1"></i>Full Report
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

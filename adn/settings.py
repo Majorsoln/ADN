@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'projects',
     'orders',
     'office',
+    'finance',
     'core',
 ]
 

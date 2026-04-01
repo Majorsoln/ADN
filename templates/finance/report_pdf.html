@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Financial Report – {{ date_from }} to {{ date_to }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 11pt; color: #222; }
+    .page { max-width: 900px; margin: 0 auto; padding: 30px; }
+    h1 { font-size: 18pt; color: #1e3a5f; }
+    h2 { font-size: 13pt; color: #1e3a5f; margin: 18px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    .header { border-bottom: 2px solid #1e3a5f; padding-bottom: 12px; margin-bottom: 20px; }
+    .company { font-size: 9pt; color: #666; }
+    .kpi-row { display: flex; gap: 12px; margin: 16px 0; }
+    .kpi-box { flex: 1; border: 1px solid #ddd; border-radius: 6px; padding: 12px; text-align: center; }
+    .kpi-label { font-size: 8pt; color: #666; text-transform: uppercase; letter-spacing: .5px; }
+    .kpi-val { font-size: 16pt; font-weight: bold; margin-top: 4px; }
+    .green { color: #16a34a; }
+    .red { color: #dc2626; }
+    .blue { color: #2563eb; }
+    .orange { color: #d97706; }
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-top: 8px; }
+    th { background: #f1f5f9; text-align: left; padding: 5px 8px; border: 1px solid #ddd; font-weight: 600; }
+    td { padding: 4px 8px; border: 1px solid #eee; }
+    tr:nth-child(even) { background: #fafafa; }
+    .text-right { text-align: right; }
+    .total-row { font-weight: bold; background: #f1f5f9 !important; }
+    .alert-box { border-left: 4px solid #dc2626; background: #fef2f2; padding: 8px 12px;
+                 border-radius: 4px; margin-bottom: 8px; font-size: 10pt; }
+    .alert-warn { border-color: #d97706; background: #fffbeb; }
+    .signatures { display: flex; gap: 40px; margin-top: 60px; }
+    .sig-block { flex: 1; text-align: center; }
+    .sig-line { border-top: 1px solid #222; margin: 40px 20px 6px; }
+    .sig-name { font-size: 9pt; color: #666; }
+    .footer { margin-top: 30px; font-size: 8pt; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- Print bar -->
+  <div class="no-print" style="background:#1e3a5f;color:#fff;padding:8px 16px;border-radius:6px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <span>Financial Report — Print Preview</span>
+    <button onclick="window.print()" style="background:#fff;color:#1e3a5f;border:none;padding:4px 14px;border-radius:4px;cursor:pointer;font-weight:600">
+      Print / Save PDF
+    </button>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>ADN Windows & Doors</h1>
+    <div class="company">Financial Report &nbsp;|&nbsp; Period: {{ date_from }} – {{ date_to }}</div>
+    <div class="company">Generated: {{ generated_at|date:"d M Y, H:i" }}</div>
+  </div>
+
+  <!-- Alerts -->
+  {% for alert in data.alerts %}
+  <div class="alert-box {% if alert.level == 'warning' %}alert-warn{% endif %}">
+    {{ alert.message }}
+  </div>
+  {% endfor %}
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-box">
+      <div class="kpi-label">Total Income</div>
+      <div class="kpi-val green">TZS {{ data.total_income|floatformat:0 }}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Total Expenses</div>
+      <div class="kpi-val red">TZS {{ data.total_expenses|floatformat:0 }}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Net Profit</div>
+      <div class="kpi-val {% if data.net_profit >= 0 %}blue{% else %}red{% endif %}">
+        TZS {{ data.net_profit|floatformat:0 }}
+      </div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Outstanding</div>
+      <div class="kpi-val orange">TZS {{ data.total_receivable|floatformat:0 }}</div>
+    </div>
+  </div>
+
+  <!-- Income breakdown -->
+  <h2>Income Breakdown</h2>
+  <table>
+    <thead>
+      <tr><th>Source</th><th class="text-right">Amount (TZS)</th></tr>
+    </thead>
+    <tbody>
+      {% for item in data.income_breakdown %}
+      <tr><td>{{ item.source }}</td><td class="text-right">{{ item.amount|floatformat:0 }}</td></tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td>Total Income</td>
+        <td class="text-right">{{ data.total_income|floatformat:0 }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Expenses by category -->
+  <h2>Expenses by Category</h2>
+  <table>
+    <thead>
+      <tr><th>Category</th><th class="text-right">Amount (TZS)</th><th>Share (%)</th><th>Entries</th></tr>
+    </thead>
+    <tbody>
+      {% for cat in data.by_category %}
+      <tr>
+        <td>{{ cat.name }}</td>
+        <td class="text-right">{{ cat.total|floatformat:0 }}</td>
+        <td>{{ cat.pct }}%</td>
+        <td>{{ cat.count }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td>Total Expenses</td>
+        <td class="text-right">{{ data.total_expenses|floatformat:0 }}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Expense ledger -->
+  {% if data.expense_rows %}
+  <h2>Expense Detail Ledger</h2>
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Category</th><th>Description</th><th>Paid To</th><th class="text-right">Amount (TZS)</th></tr>
+    </thead>
+    <tbody>
+      {% for e in data.expense_rows %}
+      <tr>
+        <td>{{ e.date }}</td>
+        <td>{{ e.category }}</td>
+        <td>{{ e.description }}</td>
+        <td>{{ e.paid_to|default:"—" }}</td>
+        <td class="text-right">{{ e.amount|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Receivables -->
+  {% if data.invoice_recv_rows or data.service_recv_rows %}
+  <h2>Outstanding Receivables</h2>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Client</th><th>Due Date</th><th>Status</th><th class="text-right">Balance (TZS)</th></tr>
+    </thead>
+    <tbody>
+      {% for r in data.invoice_recv_rows %}
+      <tr>
+        <td>Invoice {{ r.invoice_no }}</td><td>{{ r.client_name }}</td>
+        <td>{{ r.due_date }}</td>
+        <td>{% if r.is_overdue %}OVERDUE{% else %}Pending{% endif %}</td>
+        <td class="text-right">{{ r.balance|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+      {% for r in data.service_recv_rows %}
+      <tr>
+        <td>Office Service</td><td>{{ r.client_name }}</td>
+        <td>{{ r.due_date|default:"—" }}</td>
+        <td>{% if r.is_overdue %}OVERDUE{% else %}Pending{% endif %}</td>
+        <td class="text-right">{{ r.balance|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="4">Total Outstanding</td>
+        <td class="text-right">{{ data.total_receivable|floatformat:0 }}</td>
+      </tr>
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Project performance -->
+  {% with ps=data.project_stats %}
+  {% if ps.count %}
+  <h2>Project Performance (Completed in Period)</h2>
+  <table>
+    <thead>
+      <tr><th>Project</th><th>Client</th><th>Completed</th><th class="text-right">Revenue</th>
+          <th class="text-right">Materials</th><th class="text-right">Profit</th><th>Margin</th></tr>
+    </thead>
+    <tbody>
+      {% for p in ps.projects %}
+      <tr>
+        <td>{{ p.name }}</td><td>{{ p.client_name }}</td><td>{{ p.completion_date }}</td>
+        <td class="text-right">{{ p.revenue|floatformat:0 }}</td>
+        <td class="text-right">{{ p.materials_cost|floatformat:0 }}</td>
+        <td class="text-right">{{ p.gross_profit|floatformat:0 }}</td>
+        <td>{{ p.profit_margin|floatformat:1 }}%</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="3">Totals</td>
+        <td class="text-right">{{ ps.total_revenue|floatformat:0 }}</td>
+        <td class="text-right">{{ ps.total_materials|floatformat:0 }}</td>
+        <td class="text-right">{{ ps.total_profit|floatformat:0 }}</td>
+        <td>{{ ps.profit_margin|floatformat:1 }}%</td>
+      </tr>
+    </tbody>
+  </table>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Signatures -->
+  <div class="signatures">
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-name">Prepared By</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-name">Reviewed By (Accountant)</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-name">Approved By (Director)</div>
+    </div>
+  </div>
+
+  <div class="footer">ADN Windows & Doors — Confidential Financial Report — {{ date_from }} to {{ date_to }}</div>
+</div>
+</body>
+</html>
