@@ -41,6 +41,16 @@ class MaterialOrder(models.Model):
             and self.expected_delivery < timezone.now().date()
         )
 
+    # Steps: draft=0, ordered=1, partially_received=2, received=3
+    STATUS_STEPS = ['draft', 'ordered', 'partially_received', 'received']
+
+    @property
+    def status_step(self):
+        try:
+            return self.STATUS_STEPS.index(self.status)
+        except ValueError:
+            return 0
+
 
 class MaterialOrderItem(models.Model):
     UNIT_CHOICES = [

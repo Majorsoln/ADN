@@ -111,19 +111,12 @@
             {% endif %}
           </td>
           <td>
-            <!-- Mini step tracker (4 segments) -->
+            <!-- Mini step tracker: Draft / Ordered / Partial / Received -->
             <div class="d-flex gap-1 mb-1" style="width:80px;">
-              {% for sv, sl in status_choices %}{% if sv != 'cancelled' %}
-              {% with idx=forloop.counter0 %}
-              <div title="{{ sl }}" style="flex:1;height:4px;border-radius:2px;
-                background:{%
-                  if order.status == 'received' %}var(--adn-navy){%
-                  elif order.status == 'partially_received' and idx <= 1 %}var(--adn-navy){%
-                  elif order.status == 'ordered' and idx == 0 %}var(--adn-navy){%
-                  elif order.status == sv %}var(--adn-sky){%
-                  else %}#e2e8f0{% endif %};"></div>
-              {% endwith %}
-              {% endif %}{% endfor %}
+              <div title="Draft"             style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 0 and order.status != 'cancelled' %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+              <div title="Ordered"           style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 1 %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+              <div title="Partially Received" style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 2 %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+              <div title="Received"          style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 3 %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
             </div>
             <span class="badge rounded-pill px-2
               {% if order.status == 'received' %}badge-accepted
