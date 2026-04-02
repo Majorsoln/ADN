@@ -81,6 +81,27 @@ def create_view(request, project_pk):
                 project.save(update_fields=['status'])
                 _log(project, 'status', 'Status changed: Planning → Materials Ordered')
 
+            # Auto-create debt if created directly as "ordered" on credit
+            if order.status == 'ordered' and order.payment_source == 'credit':
+                from finance.models import Debt
+                Debt.objects.get_or_create(
+                    material_order=order,
+                    defaults={
+                        'creditor_name': order.supplier_name,
+                        'debt_type':     'supplier_credit',
+                        'amount':        order.total_cost,
+                        'date_incurred': order.order_date,
+                        'description':   (
+                            f"Materials on credit from {order.supplier_name} "
+                            f"for project: {project.name}"
+                        ),
+                        'project': project,
+                    }
+                )
+                _log(project, 'order_new',
+                     f'Debt auto-created: TZS {order.total_cost:,.0f} owed to '
+                     f'{order.supplier_name} (credit purchase)')
+
             messages.success(request, f'Order from {order.supplier_name} created.')
             return redirect('projects:detail', pk=project_pk)
     else:
@@ -156,6 +177,27 @@ def update_status(request, pk):
         if new_status == 'received':
             order.actual_delivery = timezone.now().date()
         order.save()
+
+        # Auto-create a Debt record when materials are bought on credit
+        if payment_source == 'credit' and new_status == 'ordered':
+            from finance.models import Debt
+            Debt.objects.get_or_create(
+                material_order=order,
+                defaults={
+                    'creditor_name': order.supplier_name,
+                    'debt_type':     'supplier_credit',
+                    'amount':        order.total_cost,
+                    'date_incurred': order.order_date,
+                    'description':   (
+                        f"Materials on credit from {order.supplier_name} "
+                        f"for project: {order.project.name}"
+                    ),
+                    'project': order.project,
+                }
+            )
+            _log(order.project, 'order_status',
+                 f'Debt auto-created: TZS {order.total_cost:,.0f} owed to '
+                 f'{order.supplier_name} (credit purchase)')
 
         new_label = order.get_status_display()
         _log(order.project, 'order_status',

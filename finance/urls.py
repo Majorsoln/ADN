@@ -26,4 +26,12 @@ urlpatterns = [
     # Categories
     path('categories/',                  views.category_list_view,   name='category_list'),
     path('categories/<int:pk>/toggle/',  views.category_toggle_view, name='category_toggle'),
+
+    # Debts / Liabilities
+    path('debts/',                        views.debt_list_view,        name='debt_list'),
+    path('debts/add/',                    views.debt_add_view,         name='debt_add'),
+    path('debts/<int:pk>/',               views.debt_detail_view,      name='debt_detail'),
+    path('debts/<int:pk>/edit/',          views.debt_edit_view,        name='debt_edit'),
+    path('debts/<int:pk>/delete/',        views.debt_delete_view,      name='debt_delete'),
+    path('debts/<int:pk>/pay/',           views.debt_add_payment_view, name='debt_pay'),
 ]

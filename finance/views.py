@@ -6,9 +6,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template
 from django.utils import timezone
 
+from django.db.models import Sum
+from django.views.decorators.http import require_POST
+
 from .engine import compute_snapshot, compute_report
-from .forms import ExpenseForm, ReportFilterForm, SaveReportForm
-from .models import Expense, ExpenseCategory, ReportSnapshot
+from .forms import ExpenseForm, ReportFilterForm, SaveReportForm, DebtForm, DebtPaymentForm
+from .models import Expense, ExpenseCategory, ReportSnapshot, Debt, DebtPayment
 
 
 # ── Level-1 Owner Snapshot ────────────────────────────────────────────────────
@@ -223,3 +226,109 @@ def category_toggle_view(request, pk):
         state = 'activated' if cat.is_active else 'deactivated'
         messages.success(request, f'Category "{cat.name}" {state}.')
     return redirect('finance:category_list')
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# DEBTS / LIABILITIES
+# ══════════════════════════════════════════════════════════════════════════════
+
+def debt_list_view(request):
+    """All debts with summary stats."""
+    debts = Debt.objects.select_related('project', 'material_order').prefetch_related('payments')
+
+    # Filters
+    status_filter = request.GET.get('status', '')
+    debt_type     = request.GET.get('type', '')
+    if status_filter:
+        debts = debts.filter(status=status_filter)
+    if debt_type:
+        debts = debts.filter(debt_type=debt_type)
+
+    debts = list(debts)
+
+    # Summary (Python loop — balance is a property)
+    total_owed      = sum(d.amount  for d in debts)
+    total_paid      = sum(d.total_paid for d in debts)
+    total_balance   = sum(d.balance for d in debts)
+    overdue_count   = sum(1 for d in debts if d.is_overdue)
+    overdue_amount  = sum(d.balance for d in debts if d.is_overdue)
+
+    return render(request, 'finance/debt_list.html', {
+        'debts':          debts,
+        'status_filter':  status_filter,
+        'debt_type':      debt_type,
+        'status_choices': Debt.STATUS_CHOICES,
+        'type_choices':   Debt.DEBT_TYPE_CHOICES,
+        'total_owed':     total_owed,
+        'total_paid':     total_paid,
+        'total_balance':  total_balance,
+        'overdue_count':  overdue_count,
+        'overdue_amount': overdue_amount,
+    })
+
+
+def debt_add_view(request):
+    if request.method == 'POST':
+        form = DebtForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Debt recorded.')
+            return redirect('finance:debt_list')
+    else:
+        form = DebtForm()
+    return render(request, 'finance/debt_form.html', {'form': form, 'action': 'Add'})
+
+
+def debt_edit_view(request, pk):
+    debt = get_object_or_404(Debt, pk=pk)
+    if request.method == 'POST':
+        form = DebtForm(request.POST, instance=debt)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Debt updated.')
+            return redirect('finance:debt_detail', pk=pk)
+    else:
+        form = DebtForm(instance=debt)
+    return render(request, 'finance/debt_form.html', {'form': form, 'debt': debt, 'action': 'Edit'})
+
+
+def debt_detail_view(request, pk):
+    debt = get_object_or_404(Debt, pk=pk)
+    payments = debt.payments.all()
+    form = DebtPaymentForm()
+    return render(request, 'finance/debt_detail.html', {
+        'debt':     debt,
+        'payments': payments,
+        'form':     form,
+    })
+
+
+@require_POST
+def debt_add_payment_view(request, pk):
+    debt = get_object_or_404(Debt, pk=pk)
+    form = DebtPaymentForm(request.POST)
+    if form.is_valid():
+        payment = form.save(commit=False)
+        payment.debt = debt
+        payment.save()
+        # Update debt status
+        total = sum(p.amount for p in debt.payments.all())
+        if total >= debt.amount:
+            debt.status = 'settled'
+        elif total > 0:
+            debt.status = 'partial'
+        debt.save(update_fields=['status'])
+        messages.success(request, f'Repayment of TZS {payment.amount:,.0f} recorded '
+                                   f'from {payment.get_payment_source_display()}.')
+    else:
+        messages.error(request, 'Invalid payment data.')
+    return redirect('finance:debt_detail', pk=pk)
+
+
+def debt_delete_view(request, pk):
+    debt = get_object_or_404(Debt, pk=pk)
+    if request.method == 'POST':
+        debt.delete()
+        messages.success(request, 'Debt record deleted.')
+        return redirect('finance:debt_list')
+    return render(request, 'finance/debt_confirm_delete.html', {'debt': debt})

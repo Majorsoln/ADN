@@ -261,6 +261,12 @@
     <a href="{% url 'finance:archive' %}" class="nav-link {% if 'finance/archive' in request.path %}active{% endif %}">
       <i class="bi bi-archive"></i> Report Archive
     </a>
+    <a href="{% url 'finance:debt_list' %}" class="nav-link {% if 'finance/debt' in request.path %}active{% endif %}">
+      <i class="bi bi-exclamation-triangle"></i> Debts &amp; Liabilities
+    </a>
+    <a href="{% url 'finance:debt_add' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> Record Debt
+    </a>
   </div>
 
   <div class="mt-auto p-3" style="border-top:1px solid rgba(255,255,255,.08);">

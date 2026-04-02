@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import Expense, ExpenseCategory, ReportSnapshot
+from .models import Expense, ExpenseCategory, ReportSnapshot, Debt, DebtPayment
 
 
 class ExpenseForm(forms.ModelForm):
@@ -80,6 +80,61 @@ class SaveReportForm(forms.ModelForm):
         widgets = {
             'period_from': forms.DateInput(attrs={'type': 'date'}),
             'period_to': forms.DateInput(attrs={'type': 'date'}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.setdefault('class', 'form-select')
+            elif not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault('class', 'form-control')
+
+
+class DebtForm(forms.ModelForm):
+    date_incurred = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        initial=timezone.now,
+    )
+    due_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+
+    class Meta:
+        model = Debt
+        fields = ['creditor_name', 'creditor_phone', 'debt_type', 'amount',
+                  'date_incurred', 'due_date', 'description',
+                  'project', 'material_order', 'notes']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
+            'notes':       forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['project'].required = False
+        self.fields['project'].empty_label = '— Not linked to a project —'
+        self.fields['material_order'].required = False
+        self.fields['material_order'].empty_label = '— Not linked to an order —'
+        for field in self.fields.values():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.setdefault('class', 'form-select')
+            elif not isinstance(field.widget, (forms.CheckboxInput,)):
+                field.widget.attrs.setdefault('class', 'form-control')
+
+
+class DebtPaymentForm(forms.ModelForm):
+    payment_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        initial=timezone.now,
+    )
+
+    class Meta:
+        model = DebtPayment
+        fields = ['amount', 'payment_date', 'payment_source', 'reference', 'notes']
+        widgets = {
             'notes': forms.Textarea(attrs={'rows': 2}),
         }
 

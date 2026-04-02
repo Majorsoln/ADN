@@ -110,3 +110,91 @@ class ReportSnapshot(models.Model):
     @property
     def net_profit(self):
         return Decimal(str(self.figures.get('net_profit', 0)))
+
+
+class Debt(models.Model):
+    """Money the business owes — supplier credit or loans from persons/companies."""
+    DEBT_TYPE_CHOICES = [
+        ('supplier_credit', 'Supplier Credit (Materials)'),
+        ('personal_loan',   'Personal Loan'),
+        ('company_loan',    'Company / Business Loan'),
+        ('other',           'Other'),
+    ]
+    STATUS_CHOICES = [
+        ('outstanding', 'Outstanding'),
+        ('partial',     'Partially Paid'),
+        ('settled',     'Fully Settled'),
+    ]
+
+    creditor_name  = models.CharField(max_length=200, help_text='Person or company we owe')
+    creditor_phone = models.CharField(max_length=30, blank=True)
+    debt_type      = models.CharField(max_length=20, choices=DEBT_TYPE_CHOICES,
+                                      default='supplier_credit')
+    amount         = models.DecimalField(max_digits=14, decimal_places=2,
+                                         help_text='Total amount owed')
+    date_incurred  = models.DateField(default=timezone.now)
+    due_date       = models.DateField(null=True, blank=True)
+    description    = models.TextField(help_text='What is this debt for?')
+    status         = models.CharField(max_length=15, choices=STATUS_CHOICES, default='outstanding')
+    notes          = models.TextField(blank=True)
+
+    # Optional links
+    project        = models.ForeignKey('projects.Project', on_delete=models.SET_NULL,
+                                        null=True, blank=True, related_name='debts')
+    material_order = models.ForeignKey('orders.MaterialOrder', on_delete=models.SET_NULL,
+                                        null=True, blank=True, related_name='debts',
+                                        help_text='Order that created this debt (if any)')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date_incurred']
+        verbose_name_plural = 'Debts'
+
+    def __str__(self):
+        return f"Owe {self.creditor_name} – TZS {self.amount:,.0f} ({self.get_status_display()})"
+
+    @property
+    def total_paid(self):
+        return sum(p.amount for p in self.payments.all())
+
+    @property
+    def balance(self):
+        return self.amount - self.total_paid
+
+    @property
+    def is_overdue(self):
+        return (
+            self.status != 'settled'
+            and self.due_date
+            and self.due_date < timezone.now().date()
+        )
+
+
+class DebtPayment(models.Model):
+    """Records a repayment instalment, tracking which account funded it."""
+    PAYMENT_SOURCE_CHOICES = [
+        ('cash',  'Cash'),
+        ('bank',  'Bank Transfer'),
+        ('mpesa', 'M-Pesa / Mobile Money'),
+        ('cheque','Cheque'),
+        ('other', 'Other'),
+    ]
+
+    debt           = models.ForeignKey(Debt, on_delete=models.CASCADE, related_name='payments')
+    amount         = models.DecimalField(max_digits=14, decimal_places=2)
+    payment_date   = models.DateField(default=timezone.now)
+    payment_source = models.CharField(max_length=10, choices=PAYMENT_SOURCE_CHOICES,
+                                       default='cash',
+                                       help_text='Where did the repayment money come from?')
+    reference      = models.CharField(max_length=100, blank=True)
+    notes          = models.TextField(blank=True)
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-payment_date']
+
+    def __str__(self):
+        return (f"Repayment TZS {self.amount:,.0f} to {self.debt.creditor_name} "
+                f"({self.get_payment_source_display()}) on {self.payment_date}")

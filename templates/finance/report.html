@@ -213,6 +213,55 @@
 </div>
 {% endif %}
 
+<!-- ── Liabilities ─────────────────────────────────────────────────────────── -->
+{% if data.liabilities.total_balance > 0 %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Outstanding Debts &amp; Liabilities</span>
+    <span class="fw-bold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</span>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-sm-4 text-center">
+        <div class="small text-muted mb-1">Total Owed</div>
+        <div class="fs-5 fw-bold">TZS {{ data.liabilities.total_owed|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-4 text-center">
+        <div class="small text-muted mb-1">Total Repaid</div>
+        <div class="fs-5 fw-bold text-success">TZS {{ data.liabilities.total_paid|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-4 text-center">
+        <div class="small text-muted mb-1">Balance Due</div>
+        <div class="fs-5 fw-bold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</div>
+      </div>
+    </div>
+    {% if data.liabilities.overdue_count %}
+    <div class="alert alert-danger py-2 mb-3 small">
+      <i class="bi bi-alarm me-1"></i>
+      <strong>{{ data.liabilities.overdue_count }} overdue debt(s)</strong> — TZS {{ data.liabilities.overdue_amount|floatformat:0 }} past due date.
+      <a href="{% url 'finance:debt_list' %}?status=outstanding" class="alert-link ms-2">View details →</a>
+    </div>
+    {% endif %}
+    {% if data.liabilities.by_type %}
+    <div class="d-flex flex-wrap gap-2">
+      {% for t in data.liabilities.by_type %}
+      <div class="border rounded p-2 small" style="min-width:160px">
+        <div class="text-muted">{{ t.label }}</div>
+        <div class="fw-semibold text-danger">TZS {{ t.balance|floatformat:0 }}</div>
+        <div class="text-muted">{{ t.count }} debt(s)</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-footer bg-transparent text-end">
+    <a href="{% url 'finance:debt_list' %}" class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>Manage Debts
+    </a>
+  </div>
+</div>
+{% endif %}
+
 <!-- ── Project Performance ─────────────────────────────────────────────────── -->
 {% with ps=data.project_stats %}
 {% if ps.count %}

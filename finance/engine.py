@@ -19,7 +19,7 @@ from django.utils import timezone
 from invoices.models import Invoice, InvoicePayment
 from office.models import OfficeServiceRecord, OfficeServicePayment, OfficeIncome
 from projects.models import Project
-from finance.models import Expense, ExpenseCategory
+from finance.models import Expense, ExpenseCategory, Debt, DebtPayment
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -152,6 +152,42 @@ def _service_receivables():
 
 # ── Project stats ─────────────────────────────────────────────────────────────
 
+def _liabilities_summary():
+    """
+    Current total liabilities (all outstanding / partial debts).
+    Returns dict with totals and breakdown by type.
+    """
+    debts = list(Debt.objects.exclude(status='settled').prefetch_related('payments'))
+
+    total_owed    = sum(d.amount    for d in debts)
+    total_paid    = sum(d.total_paid for d in debts)
+    total_balance = sum(d.balance   for d in debts)
+    overdue       = [d for d in debts if d.is_overdue]
+    overdue_amount = sum(d.balance  for d in overdue)
+
+    # Breakdown by type
+    by_type = {}
+    for d in debts:
+        key = d.debt_type
+        if key not in by_type:
+            by_type[key] = {'label': d.get_debt_type_display(), 'balance': Decimal('0'), 'count': 0}
+        by_type[key]['balance'] += d.balance
+        by_type[key]['count']   += 1
+
+    return {
+        'total_owed':      float(total_owed),
+        'total_paid':      float(total_paid),
+        'total_balance':   float(total_balance),
+        'overdue_count':   len(overdue),
+        'overdue_amount':  float(overdue_amount),
+        'by_type': [
+            {'type': k, 'label': v['label'],
+             'balance': float(v['balance']), 'count': v['count']}
+            for k, v in by_type.items()
+        ],
+    }
+
+
 def _project_stats(date_from, date_to):
     """Projects completed in period, revenue/profit aggregated via Python."""
     completed = Project.objects.filter(
@@ -233,8 +269,18 @@ def _monthly_trends(months=6):
 
 def _build_alerts(inv_overdue_count, inv_overdue_amt,
                   svc_overdue_count, svc_overdue_amt,
-                  by_category, total_expenses):
+                  by_category, total_expenses,
+                  debt_overdue_count=0, debt_overdue_amount=0):
     alerts = []
+    if debt_overdue_count:
+        alerts.append({
+            'level': 'danger',
+            'icon': 'bi-exclamation-triangle-fill',
+            'message': (
+                f"{debt_overdue_count} debt(s) overdue — "
+                f"TZS {debt_overdue_amount:,.0f} still owed"
+            ),
+        })
     if inv_overdue_count:
         alerts.append({
             'level': 'danger',
@@ -291,7 +337,12 @@ def compute_snapshot(for_date=None):
     svc_recv, svc_ov_c, svc_ov_a, svc_recv_rows = _service_receivables()
     total_receivable = inv_recv + svc_recv
 
-    alerts = _build_alerts(inv_ov_c, inv_ov_a, svc_ov_c, svc_ov_a, by_category, exp_total)
+    liabilities = _liabilities_summary()
+    alerts = _build_alerts(
+        inv_ov_c, inv_ov_a, svc_ov_c, svc_ov_a, by_category, exp_total,
+        debt_overdue_count=liabilities['overdue_count'],
+        debt_overdue_amount=liabilities['overdue_amount'],
+    )
 
     return {
         'date': today,
@@ -317,6 +368,8 @@ def compute_snapshot(for_date=None):
         'service_overdue_amount': svc_ov_a,
         'invoice_recv_rows': inv_recv_rows,
         'service_recv_rows': svc_recv_rows,
+        # Liabilities
+        'liabilities': liabilities,
         'alerts': alerts,
     }
 
@@ -349,8 +402,15 @@ def compute_report(date_from, date_to):
     # ── Monthly trends ────────────────────────────────────────────────────────
     trends = _monthly_trends(months=6)
 
+    # ── Liabilities ───────────────────────────────────────────────────────────
+    liabilities = _liabilities_summary()
+
     # ── Alerts ────────────────────────────────────────────────────────────────
-    alerts = _build_alerts(inv_ov_c, inv_ov_a, svc_ov_c, svc_ov_a, by_category, total_expenses)
+    alerts = _build_alerts(
+        inv_ov_c, inv_ov_a, svc_ov_c, svc_ov_a, by_category, total_expenses,
+        debt_overdue_count=liabilities['overdue_count'],
+        debt_overdue_amount=liabilities['overdue_amount'],
+    )
 
     # ── Income breakdown (for ledger / journal view) ──────────────────────────
     income_breakdown = [
@@ -452,6 +512,9 @@ def compute_report(date_from, date_to):
 
         # Trends
         'monthly_trends': trends,
+
+        # Liabilities
+        'liabilities': liabilities,
 
         # Alerts
         'alerts': alerts,

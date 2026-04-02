@@ -59,6 +59,11 @@ def _funding_analysis(project, orders):
     # Surplus: client paid more than materials (profit already banked)
     surplus   = max(total_client_received - materials_cost, D('0'))
 
+    # Credit orders: find linked debts
+    credit_amount = funded.get('credit', D('0'))
+    credit_orders = [o for o in orders if o.payment_source == 'credit'
+                     and o.status in ('ordered', 'partially_received', 'received')]
+
     # Identify own-funds sources: bank/cash used on orders exceeding client payments
     bank_used  = funded.get('bank', D('0'))
     cash_used  = funded.get('cash', D('0'))
@@ -74,6 +79,8 @@ def _funding_analysis(project, orders):
             parts.append(f"Cash TZS {cash_used:,.0f}")
         if mpesa_used > 0:
             parts.append(f"M-Pesa TZS {mpesa_used:,.0f}")
+        if credit_amount > 0:
+            parts.append(f"Credit/Debt TZS {credit_amount:,.0f}")
         if parts:
             own_funds_message = (
                 f"Own funds contributed to cover TZS {shortfall:,.0f} shortfall "
@@ -97,6 +104,8 @@ def _funding_analysis(project, orders):
         'shortfall':            shortfall,
         'surplus':              surplus,
         'own_funds_message':    own_funds_message,
+        'credit_orders':        credit_orders,
+        'credit_amount':        credit_amount,
     }
 
 

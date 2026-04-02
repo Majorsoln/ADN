@@ -205,6 +205,14 @@
                     <span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-phone me-1"></i>M-Pesa</span>
                   {% elif order.payment_source == 'cheque' %}
                     <span class="badge bg-secondary" style="font-size:.65rem;">Cheque</span>
+                  {% elif order.payment_source == 'credit' %}
+                    {% with debt=order.debts.first %}
+                    {% if debt %}
+                    <a href="{% url 'finance:debt_detail' debt.pk %}" class="badge bg-danger text-white text-decoration-none" style="font-size:.65rem;" title="On Credit — click to view debt"><i class="bi bi-exclamation-triangle me-1"></i>On Credit</a>
+                    {% else %}
+                    <span class="badge bg-danger" style="font-size:.65rem;"><i class="bi bi-exclamation-triangle me-1"></i>On Credit</span>
+                    {% endif %}
+                    {% endwith %}
                   {% else %}
                     <span class="badge bg-light text-muted" style="font-size:.65rem;">—</span>
                   {% endif %}
@@ -299,6 +307,7 @@
             {% if item.key == 'cash' %}<i class="bi bi-cash-coin text-success me-1"></i>
             {% elif item.key == 'bank' %}<i class="bi bi-bank text-primary me-1"></i>
             {% elif item.key == 'mpesa' %}<i class="bi bi-phone text-success me-1"></i>
+            {% elif item.key == 'credit' %}<i class="bi bi-exclamation-triangle text-danger me-1"></i>
             {% endif %}
             {{ item.label }}
           </span>
@@ -322,6 +331,21 @@
         </div>
         {% if project.revenue > 0 %}
         <div class="text-muted small text-end mt-1">Margin: {{ project.profit_margin|floatformat:1 }}%</div>
+        {% endif %}
+
+        {# ── Credit orders alert ── #}
+        {% if funding.credit_orders %}
+        <div class="alert alert-danger py-2 px-3 mt-2 mb-0 small">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          <strong>TZS {{ funding.credit_amount|floatformat:0 }}</strong> of materials purchased on credit.
+          {% for o in funding.credit_orders %}
+            {% with debt=o.debts.first %}
+            {% if debt %}
+              <a href="{% url 'finance:debt_detail' debt.pk %}" class="alert-link">View debt →</a>
+            {% endif %}
+            {% endwith %}
+          {% endfor %}
+        </div>
         {% endif %}
 
         {# ── Own funds alert ── #}

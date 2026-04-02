@@ -193,5 +193,59 @@
       </div>
     </div>
   </div>
+
+  <!-- ── Liabilities summary ───────────────────────────────────────────── -->
+  {% if data.liabilities.total_balance > 0 %}
+  <div class="col-12">
+    <div class="card border-0 shadow-sm {% if data.liabilities.overdue_count %}border-danger{% endif %}">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>
+          <i class="bi bi-exclamation-triangle me-2 text-danger"></i>Outstanding Debts &amp; Liabilities
+        </span>
+        <span class="fw-bold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</span>
+      </div>
+      <div class="card-body py-2">
+        <div class="row g-3 align-items-start">
+          <div class="col-sm-4">
+            <div class="small text-muted mb-1">Total Owed</div>
+            <div class="fw-semibold">TZS {{ data.liabilities.total_owed|floatformat:0 }}</div>
+          </div>
+          <div class="col-sm-4">
+            <div class="small text-muted mb-1">Total Repaid</div>
+            <div class="fw-semibold text-success">TZS {{ data.liabilities.total_paid|floatformat:0 }}</div>
+          </div>
+          <div class="col-sm-4">
+            <div class="small text-muted mb-1">Balance Due</div>
+            <div class="fw-semibold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</div>
+          </div>
+          {% if data.liabilities.overdue_count %}
+          <div class="col-12">
+            <div class="alert alert-danger py-2 mb-0 small">
+              <i class="bi bi-alarm me-1"></i>
+              <strong>{{ data.liabilities.overdue_count }} overdue debt(s)</strong> — TZS {{ data.liabilities.overdue_amount|floatformat:0 }} past due date
+            </div>
+          </div>
+          {% endif %}
+          {% if data.liabilities.by_type %}
+          <div class="col-12">
+            <div class="d-flex flex-wrap gap-2">
+              {% for t in data.liabilities.by_type %}
+              <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                {{ t.label }}: TZS {{ t.balance|floatformat:0 }} ({{ t.count }})
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-footer bg-transparent text-end">
+        <a href="{% url 'finance:debt_list' %}" class="btn btn-sm btn-outline-danger">
+          <i class="bi bi-exclamation-triangle me-1"></i>Manage Debts
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

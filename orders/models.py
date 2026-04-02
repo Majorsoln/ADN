@@ -16,6 +16,7 @@ class MaterialOrder(models.Model):
         ('bank',        'Bank Transfer'),
         ('mpesa',       'M-Pesa / Mobile Money'),
         ('cheque',      'Cheque'),
+        ('credit',      'On Credit (Debt Created)'),
         ('unspecified', 'Not specified'),
     ]
 
