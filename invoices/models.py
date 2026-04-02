@@ -77,7 +77,8 @@ class Invoice(models.Model):
 
     @property
     def balance_due(self):
-        return self.contract_amount - self.advance_paid
+        total_paid = self.advance_paid + sum(p.amount for p in self.payments.all())
+        return self.contract_amount - total_paid
 
     @property
     def is_overdue(self):

@@ -95,17 +95,21 @@ def _funding_analysis(project, orders):
                 f"Shortfall TZS {shortfall:,.0f} — source unspecified."
             )
 
+    # Balance still owed by client
+    balance_due = max(project.revenue - total_client_received, D('0'))
+
     return {
-        'mat_breakdown':        mat_breakdown,
-        'advance_paid':         advance_paid,
-        'inv_payments':         inv_payments,
+        'mat_breakdown':         mat_breakdown,
+        'advance_paid':          advance_paid,
+        'inv_payments':          inv_payments,
         'total_client_received': total_client_received,
-        'materials_cost':       materials_cost,
-        'shortfall':            shortfall,
-        'surplus':              surplus,
-        'own_funds_message':    own_funds_message,
-        'credit_orders':        credit_orders,
-        'credit_amount':        credit_amount,
+        'balance_due':           balance_due,
+        'materials_cost':        materials_cost,
+        'shortfall':             shortfall,
+        'surplus':               surplus,
+        'own_funds_message':     own_funds_message,
+        'credit_orders':         credit_orders,
+        'credit_amount':         credit_amount,
     }
 
 
@@ -297,5 +301,19 @@ def update_status_view(request, pk):
         project.save()
         _log(project, 'status',
              f'Status changed: {old_label} → {project.get_status_display()}')
+        # Record profit to OfficeIncome when marked completed (same as complete_view)
+        if new_status == 'completed':
+            profit = project.gross_profit
+            if profit > 0:
+                OfficeIncome.objects.get_or_create(
+                    project=project,
+                    source='project_profit',
+                    defaults={
+                        'amount':         profit,
+                        'date':           project.completion_date,
+                        'description':    f'Profit from project: {project.name}',
+                        'payment_method': 'unspecified',
+                    }
+                )
         messages.success(request, f'Status updated to {project.get_status_display()}.')
     return redirect('projects:detail', pk=pk)

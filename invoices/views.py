@@ -112,11 +112,24 @@ def add_payment(request, pk):
         payment = form.save(commit=False)
         payment.invoice = invoice
         payment.save()
-        # Update status if fully paid
-        total_paid = sum(p.amount for p in invoice.payments.all())
+        # Update status if fully paid (include advance + all installments)
+        total_paid = invoice.advance_paid + sum(p.amount for p in invoice.payments.all())
         if total_paid >= invoice.contract_amount:
             invoice.status = 'paid'
             invoice.save(update_fields=['status'])
+        # Log payment event on every linked project
+        from projects.models import ProjectEvent
+        ref_suffix = f', Ref: {payment.reference}' if payment.reference else ''
+        for project in invoice.projects.all():
+            ProjectEvent.objects.create(
+                project=project,
+                event_type='invoice',
+                description=(
+                    f'Client payment received: TZS {payment.amount:,.0f} '
+                    f'({payment.get_payment_method_display()}) — '
+                    f'Invoice {invoice.invoice_no}{ref_suffix}'
+                ),
+            )
         messages.success(request, f'Payment of TZS {payment.amount:,.0f} recorded.')
     else:
         messages.error(request, 'Invalid payment data.')

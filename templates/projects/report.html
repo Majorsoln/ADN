@@ -199,7 +199,9 @@
     <div class="meta-box">
       <div class="lbl">Financial Snapshot</div>
       <div class="sub">
-        Revenue: <strong>TZS {{ project.revenue|floatformat:0 }}</strong><br>
+        Revenue: <strong>TZS {{ project.revenue|floatformat:0 }}</strong>
+        {% if project.revenue_source == 'quotation' %}<small style="color:#2563eb;">(from accepted quotation)</small>
+        {% elif project.revenue_source == 'invoice' %}<small style="color:#16a34a;">(from invoice)</small>{% endif %}<br>
         Materials: <strong style="color:#dc2626;">TZS {{ project.materials_cost|floatformat:0 }}</strong><br>
         Profit: <strong style="color:{% if project.gross_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
           TZS {{ project.gross_profit|floatformat:0 }}
@@ -242,6 +244,40 @@
   </div>
   {% endif %}
   {% endwith %}
+
+  {# ── Accepted material option pricing ── #}
+  {% if q.accepted_material %}
+  {% for opt in q.material_options %}
+  {% if opt.material.pk == q.accepted_material_id %}
+  <div style="margin-bottom:18px;border:2px solid #16a34a;border-radius:8px;overflow:hidden;">
+    <div style="background:#16a34a;color:#fff;padding:7px 12px;font-size:8.5pt;font-weight:700;">
+      ✓ ACCEPTED MATERIAL OPTION — {{ opt.material.material_name }}
+      <span style="font-weight:400;margin-left:8px;">{{ q.total_area|floatformat:3 }} m² × TZS {{ opt.material.price_per_sqm|floatformat:0 }}/m²</span>
+    </div>
+    <table class="itbl" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Subtotal</th>
+          {% for tax in opt.taxes %}<th class="r">{{ tax.name }}</th>{% endfor %}
+          {% if opt.discount %}<th class="r">Discount</th><th class="r">After Discount</th>{% endif %}
+          <th class="r" style="background:#14532d;">Contract Value (TZS)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ opt.subtotal|floatformat:0 }}</td>
+          {% for tax in opt.taxes %}<td class="r">{{ tax.amount|floatformat:0 }}</td>{% endfor %}
+          {% if opt.discount %}<td class="r" style="color:#dc2626;">-{{ opt.discount|floatformat:0 }}</td>
+          <td class="r">{{ opt.after_disc|floatformat:0 }}</td>{% endif %}
+          <td class="r" style="font-weight:800;font-size:11pt;color:#14532d;">{{ opt.grand|floatformat:0 }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+
   {% endwith %}
   {% endif %}
 
@@ -339,7 +375,13 @@
         ▲ Money In (Client Payments)
       </div>
       <div class="fin-row" style="font-size:10pt;">
-        <span>Contract Value <span style="font-size:8pt;color:#94a3b8;">(Invoice {{ project.invoice.invoice_no|default:"—" }})</span></span>
+        <span>Contract Value
+          {% if project.revenue_source == 'invoice' %}
+          <span style="font-size:8pt;color:#94a3b8;">(Invoice {{ project.invoice.invoice_no }})</span>
+          {% elif project.revenue_source == 'quotation' %}
+          <span style="font-size:8pt;color:#2563eb;">(Accepted Quote {{ project.quotation.quote_no }})</span>
+          {% endif %}
+        </span>
         <span style="font-weight:600;">TZS {{ project.revenue|floatformat:0 }}</span>
       </div>
       {% if funding.advance_paid %}
@@ -364,10 +406,15 @@
         <span>Total Received from Client</span>
         <span class="text-green">TZS {{ funding.total_client_received|floatformat:0 }}</span>
       </div>
-      {% if project.invoice %}
-      <div class="fin-row" style="font-size:8.5pt;color:#64748b;">
+      {% if funding.balance_due > 0 %}
+      <div class="fin-row" style="font-size:8.5pt;color:#d97706;">
         <span>Balance Still Owed by Client</span>
-        <span>TZS {{ project.invoice.balance_due|floatformat:0 }}</span>
+        <span style="font-weight:600;">TZS {{ funding.balance_due|floatformat:0 }}</span>
+      </div>
+      {% elif project.revenue > 0 %}
+      <div class="fin-row" style="font-size:8.5pt;color:#16a34a;">
+        <span>Balance Still Owed by Client</span>
+        <span style="font-weight:600;">Fully Paid ✓</span>
       </div>
       {% endif %}
     </div>
@@ -384,6 +431,7 @@
           {% elif item.key == 'bank' %}Bank Transfer
           {% elif item.key == 'mpesa' %}M-Pesa
           {% elif item.key == 'cheque' %}Cheque
+          {% elif item.key == 'credit' %}On Credit (Debt)
           {% else %}Unspecified{% endif %}
         </span>
         <span>TZS {{ item.amount|floatformat:0 }}</span>

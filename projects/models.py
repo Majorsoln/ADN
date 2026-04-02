@@ -48,10 +48,26 @@ class Project(models.Model):
 
     @property
     def revenue(self):
-        """What the client paid (from linked invoice)."""
-        if self.invoice:
+        """Contract value: invoice if linked, else accepted quotation option."""
+        if self.invoice_id:
             return self.invoice.contract_amount
+        # Fall back to accepted quotation option value (before invoice is created)
+        if self.quotation_id:
+            q = self.quotation
+            if q.accepted_material_id:
+                for opt in q.material_options:
+                    if opt['material'].pk == q.accepted_material_id:
+                        return opt['grand']
         return Decimal('0')
+
+    @property
+    def revenue_source(self):
+        """'invoice', 'quotation', or 'none' — for template labelling."""
+        if self.invoice_id:
+            return 'invoice'
+        if self.quotation_id and self.quotation.accepted_material_id:
+            return 'quotation'
+        return 'none'
 
     @property
     def materials_cost(self):
