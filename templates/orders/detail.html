@@ -80,8 +80,13 @@
     {% if order.status != 'received' and order.status != 'cancelled' %}
     <div class="d-flex gap-2 justify-content-center pb-1">
       {% if order.status == 'draft' %}
-      <form method="post" action="{% url 'orders:update_status' order.pk %}">
+      <form method="post" action="{% url 'orders:update_status' order.pk %}" class="d-flex gap-2 align-items-center flex-wrap justify-content-center">
         {% csrf_token %}<input type="hidden" name="status" value="ordered">
+        <select name="payment_source" class="form-select form-select-sm" style="width:auto;min-width:170px;">
+          {% for val, label in order.PAYMENT_SOURCE_CHOICES %}
+          <option value="{{ val }}" {% if order.payment_source == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
         <button type="submit" class="btn btn-adn btn-sm">
           <i class="bi bi-send me-1"></i>Finalise &amp; Place Order
         </button>

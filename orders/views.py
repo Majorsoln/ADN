@@ -117,12 +117,24 @@ def detail_view(request, pk):
 def edit_view(request, pk):
     order = get_object_or_404(MaterialOrder, pk=pk)
     old_status = order.status
+    old_payment_source = order.payment_source
     if request.method == 'POST':
         form = MaterialOrderForm(request.POST, instance=order)
         if form.is_valid():
             order = form.save()
-            order.items.all().delete()
-            _save_items(order, request.POST.get('items_data', '[]'))
+
+            # Safe item replacement: parse first, only replace if we have valid items
+            items_data = request.POST.get('items_data', '[]')
+            try:
+                parsed_items = json.loads(items_data)
+                valid_items = [i for i in parsed_items if i.get('material_name') and i.get('quantity') and i.get('unit_cost')]
+            except (json.JSONDecodeError, ValueError):
+                valid_items = []
+
+            if valid_items:
+                order.items.all().delete()
+                _save_items(order, json.dumps(valid_items))
+            # else: keep existing items untouched — don't silently delete them
 
             desc = f'Order from {order.supplier_name} edited — {order.items.count()} items, TZS {order.total_cost:,.0f}'
             if order.status != old_status:
@@ -135,8 +147,40 @@ def edit_view(request, pk):
                 order.project.save(update_fields=['status'])
                 _log(order.project, 'status', 'Status changed: Planning → Materials Ordered')
 
+            # Auto-create or update Debt if now ordered on credit
+            if order.status == 'ordered' and order.payment_source == 'credit':
+                from finance.models import Debt
+                debt, created = Debt.objects.get_or_create(
+                    material_order=order,
+                    defaults={
+                        'creditor_name': order.supplier_name,
+                        'debt_type':     'supplier_credit',
+                        'amount':        order.total_cost,
+                        'date_incurred': order.order_date,
+                        'description':   (
+                            f"Materials on credit from {order.supplier_name} "
+                            f"for project: {order.project.name}"
+                        ),
+                        'project': order.project,
+                    }
+                )
+                if not created and debt.amount != order.total_cost:
+                    debt.amount = order.total_cost
+                    debt.save(update_fields=['amount'])
+                if created:
+                    _log(order.project, 'order_edit',
+                         f'Debt auto-created: TZS {order.total_cost:,.0f} owed to '
+                         f'{order.supplier_name} (credit purchase)')
+
+            # Auto-advance project to in_progress if first delivery received
+            if order.status == 'received' and old_status != 'received' and order.project.status == 'ordered':
+                order.project.status = 'in_progress'
+                order.project.save(update_fields=['status'])
+                _log(order.project, 'status',
+                     'Status changed: Materials Ordered → In Progress (delivery received)')
+
             messages.success(request, 'Order updated.')
-            return redirect('orders:detail', pk=order.pk)
+            return redirect('projects:detail', pk=order.project.pk)
     else:
         form = MaterialOrderForm(instance=order)
     existing_items = list(order.items.values('material_name', 'description', 'quantity', 'unit', 'unit_cost'))

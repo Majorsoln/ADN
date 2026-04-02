@@ -30,6 +30,11 @@
             <label class="form-label">Status</label>
             {{ form.status }}
           </div>
+          <div class="col-md-6">
+            <label class="form-label">Payment Source <small class="text-muted">(how materials are paid for)</small></label>
+            {{ form.payment_source }}
+            {% if form.payment_source.errors %}<div class="text-danger small">{{ form.payment_source.errors.0 }}</div>{% endif %}
+          </div>
           <div class="col-md-4">
             <label class="form-label">Order Date</label>
             {{ form.order_date }}
@@ -162,7 +167,7 @@ function updateTotal() {
   document.getElementById('grandTotal').textContent = fmt(grand);
 }
 
-document.getElementById('orderForm').addEventListener('submit', function() {
+document.getElementById('orderForm').addEventListener('submit', function(e) {
   const items = [];
   document.querySelectorAll('#itemsBody tr').forEach(row => {
     const name  = row.querySelector('.item-name')?.value?.trim();
@@ -172,6 +177,11 @@ document.getElementById('orderForm').addEventListener('submit', function() {
     const price = row.querySelector('.item-price')?.value;
     if (name && qty && price) items.push({material_name:name, description:desc||'', quantity:qty, unit:unit||'m2', unit_cost:price});
   });
+  if (items.length === 0) {
+    e.preventDefault();
+    alert('Please add at least one item before saving the order.');
+    return false;
+  }
   document.getElementById('items_data').value = JSON.stringify(items);
 });
 
