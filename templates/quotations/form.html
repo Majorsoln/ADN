@@ -3,11 +3,14 @@
 {% block page_title %}{{ action }} Quotation {% if quotation %}– {{ quotation.quote_no }}{% endif %}{% endblock %}
 
 {% block topbar_actions %}
-{% if quotation %}
-<a href="{% url 'quotations:detail' quotation.pk %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left me-1"></i>Back</a>
-{% else %}
-<a href="{% url 'quotations:list' %}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left me-1"></i>Back</a>
-{% endif %}
+<div class="d-flex gap-2 align-items-center">
+  {% if quotation %}
+  <a href="{% url 'quotations:detail' quotation.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a href="{% url 'quotations:pdf' quotation.pk %}" target="_blank" class="btn btn-sm btn-adn-sky"><i class="bi bi-eye me-1"></i>Preview PDF</a>
+  {% else %}
+  <a href="{% url 'quotations:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  {% endif %}
+</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -416,13 +419,16 @@
 
     <!-- Save -->
     <div style="text-align:center;padding:16px 0;">
-      <button type="submit" class="btn-q-save">
-        💾 {{ action }} Quotation – Hifadhi kwenye Database
+      <button type="submit" name="_action" value="save" class="btn-q-save">
+        💾 {{ action }} Quotation – Hifadhi
+      </button>
+      <button type="submit" name="_action" value="save_pdf" class="btn-q btn-q-blue" style="cursor:pointer;">
+        💾🖨 Hifadhi &amp; Preview PDF
       </button>
       {% if quotation %}
       <div style="margin-top:12px;">
-        <a href="{% url 'quotations:pdf' quotation.pk %}" target="_blank" class="btn-q btn-q-blue" style="text-decoration:none;">⬇ Print / PDF</a>
-        <a href="{% url 'invoices:create' %}?from_quote={{ quotation.pk }}" class="btn-q btn-q-green" style="text-decoration:none;">+ Create Invoice</a>
+        <a href="{% url 'quotations:pdf' quotation.pk %}" target="_blank" class="btn-q btn-q-blue" style="text-decoration:none;">⬇ Print / PDF (Current)</a>
+        <a href="{% url 'quotations:detail' quotation.pk %}" class="btn-q" style="text-decoration:none;background:#6c757d;color:#fff;">↩ Back to Detail</a>
       </div>
       {% endif %}
     </div>

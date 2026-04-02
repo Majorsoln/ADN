@@ -80,6 +80,13 @@ class Quotation(models.Model):
     custom2_rate    = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     custom2_enabled = models.BooleanField(default=False)
 
+    # Accepted option — set when client picks a specific material
+    accepted_material = models.ForeignKey(
+        'QuotationMaterial', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+',
+        help_text='Material option accepted by the client',
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

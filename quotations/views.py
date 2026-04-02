@@ -1,6 +1,7 @@
 import json
 from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
@@ -99,6 +100,8 @@ def create_view(request):
                     )
 
             messages.success(request, f'Quotation {quotation.quote_no} created successfully.')
+            if request.POST.get('_action') == 'save_pdf':
+                return redirect(reverse('quotations:pdf', args=[quotation.pk]))
             return redirect('quotations:detail', pk=quotation.pk)
     else:
         form = QuotationForm()
@@ -169,6 +172,8 @@ def edit_view(request, pk):
                 pass
 
             messages.success(request, f'Quotation {quotation.quote_no} updated.')
+            if request.POST.get('_action') == 'save_pdf':
+                return redirect(reverse('quotations:pdf', args=[quotation.pk]))
             return redirect('quotations:detail', pk=quotation.pk)
     else:
         form = QuotationForm(instance=quotation)
@@ -195,18 +200,40 @@ def delete_view(request, pk):
 
 def pdf_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
-    # Selected material index from query param
-    mat_idx = int(request.GET.get('mat', 0))
     options = quotation.material_options
+
+    # If ?mat= is not specified, default to the accepted material (if any)
+    if 'mat' not in request.GET and quotation.accepted_material:
+        mat_idx = next(
+            (i for i, opt in enumerate(options) if opt['material'].pk == quotation.accepted_material.pk),
+            0,
+        )
+    else:
+        mat_idx = int(request.GET.get('mat', 0))
+
     selected = options[mat_idx] if options and mat_idx < len(options) else (options[0] if options else None)
     context = {
         'quotation': quotation,
         'items': quotation.items.all(),
         'selected_option': selected,
+        'selected_idx': mat_idx,
         'all_options': options,
         'for_pdf': True,
     }
     return render(request, 'quotations/pdf.html', context)
+
+
+@require_POST
+def accept_option(request, pk):
+    """Mark a specific material option as accepted and set status to accepted."""
+    quotation = get_object_or_404(Quotation, pk=pk)
+    mat_pk = request.POST.get('material_pk')
+    material = get_object_or_404(QuotationMaterial, pk=mat_pk, quotation=quotation)
+    quotation.accepted_material = material
+    quotation.status = 'accepted'
+    quotation.save(update_fields=['accepted_material', 'status'])
+    messages.success(request, f'Quotation accepted — "{material.material_name}" selected by client.')
+    return redirect('quotations:detail', pk=pk)
 
 
 @require_POST
@@ -215,7 +242,13 @@ def update_status(request, pk):
     new_status = request.POST.get('status')
     valid = [s[0] for s in Quotation.STATUS_CHOICES]
     if new_status in valid:
-        quotation.status = new_status
-        quotation.save(update_fields=['status'])
+        # Clear accepted_material if reverting from accepted
+        if new_status != 'accepted' and quotation.accepted_material:
+            quotation.accepted_material = None
+            quotation.status = new_status
+            quotation.save(update_fields=['status', 'accepted_material'])
+        else:
+            quotation.status = new_status
+            quotation.save(update_fields=['status'])
         messages.success(request, f'Status updated to {quotation.get_status_display()}.')
     return redirect('quotations:detail', pk=pk)

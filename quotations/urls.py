@@ -11,4 +11,5 @@ urlpatterns = [
     path('<int:pk>/delete/', views.delete_view, name='delete'),
     path('<int:pk>/pdf/', views.pdf_view,     name='pdf'),
     path('<int:pk>/status/', views.update_status, name='update_status'),
+    path('<int:pk>/accept/', views.accept_option,  name='accept_option'),
 ]
