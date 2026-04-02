@@ -285,20 +285,19 @@
     <span style="margin-left:12px;font-size:9pt;opacity:.6;">– Quotation {{ quotation.quote_no }}</span>
   </div>
   <div class="d-flex gap-2 align-items-center" style="display:flex;gap:8px;">
-    {% if all_options and all_options|length > 1 %}
+    {% if accepted_mat_pk %}
+    <span style="background:#16a34a;color:#fff;padding:4px 12px;border-radius:6px;font-size:9pt;font-weight:600;">
+      ✓ FINAL — {{ quotation.accepted_material.material_name }}
+    </span>
+    {% elif all_options|length > 1 %}
     <select onchange="window.location='{% url 'quotations:pdf' quotation.pk %}?mat='+this.value"
             style="background:#fff;color:#1a2e5a;border:none;padding:5px 10px;border-radius:6px;font-size:9pt;cursor:pointer;">
       {% for opt in all_options %}
       <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == selected_idx %}selected{% endif %}>
-        {{ opt.material.material_name }}{% if quotation.accepted_material and opt.material.pk == quotation.accepted_material.pk %} ✓{% endif %}
+        {{ opt.material.material_name }}
       </option>
       {% endfor %}
     </select>
-    {% endif %}
-    {% if quotation.accepted_material %}
-    <span style="background:#16a34a;color:#fff;padding:4px 10px;border-radius:6px;font-size:9pt;font-weight:600;">
-      ✓ Accepted: {{ quotation.accepted_material.material_name }}
-    </span>
     {% endif %}
     <a href="{% url 'quotations:detail' quotation.pk %}">← Back</a>
     <button onclick="window.print()">⬇ Print / Save PDF</button>
@@ -387,13 +386,12 @@
 
   <!-- ── Selected material pricing highlight ─────────────────── -->
   {% if selected_option %}
-  {% with is_accepted=quotation.accepted_material and selected_option.material.pk == quotation.accepted_material.pk %}
   <div class="sec-heading">
     Pricing – {{ selected_option.material.material_name }}
-    {% if is_accepted %}<span style="background:#16a34a;color:#fff;font-size:8pt;padding:2px 8px;border-radius:4px;margin-left:8px;font-weight:700;">✓ CLIENT ACCEPTED</span>{% endif %}
+    {% if selected_option.material.pk == accepted_mat_pk %}<span style="background:#16a34a;color:#fff;font-size:8pt;padding:2px 8px;border-radius:4px;margin-left:8px;font-weight:700;">✓ CLIENT ACCEPTED</span>{% endif %}
   </div>
-  <div class="selected-option" {% if is_accepted %}style="border-color:#16a34a;background:#f0fdf4;"{% endif %}>
-    <div class="opt-label">{% if is_accepted %}Accepted Material{% else %}Selected Material{% endif %}</div>
+  <div class="selected-option" {% if selected_option.material.pk == accepted_mat_pk %}style="border-color:#16a34a;background:#f0fdf4;"{% endif %}>
+    <div class="opt-label">{% if selected_option.material.pk == accepted_mat_pk %}Accepted Material{% else %}Selected Material{% endif %}</div>
     <div class="opt-name">{{ selected_option.material.material_name }}</div>
     <div style="font-size:9pt;color:#64748b;margin-top:2px;">
       TZS {{ selected_option.material.price_per_sqm|floatformat:0 }} / m²
@@ -428,11 +426,10 @@
       <span>TZS {{ selected_option.grand|floatformat:0 }}</span>
     </div>
   </div>
-  {% endwith %}
   {% endif %}
 
-  <!-- ── All Options Comparison ──────────────────────────────── -->
-  {% if all_options|length > 1 %}
+  <!-- ── All Options Comparison — shown only when NOT yet accepted (client is still choosing) ── -->
+  {% if all_options|length > 1 and not accepted_mat_pk %}
   <div class="pricing-section">
     <div class="sec-heading">All Material Options – Price Comparison</div>
     <table class="pricing">

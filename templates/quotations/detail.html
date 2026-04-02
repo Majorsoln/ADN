@@ -152,11 +152,10 @@
           </thead>
           <tbody>
             {% for opt in material_options %}
-            {% with is_accepted=quotation.accepted_material and opt.material.pk == quotation.accepted_material.pk %}
-            <tr class="{% if is_accepted %}table-success{% endif %}">
+            <tr class="{% if opt.material.pk == accepted_mat_pk %}table-success{% endif %}">
               <td class="fw-semibold">
                 {{ opt.material.material_name }}
-                {% if is_accepted %}<span class="badge bg-success ms-1" style="font-size:.65rem;"><i class="bi bi-check-circle me-1"></i>Accepted</span>{% endif %}
+                {% if opt.material.pk == accepted_mat_pk %}<span class="badge bg-success ms-1" style="font-size:.65rem;"><i class="bi bi-check-circle me-1"></i>Accepted</span>{% endif %}
                 {% if opt.material.notes %}<div class="text-muted small">{{ opt.material.notes }}</div>{% endif %}
               </td>
               <td class="text-end">{{ opt.material.price_per_sqm|floatformat:0 }}</td>
@@ -180,7 +179,7 @@
               </td>
               {% if quotation.status != 'expired' and quotation.status != 'rejected' %}
               <td>
-                {% if is_accepted %}
+                {% if opt.material.pk == accepted_mat_pk %}
                 <span class="badge bg-success py-2"><i class="bi bi-check2-circle me-1"></i>Accepted</span>
                 {% else %}
                 <form method="post" action="{% url 'quotations:accept_option' quotation.pk %}" class="d-inline">
@@ -195,7 +194,6 @@
               </td>
               {% endif %}
             </tr>
-            {% endwith %}
             {% endfor %}
           </tbody>
         </table>

@@ -124,6 +124,7 @@ def detail_view(request, pk):
         'quotation': quotation,
         'items': quotation.items.all(),
         'material_options': quotation.material_options,
+        'accepted_mat_pk': quotation.accepted_material_id,
     }
     return render(request, 'quotations/detail.html', context)
 
@@ -218,6 +219,7 @@ def pdf_view(request, pk):
         'selected_option': selected,
         'selected_idx': mat_idx,
         'all_options': options,
+        'accepted_mat_pk': quotation.accepted_material_id,
         'for_pdf': True,
     }
     return render(request, 'quotations/pdf.html', context)
