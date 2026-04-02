@@ -45,6 +45,7 @@ def list_view(request):
         'status_filter': status_filter,
         'search': search,
         'status_choices': Quotation.STATUS_CHOICES,
+        'today': timezone.now().date(),
     }
     return render(request, 'quotations/list.html', context)
 

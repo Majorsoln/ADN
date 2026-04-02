@@ -44,6 +44,12 @@ def create_view(request):
                 'quote_ref':      q.quote_no,
                 'quotation':      q,
             }
+            # Pre-fill contract_amount from the accepted material option
+            if q.accepted_material:
+                for opt in q.material_options:
+                    if opt['material'].pk == q.accepted_material_id:
+                        initial['contract_amount'] = opt['grand']
+                        break
         except Quotation.DoesNotExist:
             pass
 
