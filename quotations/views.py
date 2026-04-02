@@ -204,25 +204,30 @@ def pdf_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
     options = quotation.material_options
 
-    # If ?mat= is not specified, default to the accepted material (if any)
-    if 'mat' not in request.GET and quotation.accepted_material:
-        mat_idx = next(
-            (i for i, opt in enumerate(options) if opt['material'].pk == quotation.accepted_material.pk),
-            0,
+    if quotation.accepted_material_id:
+        # FINAL document — only the accepted option
+        selected = next(
+            (opt for opt in options if opt['material'].pk == quotation.accepted_material_id),
+            options[0] if options else None,
         )
+        context = {
+            'quotation': quotation,
+            'items': quotation.items.all(),
+            'selected_option': selected,
+            'all_options': [],          # hide comparison — final doc
+            'accepted_mat_pk': quotation.accepted_material_id,
+            'is_final': True,
+        }
     else:
-        mat_idx = int(request.GET.get('mat', 0))
-
-    selected = options[mat_idx] if options and mat_idx < len(options) else (options[0] if options else None)
-    context = {
-        'quotation': quotation,
-        'items': quotation.items.all(),
-        'selected_option': selected,
-        'selected_idx': mat_idx,
-        'all_options': options,
-        'accepted_mat_pk': quotation.accepted_material_id,
-        'for_pdf': True,
-    }
+        # DRAFT/SENT — show every option in full so the client can choose
+        context = {
+            'quotation': quotation,
+            'items': quotation.items.all(),
+            'selected_option': None,    # no single highlight — show all
+            'all_options': options,
+            'accepted_mat_pk': None,
+            'is_final': False,
+        }
     return render(request, 'quotations/pdf.html', context)
 
 

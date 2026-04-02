@@ -139,6 +139,82 @@
 
     /* ── Pricing options ────────────────────────── */
     .pricing-section { margin-bottom: 24px; }
+
+    /* ── Multi-option cards (draft/sent PDF) ─────── */
+    .options-intro {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 9pt;
+      color: #1e40af;
+      margin-bottom: 16px;
+    }
+    .option-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+    .option-card-header {
+      background: #1a2e5a;
+      color: #fff;
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .option-card-header .opt-num {
+      font-size: 8pt;
+      opacity: .7;
+      font-weight: 400;
+    }
+    .option-card-header .opt-name {
+      font-size: 11pt;
+      font-weight: 700;
+    }
+    .option-card-header .opt-rate {
+      font-size: 9pt;
+      opacity: .85;
+    }
+    .option-card-body {
+      padding: 10px 14px;
+      background: #fff;
+    }
+    .opt-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9.5pt;
+      padding: 4px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .opt-row:last-child { border-bottom: none; }
+    .opt-row.discount { color: #dc2626; }
+    .opt-row.total-row {
+      font-size: 12pt;
+      font-weight: 800;
+      color: #1a2e5a;
+      border-top: 2px solid #1a2e5a;
+      border-bottom: none;
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+    .opt-choice-box {
+      border-top: 1px dashed #94a3b8;
+      padding: 8px 14px;
+      background: #f8fafc;
+      font-size: 8.5pt;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .opt-choice-box .choice-line {
+      flex: 1;
+      border-bottom: 1px solid #94a3b8;
+      margin-left: 8px;
+    }
     table.pricing {
       width: 100%;
       border-collapse: collapse;
@@ -284,23 +360,18 @@
     <span style="font-family:'DM Serif Display',serif;font-size:14pt;">ADN uPVC &amp; Aluminum Solutions</span>
     <span style="margin-left:12px;font-size:9pt;opacity:.6;">– Quotation {{ quotation.quote_no }}</span>
   </div>
-  <div class="d-flex gap-2 align-items-center" style="display:flex;gap:8px;">
-    {% if accepted_mat_pk %}
-    <span style="background:#16a34a;color:#fff;padding:4px 12px;border-radius:6px;font-size:9pt;font-weight:600;">
-      ✓ FINAL — {{ quotation.accepted_material.material_name }}
+  <div style="display:flex;gap:8px;align-items:center;">
+    {% if is_final %}
+    <span style="background:#15803d;color:#fff;padding:4px 14px;border-radius:6px;font-size:9pt;font-weight:700;">
+      ✓ FINAL QUOTATION — {{ quotation.accepted_material.material_name }}
     </span>
-    {% elif all_options|length > 1 %}
-    <select onchange="window.location='{% url 'quotations:pdf' quotation.pk %}?mat='+this.value"
-            style="background:#fff;color:#1a2e5a;border:none;padding:5px 10px;border-radius:6px;font-size:9pt;cursor:pointer;">
-      {% for opt in all_options %}
-      <option value="{{ forloop.counter0 }}" {% if forloop.counter0 == selected_idx %}selected{% endif %}>
-        {{ opt.material.material_name }}
-      </option>
-      {% endfor %}
-    </select>
+    {% else %}
+    <span style="background:#1e40af;color:#fff;padding:4px 14px;border-radius:6px;font-size:9pt;font-weight:600;">
+      {{ all_options|length }} option{{ all_options|length|pluralize }} — client choice
+    </span>
     {% endif %}
-    <a href="{% url 'quotations:detail' quotation.pk %}">← Back</a>
-    <button onclick="window.print()">⬇ Print / Save PDF</button>
+    <a href="{% url 'quotations:detail' quotation.pk %}" style="color:#94ccde;text-decoration:none;font-size:9pt;">← Back</a>
+    <button onclick="window.print()" style="background:#3aacdc;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-weight:600;cursor:pointer;font-size:10pt;">⬇ Print / Save PDF</button>
   </div>
 </div>
 
@@ -317,11 +388,15 @@
       </div>
     </div>
     <div class="doc-title-block">
-      <div class="doc-type">{% if quotation.accepted_material %}FINAL QUOTATION{% else %}QUOTATION{% endif %}</div>
+      <div class="doc-type">{% if is_final %}FINAL QUOTATION{% else %}QUOTATION{% endif %}</div>
       <div class="doc-no">{{ quotation.quote_no }}</div>
       <div class="doc-dates">
         Date: {{ quotation.quote_date|date:"d F Y" }}<br>
+        {% if is_final %}
+        Ref: {{ quotation.quote_no }}
+        {% else %}
         Valid Until: <strong>{{ quotation.valid_until|date:"d F Y" }}</strong>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -384,82 +459,105 @@
     </tfoot>
   </table>
 
-  <!-- ── Selected material pricing highlight ─────────────────── -->
-  {% if selected_option %}
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- FINAL QUOTATION — single accepted option                   -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  {% if is_final and selected_option %}
   <div class="sec-heading">
-    Pricing – {{ selected_option.material.material_name }}
-    {% if selected_option.material.pk == accepted_mat_pk %}<span style="background:#16a34a;color:#fff;font-size:8pt;padding:2px 8px;border-radius:4px;margin-left:8px;font-weight:700;">✓ CLIENT ACCEPTED</span>{% endif %}
+    Confirmed Pricing
+    <span style="background:#16a34a;color:#fff;font-size:8pt;padding:2px 10px;border-radius:4px;margin-left:8px;font-weight:700;">✓ CLIENT CONFIRMED</span>
   </div>
-  <div class="selected-option" {% if selected_option.material.pk == accepted_mat_pk %}style="border-color:#16a34a;background:#f0fdf4;"{% endif %}>
-    <div class="opt-label">{% if selected_option.material.pk == accepted_mat_pk %}Accepted Material{% else %}Selected Material{% endif %}</div>
-    <div class="opt-name">{{ selected_option.material.material_name }}</div>
-    <div style="font-size:9pt;color:#64748b;margin-top:2px;">
-      TZS {{ selected_option.material.price_per_sqm|floatformat:0 }} / m²
-      {% if selected_option.material.notes %} · {{ selected_option.material.notes }}{% endif %}
+  <div class="option-card" style="border-color:#16a34a;">
+    <div class="option-card-header" style="background:#15803d;">
+      <div>
+        <div class="opt-num">Confirmed Material</div>
+        <div class="opt-name">{{ selected_option.material.material_name }}</div>
+      </div>
+      <div class="opt-rate">TZS {{ selected_option.material.price_per_sqm|floatformat:0 }} / m²{% if selected_option.material.notes %} · {{ selected_option.material.notes }}{% endif %}</div>
     </div>
-    <div class="summary-row" style="margin-top:10px;">
-      <span>Subtotal ({{ quotation.total_area|floatformat:2 }} m²)</span>
-      <span>TZS {{ selected_option.subtotal|floatformat:0 }}</span>
-    </div>
-    {% if quotation.discount_value %}
-    <div class="summary-row text-red">
-      <span>
-        {{ quotation.discount_name|default:"Discount" }}
-        ({% if quotation.discount_type == 'percentage' %}{{ quotation.discount_value }}%{% else %}Fixed{% endif %})
-        {% if quotation.discount_duration %} – {{ quotation.discount_duration }}{% endif %}
-      </span>
-      <span>– TZS {{ selected_option.discount|floatformat:0 }}</span>
-    </div>
-    <div class="summary-row">
-      <span>After Discount</span>
-      <span>TZS {{ selected_option.after_disc|floatformat:0 }}</span>
-    </div>
-    {% endif %}
-    {% for tax in selected_option.taxes %}
-    <div class="summary-row">
-      <span>{{ tax.name }}</span>
-      <span>TZS {{ tax.amount|floatformat:0 }}</span>
-    </div>
-    {% endfor %}
-    <div class="summary-row total">
-      <span>TOTAL AMOUNT</span>
-      <span>TZS {{ selected_option.grand|floatformat:0 }}</span>
+    <div class="option-card-body">
+      <div class="opt-row">
+        <span>Subtotal ({{ quotation.total_area|floatformat:2 }} m²)</span>
+        <span>TZS {{ selected_option.subtotal|floatformat:0 }}</span>
+      </div>
+      {% if quotation.discount_value %}
+      <div class="opt-row discount">
+        <span>{{ quotation.discount_name|default:"Discount" }}
+          ({% if quotation.discount_type == 'percentage' %}{{ quotation.discount_value }}%{% else %}Fixed{% endif %})
+          {% if quotation.discount_duration %} – {{ quotation.discount_duration }}{% endif %}</span>
+        <span>– TZS {{ selected_option.discount|floatformat:0 }}</span>
+      </div>
+      <div class="opt-row">
+        <span>After Discount</span>
+        <span>TZS {{ selected_option.after_disc|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+      {% for tax in selected_option.taxes %}
+      <div class="opt-row">
+        <span>{{ tax.name }}</span>
+        <span>TZS {{ tax.amount|floatformat:0 }}</span>
+      </div>
+      {% endfor %}
+      <div class="opt-row total-row">
+        <span>TOTAL AMOUNT</span>
+        <span>TZS {{ selected_option.grand|floatformat:0 }}</span>
+      </div>
     </div>
   </div>
-  {% endif %}
 
-  <!-- ── All Options Comparison — shown only when NOT yet accepted (client is still choosing) ── -->
-  {% if all_options|length > 1 and not accepted_mat_pk %}
-  <div class="pricing-section">
-    <div class="sec-heading">All Material Options – Price Comparison</div>
-    <table class="pricing">
-      <thead>
-        <tr>
-          <th>Material</th>
-          <th>Price/m²</th>
-          <th>Subtotal</th>
-          {% if quotation.discount_value %}<th>Discount</th><th>After Disc.</th>{% endif %}
-          <th>Tax</th>
-          <th>Total (TZS)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for opt in all_options %}
-        <tr>
-          <td>{{ opt.material.material_name }}</td>
-          <td>{{ opt.material.price_per_sqm|floatformat:0 }}</td>
-          <td>{{ opt.subtotal|floatformat:0 }}</td>
-          {% if quotation.discount_value %}
-          <td style="color:#dc2626;">–{{ opt.discount|floatformat:0 }}</td>
-          <td>{{ opt.after_disc|floatformat:0 }}</td>
-          {% endif %}
-          <td>{{ opt.tax_total|floatformat:0 }}</td>
-          <td style="font-weight:700;color:#1a2e5a;">{{ opt.grand|floatformat:0 }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- DRAFT / SENT — all options shown as cards for client       -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  {% elif all_options %}
+  <div class="sec-heading">Pricing Options</div>
+  <div class="options-intro">
+    ℹ Please review all material options below. Each option shows the full price breakdown.
+    Indicate your preferred option to our team and we will prepare your final quotation.
   </div>
+  {% for opt in all_options %}
+  <div class="option-card">
+    <div class="option-card-header">
+      <div>
+        <div class="opt-num">Option {{ forloop.counter }} of {{ all_options|length }}</div>
+        <div class="opt-name">{{ opt.material.material_name }}</div>
+      </div>
+      <div class="opt-rate">TZS {{ opt.material.price_per_sqm|floatformat:0 }} / m²{% if opt.material.notes %} · {{ opt.material.notes }}{% endif %}</div>
+    </div>
+    <div class="option-card-body">
+      <div class="opt-row">
+        <span>Subtotal ({{ quotation.total_area|floatformat:2 }} m²)</span>
+        <span>TZS {{ opt.subtotal|floatformat:0 }}</span>
+      </div>
+      {% if quotation.discount_value %}
+      <div class="opt-row discount">
+        <span>{{ quotation.discount_name|default:"Discount" }}
+          ({% if quotation.discount_type == 'percentage' %}{{ quotation.discount_value }}%{% else %}Fixed{% endif %})
+          {% if quotation.discount_duration %} – {{ quotation.discount_duration }}{% endif %}</span>
+        <span>– TZS {{ opt.discount|floatformat:0 }}</span>
+      </div>
+      <div class="opt-row">
+        <span>After Discount</span>
+        <span>TZS {{ opt.after_disc|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+      {% for tax in opt.taxes %}
+      <div class="opt-row">
+        <span>{{ tax.name }}</span>
+        <span>TZS {{ tax.amount|floatformat:0 }}</span>
+      </div>
+      {% endfor %}
+      <div class="opt-row total-row">
+        <span>TOTAL AMOUNT</span>
+        <span>TZS {{ opt.grand|floatformat:0 }}</span>
+      </div>
+    </div>
+    <div class="opt-choice-box">
+      <span>☐ I prefer this option</span>
+      <div class="choice-line"></div>
+      <span>Client Initials: ______</span>
+    </div>
+  </div>
+  {% endfor %}
   {% endif %}
 
   <!-- ── Footer grid ─────────────────────────────────────────── -->
@@ -494,18 +592,28 @@
   {% endif %}
 
   <!-- ── Signatures ───────────────────────────────────────────── -->
+  {% if is_final %}
   <div class="signature-row">
     <div class="sig-block">
-      <div class="sig-line">
-        Authorized Signatory – ADN Solutions
-      </div>
+      <div class="sig-line">Authorized Signatory – ADN Solutions</div>
     </div>
     <div class="sig-block">
-      <div class="sig-line">
-        Client Acceptance – {{ quotation.client_name }}
-      </div>
+      <div class="sig-line">Client Acceptance – {{ quotation.client_name }}</div>
     </div>
   </div>
+  {% else %}
+  <div style="margin-top:20px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-size:9pt;color:#0369a1;">
+    <strong>Next step:</strong> Please circle or initial your preferred option above, then contact us at +255 XXX XXX XXX or info@adnarusha.com to confirm your selection and proceed.
+  </div>
+  <div class="signature-row" style="margin-top:12px;">
+    <div class="sig-block">
+      <div class="sig-line">Prepared by – ADN Solutions</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">Client Signature – {{ quotation.client_name }}</div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- ── Footer ───────────────────────────────────────────────── -->
   <div style="margin-top:24px;text-align:center;font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;">
