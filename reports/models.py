@@ -15,17 +15,25 @@ class Invoice(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invoices')
     invoice_number = models.CharField(max_length=50, unique=True)
     client_name = models.CharField(max_length=255)
+    client_phone = models.CharField(max_length=50, blank=True)
     client_address = models.TextField(blank=True)
     description = models.TextField(blank=True)
+    quotation_ref = models.CharField(max_length=100, blank=True)
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    advance_paid = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='draft')
     issue_date = models.DateField(auto_now_add=True)
     due_date = models.DateField(null=True, blank=True)
+    completion_date = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
+
+    @property
+    def balance_due(self):
+        return self.total_amount - self.advance_paid
 
     def __str__(self):
         return f"INV-{self.invoice_number}"
@@ -58,8 +66,16 @@ class Quote(models.Model):
     quote_number = models.CharField(max_length=50, unique=True)
     client_name = models.CharField(max_length=255)
     project_name = models.CharField(max_length=255)
+    installation_days = models.IntegerField(default=14)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='draft')
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    discount_name = models.CharField(max_length=255, blank=True)
+    discount_type = models.CharField(max_length=20, default='percentage', choices=[('percentage', 'Percentage'), ('flat', 'Flat Amount')])
+    discount_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    vat_enabled = models.BooleanField(default=False)
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=18)
+    service_levy_enabled = models.BooleanField(default=False)
+    service_levy_rate = models.DecimalField(max_digits=5, decimal_places=2, default=2)
     notes = models.TextField(blank=True)
     valid_until = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -73,6 +89,15 @@ class Quote(models.Model):
 
 
 class QuoteItem(models.Model):
+    ITEM_TYPE_CHOICES = [
+        ('window', 'Window'),
+        ('door', 'Door'),
+        ('fixed', 'Fixed'),
+        ('fixed_door', 'Fixed with Door'),
+        ('fixed_sliding', 'Fixed with Sliding Door'),
+        ('fixed_window', 'Fixed with Window'),
+    ]
+
     quote = models.ForeignKey(Quote, on_delete=models.CASCADE, related_name='items')
     description = models.CharField(max_length=500)
     width = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
@@ -81,6 +106,12 @@ class QuoteItem(models.Model):
     material = models.CharField(max_length=100, blank=True)
     item_type = models.CharField(max_length=100, blank=True)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    @property
+    def area_sqm(self):
+        if self.width and self.height:
+            return (self.width * self.height * self.quantity) / 10000
+        return 0
 
     @property
     def total(self):

@@ -42,21 +42,80 @@ def reports_dashboard(request):
 
 @login_required
 def create_invoice(request):
+    projects = Project.objects.all()
+
     if request.method == 'POST':
-        form = InvoiceForm(request.POST)
-        if form.is_valid():
-            invoice = form.save(commit=False)
-            invoice.created_by = request.user
-            invoice.save()
-            ActivityLog.objects.create(
-                project=invoice.project, user=request.user,
-                action=f'Created invoice INV-{invoice.invoice_number}'
-            )
-            messages.success(request, f'Invoice INV-{invoice.invoice_number} created.')
-            return redirect('invoice_detail', pk=invoice.pk)
-    else:
-        form = InvoiceForm()
-    return render(request, 'reports/invoice_form.html', {'form': form, 'title': 'Create Invoice'})
+        # Collect form data
+        invoice_number = request.POST.get('invoice_number', '').strip()
+        client_name = request.POST.get('client_name', '').strip()
+        client_phone = request.POST.get('client_phone', '').strip()
+        client_address = request.POST.get('client_address', '').strip()
+        description = request.POST.get('description', '').strip()
+        quotation_ref = request.POST.get('quotation_ref', '').strip()
+        status = request.POST.get('status', 'draft')
+        due_date = request.POST.get('due_date') or None
+        completion_date = request.POST.get('completion_date') or None
+        advance_paid = Decimal(request.POST.get('advance_paid', '0') or '0')
+        project_id = request.POST.get('project')
+
+        project = get_object_or_404(Project, pk=project_id) if project_id else None
+
+        if not invoice_number or not client_name or not project:
+            messages.error(request, 'Invoice number, client name, and project are required.')
+            return render(request, 'reports/invoice_create.html', {
+                'projects': projects,
+                'today': timezone.now().strftime('%Y-%m-%d'),
+                'next_number': f'ADN-INV-{Invoice.objects.count() + 1:03d}',
+            })
+
+        invoice = Invoice.objects.create(
+            project=project,
+            invoice_number=invoice_number,
+            client_name=client_name,
+            client_phone=client_phone,
+            client_address=client_address,
+            description=description,
+            quotation_ref=quotation_ref,
+            status=status,
+            due_date=due_date,
+            completion_date=completion_date,
+            advance_paid=advance_paid,
+            created_by=request.user,
+        )
+
+        # Process items
+        item_count = int(request.POST.get('item_count', 0))
+        total = Decimal('0')
+        for i in range(item_count):
+            desc = request.POST.get(f'items[{i}][description]', '').strip()
+            amt = request.POST.get(f'items[{i}][amount]', '0')
+            if desc and amt:
+                amount = Decimal(amt)
+                InvoiceItem.objects.create(
+                    invoice=invoice,
+                    description=desc,
+                    quantity=1,
+                    unit_price=amount,
+                )
+                total += amount
+
+        invoice.total_amount = total
+        invoice.save()
+
+        ActivityLog.objects.create(
+            project=project, user=request.user,
+            action=f'Created invoice INV-{invoice.invoice_number}'
+        )
+        messages.success(request, f'Invoice INV-{invoice.invoice_number} created successfully.')
+        return redirect('invoice_detail', pk=invoice.pk)
+
+    # GET request
+    next_number = f'ADN-INV-{Invoice.objects.count() + 1:03d}'
+    return render(request, 'reports/invoice_create.html', {
+        'projects': projects,
+        'today': timezone.now().strftime('%Y-%m-%d'),
+        'next_number': next_number,
+    })
 
 
 @login_required
@@ -431,17 +490,86 @@ def generate_quote_pdf(request, pk):
 
 @login_required
 def create_quote(request):
+    projects = Project.objects.all()
+
     if request.method == 'POST':
-        form = QuoteForm(request.POST)
-        if form.is_valid():
-            quote = form.save(commit=False)
-            quote.created_by = request.user
-            quote.save()
-            messages.success(request, f'Quote QT-{quote.quote_number} created.')
-            return redirect('reports_dashboard')
-    else:
-        form = QuoteForm()
-    return render(request, 'reports/quote_form.html', {'form': form, 'title': 'Create Quote'})
+        import json
+        quote_number = request.POST.get('quote_number', '').strip()
+        client_name = request.POST.get('client_name', '').strip()
+        project_name = request.POST.get('project_name', '').strip()
+        project_id = request.POST.get('project') or None
+        installation_days = int(request.POST.get('installation_days', '14') or '14')
+        discount_name = request.POST.get('discount_name', '').strip()
+        discount_type = request.POST.get('discount_type', 'percentage')
+        discount_value = Decimal(request.POST.get('discount_value', '0') or '0')
+        vat_enabled = request.POST.get('vat_enabled') == 'on'
+        vat_rate = Decimal(request.POST.get('vat_rate', '18') or '18')
+        service_levy_enabled = request.POST.get('service_levy_enabled') == 'on'
+        service_levy_rate = Decimal(request.POST.get('service_levy_rate', '2') or '2')
+        valid_until = request.POST.get('valid_until') or None
+        notes = request.POST.get('notes', '').strip()
+        total_amount = Decimal(request.POST.get('total_amount', '0') or '0')
+
+        project = get_object_or_404(Project, pk=project_id) if project_id else None
+
+        if not quote_number or not client_name:
+            messages.error(request, 'Quote number and client name are required.')
+            return render(request, 'reports/quote_create.html', {
+                'projects': projects,
+                'next_number': f'QT-{Quote.objects.count() + 1:03d}',
+            })
+
+        quote = Quote.objects.create(
+            project=project,
+            quote_number=quote_number,
+            client_name=client_name,
+            project_name=project_name,
+            installation_days=installation_days,
+            discount_name=discount_name,
+            discount_type=discount_type,
+            discount_value=discount_value,
+            vat_enabled=vat_enabled,
+            vat_rate=vat_rate,
+            service_levy_enabled=service_levy_enabled,
+            service_levy_rate=service_levy_rate,
+            valid_until=valid_until,
+            notes=notes,
+            total_amount=total_amount,
+            created_by=request.user,
+        )
+
+        # Process items from JSON
+        items_json = request.POST.get('items_json', '[]')
+        try:
+            items_data = json.loads(items_json)
+        except json.JSONDecodeError:
+            items_data = []
+
+        for item in items_data:
+            QuoteItem.objects.create(
+                quote=quote,
+                description=item.get('description', ''),
+                item_type=item.get('type', 'window'),
+                width=Decimal(str(item.get('width', 0) or 0)),
+                height=Decimal(str(item.get('height', 0) or 0)),
+                quantity=int(item.get('quantity', 1) or 1),
+                material=item.get('material', ''),
+                unit_price=Decimal(str(item.get('unit_price', 0) or 0)),
+            )
+
+        if project:
+            ActivityLog.objects.create(
+                project=project, user=request.user,
+                action=f'Created quotation QT-{quote.quote_number}'
+            )
+        messages.success(request, f'Quotation QT-{quote.quote_number} created successfully.')
+        return redirect('reports_dashboard')
+
+    next_number = f'QT-{Quote.objects.count() + 1:03d}'
+    return render(request, 'reports/quote_create.html', {
+        'projects': projects,
+        'next_number': next_number,
+    })
 
 
 @login_required

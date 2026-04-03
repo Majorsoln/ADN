@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Create Invoice - ADN{% endblock %}
+{% block page_title %}Create Professional Invoice{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    .inv-builder { display: grid; grid-template-columns: 380px 1fr; gap: 0; min-height: 80vh; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 28px rgba(26,46,90,0.13); }
+
+    /* Sidebar Form */
+    .inv-sidebar { background: #1a2e5a; padding: 28px 22px; overflow-y: auto; max-height: 85vh; }
+    .inv-sidebar .sidebar-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid #2a4070; }
+    .inv-sidebar .sidebar-brand .logo-circle { width: 44px; height: 44px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #1a2e5a; font-size: 11px; }
+    .inv-sidebar .sidebar-brand span { font-family: 'DM Serif Display', serif; color: #3aacdc; font-size: 13px; line-height: 1.4; }
+
+    .inv-sidebar .form-section { margin-bottom: 18px; }
+    .inv-sidebar .form-section h3 { font-size: 9px; letter-spacing: 1.8px; text-transform: uppercase; color: #3aacdc; font-weight: 600; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #2a4070; }
+
+    .inv-sidebar .field { margin-bottom: 10px; }
+    .inv-sidebar .field label { display: block; font-size: 10.5px; color: #7aaac8; font-weight: 500; margin-bottom: 3px; }
+    .inv-sidebar .field input, .inv-sidebar .field textarea, .inv-sidebar .field select {
+        width: 100%; background: #0f1f42; border: 1px solid #2a4070; border-radius: 7px;
+        padding: 8px 11px; color: white; font-family: 'DM Sans', sans-serif; font-size: 12.5px;
+        transition: border-color .2s; outline: none;
+    }
+    .inv-sidebar .field input:focus, .inv-sidebar .field textarea:focus, .inv-sidebar .field select:focus { border-color: #3aacdc; }
+    .inv-sidebar .field textarea { resize: vertical; min-height: 55px; }
+    .inv-sidebar .field input::placeholder, .inv-sidebar .field textarea::placeholder { color: #2a4070; }
+    .inv-sidebar .field select option { background: #0f1f42; color: white; }
+    .inv-sidebar .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .btn-generate { width: 100%; padding: 13px; background: #3aacdc; border: none; border-radius: 9px; color: #1a2e5a; font-family: 'DM Sans', sans-serif; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background .2s, transform .1s; margin-top: 4px; }
+    .btn-generate:hover { background: #5bbde0; }
+    .btn-generate:active { transform: scale(.98); }
+    .btn-download { width: 100%; padding: 11px; background: transparent; border: 1px solid #2a4070; border-radius: 9px; color: #3aacdc; font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; cursor: pointer; transition: border-color .2s; margin-top: 8px; }
+    .btn-download:hover { background: #0f1f42; border-color: #3aacdc; }
+
+    /* Items Section */
+    .inv-sidebar .items-section { background: #0f1f42; border-radius: 8px; padding: 12px; margin-top: 10px; }
+    .inv-sidebar .item-row { display: grid; grid-template-columns: 1fr 80px 40px; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .inv-sidebar .item-row input { font-size: 11px; padding: 6px 8px; }
+    .inv-sidebar .item-row .remove-item { background: #c0392b; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; padding: 6px 8px; }
+    .btn-add-item { padding: 8px 14px; background: rgba(58,172,220,0.15); border: 1px dashed #3aacdc; border-radius: 7px; color: #3aacdc; font-size: 11px; cursor: pointer; width: 100%; margin-top: 6px; }
+
+    /* Preview Area */
+    .inv-preview { padding: 30px; background: #e8f0f8; display: flex; flex-direction: column; align-items: center; overflow-y: auto; max-height: 85vh; }
+    .preview-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #4a6a8a; font-weight: 600; margin-bottom: 16px; align-self: flex-start; }
+
+    /* Invoice */
+    .invoice-wrap { background: white; border-radius: 10px; box-shadow: 0 4px 28px rgba(26,46,90,0.13); width: 100%; max-width: 750px; overflow: hidden; }
+    .inv-header { display: flex; justify-content: space-between; align-items: center; background: #1a2e5a; padding: 20px 28px; gap: 20px; }
+    .inv-header-brand { display: flex; align-items: center; gap: 14px; }
+    .inv-header-brand .logo-circle { width: 52px; height: 52px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #1a2e5a; font-size: 13px; padding: 4px; }
+    .inv-header-brand .company { font-family: 'DM Serif Display', serif; color: #3aacdc; font-size: 16px; line-height: 1.2; }
+    .inv-header-brand .tagline { font-size: 10.5px; color: #7aaac8; margin-top: 3px; }
+    .inv-header-right .inv-title { font-family: 'DM Serif Display', serif; font-size: 26px; color: white; letter-spacing: -0.5px; text-align: right; }
+    .inv-header-right .inv-title span { color: #3aacdc; }
+
+    .inv-info { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 2px solid #1a2e5a; }
+    .inv-info-block { padding: 16px 20px; border-right: 1px solid #b8d4e8; }
+    .inv-info-block:last-child { border-right: none; }
+    .inv-info-block .block-label { font-size: 8.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #2176ae; font-weight: 700; margin-bottom: 7px; padding-bottom: 4px; border-bottom: 2px solid #3aacdc; display: inline-block; }
+    .inv-info-block .block-value { font-size: 12px; color: #1a2e5a; font-weight: 500; line-height: 1.65; }
+    .inv-info-block .block-value small { font-size: 10.5px; color: #4a6a8a; font-weight: 400; }
+
+    .inv-desc { padding: 12px 22px; background: #e6f4fb; font-size: 11.5px; color: #1a2e5a; line-height: 1.6; border-bottom: 1px solid #b8d4e8; border-left: 4px solid #3aacdc; }
+
+    .inv-table { width: 100%; border-collapse: collapse; }
+    .inv-table thead tr { background: #1a2e5a; }
+    .inv-table thead th { padding: 10px 16px; text-align: left; font-size: 9.5px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; color: white; }
+    .inv-table thead th:last-child { text-align: right; }
+    .inv-table tbody td { padding: 10px 16px; font-size: 12px; border-bottom: 1px solid #e6f4fb; }
+    .inv-table tbody td:last-child { text-align: right; font-weight: 600; }
+    .inv-table tbody tr:hover { background: #f0f6fc; }
+
+    .inv-summary { display: flex; justify-content: flex-end; padding: 16px 24px; }
+    .inv-summary-box { min-width: 270px; }
+    .inv-summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; color: #1a2e5a; border-bottom: 1px solid #e6f4fb; }
+    .inv-summary-row:last-child { border-bottom: 2px solid #1a2e5a; padding-top: 8px; font-weight: 700; font-size: 14px; }
+    .inv-summary-row.advance { color: #c0392b; }
+    .inv-summary-row:last-child span:last-child { color: #3aacdc; }
+
+    .inv-footer { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #b8d4e8; }
+    .inv-footer-block { padding: 16px 22px; border-right: 1px solid #b8d4e8; }
+    .inv-footer-block:last-child { border-right: none; }
+    .inv-footer-block h4 { font-size: 9px; letter-spacing: 1.3px; text-transform: uppercase; color: #2176ae; margin-bottom: 6px; }
+    .inv-footer-block p { font-size: 10.5px; color: #4a6a8a; line-height: 1.7; }
+
+    .inv-bottom { background: #1a2e5a; display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; }
+    .inv-bottom .prepared { font-size: 10px; color: #7aaac8; }
+    .inv-bottom .prepared strong { color: #3aacdc; display: block; }
+    .inv-bottom .thank { font-size: 11px; color: #7aaac8; font-style: italic; }
+
+    .empty-invoice { text-align: center; padding: 80px 30px; color: #94a3b8; }
+    .empty-invoice i { font-size: 4rem; margin-bottom: 16px; color: #cbd5e1; }
+
+    @media (max-width: 900px) {
+        .inv-builder { grid-template-columns: 1fr; }
+        .inv-preview { max-height: none; }
+        .inv-sidebar { max-height: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="invoiceForm">
+{% csrf_token %}
+<div class="inv-builder">
+    <!-- SIDEBAR FORM -->
+    <div class="inv-sidebar">
+        <div class="sidebar-brand">
+            <div class="logo-circle">ADN</div>
+            <span>ADN uPVC & ALUMINUM<br>Invoice Generator</span>
+        </div>
+
+        <div class="form-section">
+            <h3>Invoice Details</h3>
+            <div class="row2">
+                <div class="field">
+                    <label>Invoice No.</label>
+                    <input type="text" name="invoice_number" id="inv_number" value="{{ form.invoice_number.value|default_if_none:next_number }}" placeholder="ADN-INV-001" required>
+                </div>
+                <div class="field">
+                    <label>Date</label>
+                    <input type="date" name="date" id="inv_date" value="{{ today }}">
+                </div>
+            </div>
+            <div class="row2">
+                <div class="field">
+                    <label>Due Date</label>
+                    <input type="date" name="due_date" id="inv_due_date">
+                </div>
+                <div class="field">
+                    <label>Quotation Ref</label>
+                    <input type="text" name="quotation_ref" id="inv_quot_ref" placeholder="QT-2025-001">
+                </div>
+            </div>
+            <div class="field">
+                <label>Status</label>
+                <select name="status" id="inv_status">
+                    <option value="draft">Draft</option>
+                    <option value="sent">Sent</option>
+                    <option value="paid">Paid</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Client Information</h3>
+            <div class="field">
+                <label>Client Name</label>
+                <input type="text" name="client_name" id="inv_client" placeholder="Customer name" required>
+            </div>
+            <div class="field">
+                <label>Phone</label>
+                <input type="text" name="client_phone" id="inv_phone" placeholder="+255 xxx xxx xxx">
+            </div>
+            <div class="field">
+                <label>Address</label>
+                <textarea name="client_address" id="inv_address" placeholder="Client address..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Project</h3>
+            <div class="field">
+                <label>Link to Project</label>
+                <select name="project" id="inv_project">
+                    <option value="">-- Select Project --</option>
+                    {% for p in projects %}
+                    <option value="{{ p.pk }}">{{ p.title }} ({{ p.client_name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <textarea name="description" id="inv_desc" placeholder="Work description for this invoice..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Invoice Items</h3>
+            <div class="items-section" id="itemsContainer">
+                <div class="item-row" data-idx="0">
+                    <input type="text" name="item_desc_0" placeholder="Description" class="item-description">
+                    <input type="number" name="item_amount_0" placeholder="Amount" step="0.01" class="item-amount" oninput="updatePreview()">
+                    <button type="button" class="remove-item" onclick="removeItem(this)">&times;</button>
+                </div>
+            </div>
+            <button type="button" class="btn-add-item" onclick="addItem()">+ Add Item</button>
+        </div>
+
+        <div class="form-section">
+            <h3>Payment Adjustments</h3>
+            <div class="row2">
+                <div class="field">
+                    <label>Advance Paid (TZS)</label>
+                    <input type="number" name="advance_paid" id="inv_advance" value="0" step="0.01" oninput="updatePreview()">
+                </div>
+                <div class="field">
+                    <label>Completion Date</label>
+                    <input type="date" name="completion_date" id="inv_completion">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-generate" onclick="updatePreview()">Save & Generate Invoice</button>
+        <button type="button" class="btn-download" onclick="window.print()">Download / Print PDF</button>
+    </div>
+
+    <!-- PREVIEW AREA -->
+    <div class="inv-preview">
+        <div class="preview-label">Live Preview</div>
+        <div class="invoice-wrap" id="invoicePreview">
+            <div class="inv-header">
+                <div class="inv-header-brand">
+                    <div class="logo-circle">ADN</div>
+                    <div>
+                        <div class="company">ADN uPVC & ALUMINUM SOLUTIONS</div>
+                        <div class="tagline">Workshop invoice for completed fabrication / installation work</div>
+                    </div>
+                </div>
+                <div class="inv-header-right">
+                    <div class="inv-title">FINAL <span>INVOICE</span></div>
+                </div>
+            </div>
+
+            <div class="inv-info">
+                <div class="inv-info-block">
+                    <div class="block-label">From</div>
+                    <div class="block-value">
+                        <strong>ADN uPVC & ALUMINUM SOLUTIONS</strong><br>
+                        <small>Excellence in Windows & Doors Installation</small><br>
+                        <small>Arusha, Tanzania</small>
+                    </div>
+                </div>
+                <div class="inv-info-block">
+                    <div class="block-label">Bill To</div>
+                    <div class="block-value" id="preview_billto">
+                        <strong>Client Name</strong><br>
+                        <small>Phone</small><br>
+                        <small>Address</small>
+                    </div>
+                </div>
+                <div class="inv-info-block">
+                    <div class="block-label">Invoice Details</div>
+                    <div class="block-value" id="preview_details">
+                        <small>Invoice No:</small> <strong>---</strong><br>
+                        <small>Date:</small> ---<br>
+                        <small>Due Date:</small> ---
+                    </div>
+                </div>
+            </div>
+
+            <div class="inv-desc" id="preview_desc">
+                Final balance payment for completed <strong>installation of windows and/or doors</strong> as agreed in the quotation above.
+            </div>
+
+            <table class="inv-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px">No.</th>
+                        <th>Description</th>
+                        <th style="text-align:right">Amount (TZS)</th>
+                    </tr>
+                </thead>
+                <tbody id="preview_items">
+                    <tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:20px;">Add items on the left</td></tr>
+                </tbody>
+            </table>
+
+            <div class="inv-summary">
+                <div class="inv-summary-box" id="preview_summary">
+                    <div class="inv-summary-row">
+                        <span>Sub Total</span><span>TZS 0</span>
+                    </div>
+                    <div class="inv-summary-row advance">
+                        <span>Less: Advance Paid</span><span>- TZS 0</span>
+                    </div>
+                    <div class="inv-summary-row">
+                        <span>Balance Due</span><span>TZS 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="inv-footer">
+                <div class="inv-footer-block">
+                    <h4>Bank Transfer Details</h4>
+                    <p>
+                        <strong>Bank:</strong> CRDB Bank<br>
+                        <strong>Branch:</strong> Arusha Main Branch<br>
+                        <strong>Account Name:</strong> ADN HARDWARE SOLUTIONS LIMITED PVC<br>
+                        <strong>Account Number:</strong> 0150792421302
+                    </p>
+                </div>
+                <div class="inv-footer-block">
+                    <h4>Remarks</h4>
+                    <p>The work and installation have been completed as agreed. This invoice reflects the final balance after deducting the advance payment already received.</p>
+                </div>
+            </div>
+
+            <div class="inv-bottom">
+                <div class="prepared">
+                    <strong>ADN uPVC & Aluminum Solutions</strong>
+                    Arusha, Tanzania
+                </div>
+                <div class="thank">Thank you for your business.</div>
+            </div>
+        </div>
+    </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let itemIdx = 1;
+
+function fmt(n) {
+    return new Intl.NumberFormat('en-TZ').format(Math.round(n));
+}
+
+function addItem() {
+    const container = document.getElementById('itemsContainer');
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.dataset.idx = itemIdx;
+    row.innerHTML = `
+        <input type="text" name="item_desc_${itemIdx}" placeholder="Description" class="item-description">
+        <input type="number" name="item_amount_${itemIdx}" placeholder="Amount" step="0.01" class="item-amount" oninput="updatePreview()">
+        <button type="button" class="remove-item" onclick="removeItem(this)">&times;</button>
+    `;
+    container.appendChild(row);
+    itemIdx++;
+}
+
+function removeItem(btn) {
+    const rows = document.querySelectorAll('.item-row');
+    if (rows.length > 1) {
+        btn.closest('.item-row').remove();
+        updatePreview();
+    }
+}
+
+function updatePreview() {
+    // Bill To
+    const client = document.getElementById('inv_client').value || 'Client Name';
+    const phone = document.getElementById('inv_phone').value || '';
+    const address = document.getElementById('inv_address').value || '';
+    document.getElementById('preview_billto').innerHTML = `
+        <strong>${client}</strong><br>
+        ${phone ? '<small>' + phone + '</small><br>' : ''}
+        ${address ? '<small>' + address + '</small>' : ''}
+    `;
+
+    // Details
+    const invNo = document.getElementById('inv_number').value || '---';
+    const invDate = document.getElementById('inv_date').value || '---';
+    const dueDate = document.getElementById('inv_due_date').value || '---';
+    const quotRef = document.getElementById('inv_quot_ref').value || '';
+    document.getElementById('preview_details').innerHTML = `
+        <small>Invoice No:</small> <strong>${invNo}</strong><br>
+        <small>Date:</small> ${invDate}<br>
+        ${quotRef ? '<small>Quotation Ref:</small> ' + quotRef + '<br>' : ''}
+        <small>Due Date:</small> ${dueDate}
+    `;
+
+    // Description
+    const desc = document.getElementById('inv_desc').value;
+    if (desc) {
+        document.getElementById('preview_desc').innerHTML = desc;
+    }
+
+    // Items
+    const rows = document.querySelectorAll('.item-row');
+    let subtotal = 0;
+    let html = '';
+    let num = 1;
+    rows.forEach(row => {
+        const descEl = row.querySelector('.item-description');
+        const amtEl = row.querySelector('.item-amount');
+        const d = descEl ? descEl.value : '';
+        const a = amtEl ? (parseFloat(amtEl.value) || 0) : 0;
+        if (d || a) {
+            html += `<tr><td>${num}</td><td>${d}</td><td style="text-align:right">TZS ${fmt(a)}</td></tr>`;
+            subtotal += a;
+            num++;
+        }
+    });
+    if (!html) html = '<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:20px;">Add items on the left</td></tr>';
+    document.getElementById('preview_items').innerHTML = html;
+
+    // Summary
+    const advance = parseFloat(document.getElementById('inv_advance').value) || 0;
+    const balance = subtotal - advance;
+    document.getElementById('preview_summary').innerHTML = `
+        <div class="inv-summary-row"><span>Sub Total</span><span>TZS ${fmt(subtotal)}</span></div>
+        ${advance > 0 ? `<div class="inv-summary-row advance"><span>Less: Advance Paid</span><span>- TZS ${fmt(advance)}</span></div>` : ''}
+        <div class="inv-summary-row" style="border-bottom:2px solid #1a2e5a;padding-top:8px;font-weight:700;font-size:14px;"><span>Balance Due</span><span style="color:#3aacdc;">TZS ${fmt(balance)}</span></div>
+    `;
+}
+
+// Live preview on any input change
+document.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('input', updatePreview);
+    el.addEventListener('change', updatePreview);
+});
+
+// Auto-fill from project selection
+document.getElementById('inv_project').addEventListener('change', function() {
+    // Project data will be loaded via AJAX in production
+});
+
+// Initialize
+updatePreview();
+
+// Print styling
+const printStyle = document.createElement('style');
+printStyle.textContent = `
+    @media print {
+        .sidebar, .top-bar, .inv-sidebar, .preview-label, .btn-generate, .btn-download, .mobile-toggle { display: none !important; }
+        .main-content { margin-left: 0 !important; }
+        .content-area { padding: 0 !important; }
+        .inv-builder { display: block !important; }
+        .inv-preview { padding: 0 !important; max-height: none !important; }
+        .invoice-wrap { box-shadow: none !important; border-radius: 0 !important; }
+        .inv-header, .inv-bottom { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+`;
+document.head.appendChild(printStyle);
+
+// Form submission
+document.getElementById('invoiceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Collect items
+    const rows = document.querySelectorAll('.item-row');
+    let items = [];
+    rows.forEach(row => {
+        const desc = row.querySelector('.item-description').value;
+        const amt = row.querySelector('.item-amount').value;
+        if (desc && amt) items.push({description: desc, amount: parseFloat(amt)});
+    });
+
+    // Create hidden inputs for items
+    items.forEach((item, i) => {
+        ['description', 'amount'].forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `items[${i}][${key}]`;
+            input.value = item[key];
+            this.appendChild(input);
+        });
+    });
+
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'item_count';
+    hidden.value = items.length;
+    this.appendChild(hidden);
+
+    this.submit();
+});
+</script>
+{% endblock %}
