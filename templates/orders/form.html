@@ -141,7 +141,7 @@ function addItem(data) {
     <td><input type="text" class="form-control form-control-sm item-desc" value="${data?.description||''}" placeholder="Optional"></td>
     <td><input type="number" class="form-control form-control-sm item-qty" value="${data?.quantity||''}" step="0.001" min="0" placeholder="0" oninput="calcRow(this)"></td>
     <td><select class="form-select form-select-sm item-unit">${unitOptions}</select></td>
-    <td><input type="number" class="form-control form-control-sm item-price" value="${data?.unit_cost||''}" step="1000" min="0" placeholder="0" oninput="calcRow(this)"></td>
+    <td><input type="number" class="form-control form-control-sm item-price" value="${data?.unit_cost||''}" step="any" min="0" placeholder="0" oninput="calcRow(this)"></td>
     <td class="text-end fw-semibold item-total" style="vertical-align:middle;">—</td>
     <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove();updateTotal()"><i class="bi bi-trash"></i></button></td>`;
   body.appendChild(tr);
