@@ -29,13 +29,17 @@ def list_view(request):
 
 
 def create_view(request):
-    # Pre-fill from quotation if passed
-    quote_pk = request.GET.get('from_quote')
+    # Pre-fill from quotation / project if passed in GET or POST
+    quote_pk   = request.GET.get('from_quote') or request.POST.get('from_quote')
+    project_pk = request.GET.get('from_project') or request.POST.get('from_project')
     initial = {}
+    quote_obj = None
+
     if quote_pk:
         from quotations.models import Quotation
         try:
             q = Quotation.objects.get(pk=quote_pk)
+            quote_obj = q
             initial = {
                 'client_name':    q.client_name,
                 'client_phone':   q.client_phone,
@@ -50,6 +54,12 @@ def create_view(request):
                     if opt['material'].pk == q.accepted_material_id:
                         initial['contract_amount'] = opt['grand']
                         break
+            # Discover linked project automatically if not already provided
+            if not project_pk:
+                try:
+                    project_pk = str(q.project.pk)
+                except Exception:
+                    pass
         except Quotation.DoesNotExist:
             pass
 
@@ -57,12 +67,38 @@ def create_view(request):
         form = InvoiceForm(request.POST)
         if form.is_valid():
             invoice = form.save()
+            # Auto-link invoice back to the originating project
+            if project_pk:
+                from projects.models import Project, ProjectEvent
+                try:
+                    project = Project.objects.get(pk=project_pk)
+                    if not project.invoice_id:
+                        project.invoice = invoice
+                        project.save(update_fields=['invoice'])
+                        ProjectEvent.objects.create(
+                            project=project,
+                            event_type='invoice',
+                            description=(
+                                f'Invoice {invoice.invoice_no} created and linked '
+                                f'(contract TZS {invoice.contract_amount:,.0f}).'
+                            ),
+                        )
+                    messages.success(request,
+                        f'Invoice {invoice.invoice_no} created and linked to project.')
+                    return redirect('projects:detail', pk=project.pk)
+                except Project.DoesNotExist:
+                    pass
             messages.success(request, f'Invoice {invoice.invoice_no} created.')
             return redirect('invoices:detail', pk=invoice.pk)
     else:
         form = InvoiceForm(initial=initial)
 
-    return render(request, 'invoices/form.html', {'form': form, 'action': 'Create'})
+    return render(request, 'invoices/form.html', {
+        'form':       form,
+        'action':     'Create',
+        'quote_pk':   quote_pk,
+        'project_pk': project_pk,
+    })
 
 
 def detail_view(request, pk):

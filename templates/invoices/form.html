@@ -284,11 +284,11 @@
     <div class="sec-title">Fedha (TZS)</div>
     <div class="inv-field">
       <label>Jumla ya Mkataba (Contract Amount)</label>
-      <input type="number" name="contract_amount" id="f_subtotal" value="{{ form.contract_amount.value|default:'0' }}" placeholder="0" oninput="livePreview()">
+      <input type="number" step="any" min="0" name="contract_amount" id="f_subtotal" value="{{ form.contract_amount.value|default:'0' }}" placeholder="0" oninput="livePreview()">
     </div>
     <div class="inv-field">
       <label>Malipo ya Awali (Advance Paid)</label>
-      <input type="number" name="advance_paid" id="f_advance" value="{{ form.advance_paid.value|default:'0' }}" placeholder="0" oninput="livePreview()">
+      <input type="number" step="any" min="0" name="advance_paid" id="f_advance" value="{{ form.advance_paid.value|default:'0' }}" placeholder="0" oninput="livePreview()">
     </div>
 
     <!-- Status -->
@@ -307,8 +307,10 @@
       <textarea name="notes" rows="2" placeholder="Maelezo ya ziada...">{{ form.notes.value|default:'' }}</textarea>
     </div>
 
-    <!-- Hidden: linked quotation -->
+    <!-- Hidden: linked quotation + project (survive POST re-submit) -->
     {% if form.quotation.value %}<input type="hidden" name="quotation" value="{{ form.quotation.value }}">{% endif %}
+    {% if quote_pk %}<input type="hidden" name="from_quote" value="{{ quote_pk }}">{% endif %}
+    {% if project_pk %}<input type="hidden" name="from_project" value="{{ project_pk }}">{% endif %}
 
     <button type="submit" class="btn-save">
       💾 {{ action }} Invoice – Hifadhi kwenye DB
@@ -395,10 +397,10 @@
         <div class="inv-footer-col">
           <div class="foot-label">Malipo – Bank Transfer</div>
           <div class="bank-detail">
-            <strong>ADN uPVC &amp; Aluminum Solutions</strong><br>
-            Benki: CRDB Bank<br>
-            Akaunti: XXXXXXXXXXXXXXX<br>
-            Tawi: Arusha Branch
+            <strong>ADN Hardware Solutions Limited PVC</strong><br>
+            Benki: CRDB Bank · Tawi: Dar es Salaam<br>
+            Akaunti: <strong>0150792421302</strong><br>
+            VAT TIN: 162-491-113 · Reg: 162491113
           </div>
         </div>
         <div class="inv-footer-col">

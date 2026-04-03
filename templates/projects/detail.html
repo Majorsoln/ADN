@@ -110,9 +110,9 @@
             {% endif %}
             {% if not project.invoice %}
             <div class="mt-1">
-              <a href="{% url 'invoices:create' %}{% if project.quotation %}?from_quote={{ project.quotation.pk }}{% endif %}"
+              <a href="{% url 'invoices:create' %}?from_project={{ project.pk }}{% if project.quotation %}&from_quote={{ project.quotation.pk }}{% endif %}"
                  class="btn btn-xs btn-outline-success btn-sm" style="font-size:.72rem;padding:2px 8px;">
-                <i class="bi bi-receipt me-1"></i>Link Invoice
+                <i class="bi bi-receipt me-1"></i>Create &amp; Link Invoice
               </a>
             </div>
             {% endif %}
