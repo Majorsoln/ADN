@@ -48,8 +48,33 @@
         <div class="section-heading">Linked Documents</div>
         <div class="row g-3">
           <div class="col-md-6">
+            {% if locked_quotation %}
+            {# Locked: show accepted quotation as a read-only info card #}
             <label class="form-label">Linked Quotation</label>
+            <input type="hidden" name="quotation" value="{{ locked_quotation.pk }}">
+            <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:10px 14px;">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="bi bi-lock-fill text-success" style="font-size:.85rem;"></i>
+                <span class="fw-bold text-success" style="font-size:.82rem;">{{ locked_quotation.quote_no }}</span>
+                <span class="badge bg-success" style="font-size:.6rem;">Accepted</span>
+              </div>
+              <div class="small text-muted">{{ locked_quotation.client_name }}</div>
+              {% if locked_quotation.accepted_material %}
+              <div class="small mt-1">
+                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                <strong>{{ locked_quotation.accepted_material.material_name }}</strong>
+              </div>
+              {% for opt in locked_quotation.material_options %}
+              {% if opt.material.pk == locked_quotation.accepted_material_id %}
+              <div class="small text-success fw-bold mt-1">Contract Value: TZS {{ opt.grand|floatformat:0 }}</div>
+              {% endif %}
+              {% endfor %}
+              {% endif %}
+            </div>
+            {% else %}
+            <label class="form-label">Linked Quotation <small class="text-muted">(accepted only)</small></label>
             {{ form.quotation }}
+            {% endif %}
           </div>
           <div class="col-md-6">
             <label class="form-label">Linked Invoice</label>

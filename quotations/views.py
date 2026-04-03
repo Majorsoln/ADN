@@ -31,7 +31,7 @@ DEFAULT_MATERIALS = [
 
 def list_view(request):
     _auto_expire()
-    qs = Quotation.objects.all()
+    qs = Quotation.objects.select_related('accepted_material', 'project')
     status_filter = request.GET.get('status', '')
     search = request.GET.get('q', '')
     if status_filter:

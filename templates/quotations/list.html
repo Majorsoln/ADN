@@ -98,7 +98,11 @@
               <a href="{% url 'quotations:edit' q.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
               <a href="{% url 'quotations:pdf' q.pk %}" class="btn btn-outline-secondary" title="{% if q.accepted_material %}Final PDF{% else %}Preview PDF{% endif %}" target="_blank"><i class="bi bi-printer"></i></a>
               {% if q.status == 'accepted' %}
+              {% if q.project %}
+              <a href="{% url 'invoices:create' %}?from_quote={{ q.pk }}&from_project={{ q.project.pk }}" class="btn btn-outline-success" title="Create Invoice &amp; Link Project"><i class="bi bi-receipt"></i></a>
+              {% else %}
               <a href="{% url 'invoices:create' %}?from_quote={{ q.pk }}" class="btn btn-outline-success" title="Create Invoice"><i class="bi bi-receipt"></i></a>
+              {% endif %}
               {% endif %}
             </div>
           </td>

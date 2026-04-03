@@ -152,15 +152,16 @@ def create_view(request):
     # Pre-fill from quotation
     quote_pk = request.GET.get('from_quote')
     initial = {}
+    locked_quotation = None
     if quote_pk:
         from quotations.models import Quotation
         try:
-            q = Quotation.objects.get(pk=quote_pk)
+            locked_quotation = Quotation.objects.get(pk=quote_pk)
             initial = {
-                'name':         q.project_name or f"Project – {q.client_name}",
-                'client_name':  q.client_name,
-                'client_phone': q.client_phone,
-                'quotation':    q,
+                'name':         locked_quotation.project_name or f"Project – {locked_quotation.client_name}",
+                'client_name':  locked_quotation.client_name,
+                'client_phone': locked_quotation.client_phone,
+                'quotation':    locked_quotation,
             }
         except Quotation.DoesNotExist:
             pass
@@ -177,7 +178,12 @@ def create_view(request):
             return redirect('projects:detail', pk=project.pk)
     else:
         form = ProjectForm(initial=initial)
-    return render(request, 'projects/form.html', {'form': form, 'action': 'Create'})
+
+    return render(request, 'projects/form.html', {
+        'form':             form,
+        'action':           'Create',
+        'locked_quotation': locked_quotation,
+    })
 
 
 def detail_view(request, pk):
@@ -214,7 +220,12 @@ def edit_view(request, pk):
             return redirect('projects:detail', pk=project.pk)
     else:
         form = ProjectForm(instance=project)
-    return render(request, 'projects/form.html', {'form': form, 'project': project, 'action': 'Edit'})
+    return render(request, 'projects/form.html', {
+        'form':             form,
+        'project':          project,
+        'action':           'Edit',
+        'locked_quotation': project.quotation,  # Show locked card for existing link
+    })
 
 
 def delete_view(request, pk):
