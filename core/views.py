@@ -7,7 +7,12 @@ from projects.models import Project
 from office.models import OfficeServiceRecord, OfficeIncome
 
 
-def dashboard(request):
+def manual(request):
+    from django.utils import timezone
+    return render(request, 'manual.html', {'today': timezone.now().date()})
+
+
+
     today = timezone.now().date()
 
     # Quotation stats
