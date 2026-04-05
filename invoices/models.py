@@ -44,6 +44,18 @@ class Invoice(models.Model):
     # Financials
     contract_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     advance_paid    = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    advance_payment_method = models.CharField(
+        max_length=20,
+        choices=[
+            ('cash',          'Cash'),
+            ('bank_transfer', 'Bank Transfer'),
+            ('mobile_money',  'M-Pesa / Mobile Money'),
+            ('cheque',        'Cheque'),
+            ('unspecified',   'Unspecified'),
+        ],
+        default='unspecified',
+        help_text='How was the advance payment received?',
+    )
 
     # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')

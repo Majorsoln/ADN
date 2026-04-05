@@ -302,6 +302,14 @@
       <label>Malipo ya Awali (Advance Paid)</label>
       <input type="number" step="any" min="0" name="advance_paid" id="f_advance" value="{{ form.advance_paid.value|default:'0' }}" placeholder="0" oninput="livePreview()">
     </div>
+    <div class="inv-field" id="advance_method_row">
+      <label>Advance Ilipokelewa Kwa Njia Gani?</label>
+      <select name="advance_payment_method">
+        {% for val, label in form.fields.advance_payment_method.choices %}
+        <option value="{{ val }}" {% if form.advance_payment_method.value == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
     <!-- Status -->
     <div class="sec-title">Hali (Status)</div>

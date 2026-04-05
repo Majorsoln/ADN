@@ -83,17 +83,26 @@
         <i class="bi bi-arrow-down-circle-fill me-2"></i>Payments Received
       </div>
       <div class="card-body p-0">
-        {% if data.inv_payments or data.off_payments %}
+        {% if data.inv_payments or data.off_payments or data.advance_rows %}
         <div class="table-responsive">
           <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
-              <tr><th>Source</th><th>Client</th><th class="text-end">Amount (TZS)</th></tr>
+              <tr><th>Aina</th><th>Mteja</th><th>Njia</th><th class="text-end">Kiasi (TZS)</th></tr>
             </thead>
             <tbody>
+              {% for inv in data.advance_rows %}
+              <tr>
+                <td><span class="badge bg-warning text-dark">Advance</span> {{ inv.invoice_no }}</td>
+                <td>{{ inv.client_name }}</td>
+                <td class="small text-muted">{{ inv.advance_payment_method }}</td>
+                <td class="text-end fw-semibold text-success">{{ inv.advance_paid|floatformat:0 }}</td>
+              </tr>
+              {% endfor %}
               {% for p in data.inv_payments %}
               <tr>
                 <td><span class="badge bg-info text-dark">Invoice</span> {{ p.invoice.invoice_no }}</td>
                 <td>{{ p.invoice.client_name }}</td>
+                <td class="small text-muted">{{ p.get_payment_method_display }}</td>
                 <td class="text-end fw-semibold text-success">{{ p.amount|floatformat:0 }}</td>
               </tr>
               {% endfor %}
@@ -101,6 +110,7 @@
               <tr>
                 <td><span class="badge bg-secondary">Office</span></td>
                 <td>{{ p.record.client_name }}</td>
+                <td class="small text-muted">{{ p.get_payment_method_display }}</td>
                 <td class="text-end fw-semibold text-success">{{ p.amount|floatformat:0 }}</td>
               </tr>
               {% endfor %}
@@ -108,7 +118,7 @@
           </table>
         </div>
         {% else %}
-        <div class="text-center text-muted py-4">No payments recorded today.</div>
+        <div class="text-center text-muted py-4">Hakuna malipo yaliyoandikwa leo.</div>
         {% endif %}
       </div>
     </div>
@@ -243,6 +253,61 @@
         <a href="{% url 'finance:debt_list' %}" class="btn btn-sm btn-outline-danger">
           <i class="bi bi-exclamation-triangle me-1"></i>Manage Debts
         </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Funds Position (compact) ─────────────────────────────────────────── -->
+  {% if data.funds %}
+  <div class="col-12">
+    <div class="card border-0 shadow-sm" style="border-left:4px solid #1a2e5a!important;">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f0f4ff;">
+        <span><i class="bi bi-wallet2 me-2" style="color:#1a2e5a;"></i>Pesa Ziko Wapi — Funds Position</span>
+        <a href="{% url 'finance:report' %}" class="btn btn-sm btn-outline-primary">Ripoti Kamili →</a>
+      </div>
+      <div class="card-body py-3">
+        <div class="row g-2 mb-3">
+          {% for acc in data.funds.accounts %}
+          <div class="col-sm-6 col-lg-3">
+            <div class="p-2 rounded text-center" style="background:{{ acc.color }}10;border:1px solid {{ acc.color }}30;">
+              <div class="small fw-semibold mb-1" style="color:{{ acc.color }};">
+                <i class="bi {{ acc.icon }} me-1"></i>{{ acc.label }}
+              </div>
+              <div class="fw-bold {% if acc.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                TZS {{ acc.balance|floatformat:0 }}
+              </div>
+              <div class="text-muted" style="font-size:.65rem;">
+                in: {{ acc.in|floatformat:0 }} / out: {{ acc.out|floatformat:0 }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="row g-2">
+          <div class="col-sm-4">
+            <div class="p-2 rounded text-center" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+              <div class="small text-muted mb-1">Wateja Wanaokudai</div>
+              <div class="fw-bold text-success">TZS {{ data.funds.total_receivable|floatformat:0 }}</div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="p-2 rounded text-center" style="background:#fff1f2;border:1px solid #fecaca;">
+              <div class="small text-muted mb-1">Tunaodai (Credit)</div>
+              <div class="fw-bold text-danger">TZS {{ data.funds.total_payable|floatformat:0 }}</div>
+              {% if data.funds.labour_credit > 0 %}<div style="font-size:.65rem;color:#dc2626;">Mafundi: {{ data.funds.labour_credit|floatformat:0 }}</div>{% endif %}
+              {% if data.funds.material_credit > 0 %}<div style="font-size:.65rem;color:#dc2626;">Malighafi: {{ data.funds.material_credit|floatformat:0 }}</div>{% endif %}
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="p-2 rounded text-center" style="background:#1a2e5a;">
+              <div class="small mb-1" style="color:#94a3b8;">NET POSITION</div>
+              <div class="fw-bold fs-5 {% if data.funds.net_position >= 0 %}text-success{% else %}text-warning{% endif %}">
+                TZS {{ data.funds.net_position|floatformat:0 }}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

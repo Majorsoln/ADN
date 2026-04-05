@@ -18,6 +18,7 @@ from django.utils import timezone
 
 from invoices.models import Invoice, InvoicePayment
 from office.models import OfficeServiceRecord, OfficeServicePayment, OfficeIncome
+from orders.models import MaterialOrder
 from projects.models import Project
 from finance.models import Expense, ExpenseCategory, Debt, DebtPayment
 
@@ -62,6 +63,31 @@ def _other_income_in(date_from, date_to):
     """Sum of OfficeIncome records with source='other' in period."""
     qs = OfficeIncome.objects.filter(source='other', date__gte=date_from, date__lte=date_to)
     return _sum_qs(qs, 'amount'), list(qs)
+
+
+def _advance_payments_in(date_from, date_to):
+    """
+    Sum of Invoice.advance_paid for invoices created in period.
+    Advance is typically collected at invoice creation time — we use
+    invoice_date as the proxy for when the cash/bank was received.
+    Returns (total, rows_list, by_method_dict).
+    """
+    qs = Invoice.objects.filter(
+        invoice_date__gte=date_from,
+        invoice_date__lte=date_to,
+        advance_paid__gt=0,
+    )
+    total = _d(qs.aggregate(s=Sum('advance_paid'))['s'])
+    rows = list(qs.only(
+        'invoice_no', 'client_name', 'advance_paid',
+        'advance_payment_method', 'invoice_date',
+    ))
+    # Group by method
+    by_method = {}
+    for inv in rows:
+        m = inv.advance_payment_method or 'unspecified'
+        by_method[m] = by_method.get(m, Decimal('0')) + inv.advance_paid
+    return total, rows, by_method
 
 
 # ── Expense aggregation ───────────────────────────────────────────────────────
@@ -343,6 +369,151 @@ def _build_alerts(inv_overdue_count, inv_overdue_amt,
     return alerts
 
 
+# ── Funds position (all-time balance sheet view) ──────────────────────────────
+
+def _funds_position():
+    """
+    ALL-TIME view: where is the business money right now?
+
+    For each account (Cash / Bank / M-Pesa / Cheque):
+        balance = all_inflows_via_that_method - all_outflows_via_that_method
+
+    Inflows:
+        InvoicePayment   (payment_method)
+        Invoice.advance_paid  (advance_payment_method)
+        OfficeServicePayment (payment_method)
+
+    Outflows (non-credit, already paid):
+        Expense          (payment_method)
+        MaterialOrder    (payment_source, status in ordered/partially/received, NOT credit)
+
+    Credit we owe (not yet paid from any account):
+        Debt.balance  — broken down: supplier_credit, labour_credit, other
+
+    Credit clients owe us:
+        Invoice.balance_due  (for unpaid/partial invoices)
+        OfficeServiceRecord.balance
+    """
+    D = Decimal
+
+    # ── Helpers: normalise method names to canonical keys ──────────────────
+    # All three source models use slightly different choice values.
+    # We map everything → 'cash' | 'bank' | 'mpesa' | 'cheque' | 'other'
+    def _norm_in(method):
+        m = (method or '').lower()
+        if m == 'cash':              return 'cash'
+        if m in ('bank_transfer', 'bank'): return 'bank'
+        if m in ('mobile_money', 'mpesa'): return 'mpesa'
+        if m == 'cheque':            return 'cheque'
+        return 'other'
+
+    def _norm_out(source):
+        s = (source or '').lower()
+        if s == 'cash':   return 'cash'
+        if s == 'bank':   return 'bank'
+        if s == 'mpesa':  return 'mpesa'
+        if s == 'cheque': return 'cheque'
+        return 'other'
+
+    accounts = {k: {'in': D('0'), 'out': D('0')} for k in ['cash', 'bank', 'mpesa', 'cheque', 'other']}
+
+    # ── INFLOWS ────────────────────────────────────────────────────────────
+
+    # 1. Invoice instalment payments
+    for p in InvoicePayment.objects.all().only('amount', 'payment_method'):
+        accounts[_norm_in(p.payment_method)]['in'] += p.amount
+
+    # 2. Advance payments on invoices
+    for inv in Invoice.objects.filter(advance_paid__gt=0).only('advance_paid', 'advance_payment_method'):
+        accounts[_norm_in(inv.advance_payment_method)]['in'] += inv.advance_paid
+
+    # 3. Office service payments
+    for p in OfficeServicePayment.objects.all().only('amount', 'payment_method'):
+        accounts[_norm_in(p.payment_method)]['in'] += p.amount
+
+    # ── OUTFLOWS (real money paid, not credit) ─────────────────────────────
+
+    # 4. General expenses
+    for exp in Expense.objects.all().only('amount', 'payment_method'):
+        accounts[_norm_out(exp.payment_method)]['out'] += exp.amount
+
+    # 5. Material orders paid via cash/bank/mpesa/cheque (not credit/unspecified)
+    paid_sources = ('cash', 'bank', 'mpesa', 'cheque')
+    for order in MaterialOrder.objects.filter(
+        payment_source__in=paid_sources,
+        status__in=['ordered', 'partially_received', 'received'],
+    ).prefetch_related('items'):
+        accounts[_norm_out(order.payment_source)]['out'] += order.total_cost
+
+    # ── CREDIT WE OWE (Payables) ───────────────────────────────────────────
+    outstanding_debts = list(
+        Debt.objects.exclude(status='settled').prefetch_related('payments')
+    )
+    material_credit  = sum(d.balance for d in outstanding_debts if d.debt_type == 'supplier_credit')
+    labour_credit    = sum(d.balance for d in outstanding_debts if d.debt_type == 'labour_credit')
+    other_payable    = sum(d.balance for d in outstanding_debts
+                          if d.debt_type not in ('supplier_credit', 'labour_credit'))
+    total_payable    = material_credit + labour_credit + other_payable
+
+    # ── CREDIT CLIENTS OWE US (Receivables) ────────────────────────────────
+    inv_receivable = sum(
+        inv.balance_due
+        for inv in Invoice.objects.filter(
+            status__in=['draft', 'sent', 'overdue']
+        ).prefetch_related('payments')
+        if inv.balance_due > 0
+    )
+    svc_receivable = sum(
+        rec.balance
+        for rec in OfficeServiceRecord.objects.exclude(status='paid')
+        .prefetch_related('payments')
+        if rec.balance > 0
+    )
+    total_receivable = inv_receivable + svc_receivable
+
+    # ── SUMMARY ────────────────────────────────────────────────────────────
+    account_labels = {
+        'cash':   ('Cash',           'bi-cash-coin',    '#16a34a'),
+        'bank':   ('Bank Transfer',  'bi-bank',         '#2563eb'),
+        'mpesa':  ('M-Pesa',         'bi-phone',        '#059669'),
+        'cheque': ('Cheque',         'bi-file-text',    '#7c3aed'),
+        'other':  ('Other',          'bi-three-dots',   '#94a3b8'),
+    }
+    account_rows = []
+    total_liquid = D('0')
+    for key, vals in accounts.items():
+        bal = vals['in'] - vals['out']
+        if vals['in'] == 0 and vals['out'] == 0:
+            continue
+        label, icon, color = account_labels[key]
+        account_rows.append({
+            'key':     key,
+            'label':   label,
+            'icon':    icon,
+            'color':   color,
+            'in':      float(vals['in']),
+            'out':     float(vals['out']),
+            'balance': float(bal),
+        })
+        total_liquid += bal
+
+    # Net position = liquid + receivables - payables
+    net_position = total_liquid + total_receivable - total_payable
+
+    return {
+        'accounts':          account_rows,
+        'total_liquid':      float(total_liquid),
+        'inv_receivable':    float(inv_receivable),
+        'svc_receivable':    float(svc_receivable),
+        'total_receivable':  float(total_receivable),
+        'material_credit':   float(material_credit),
+        'labour_credit':     float(labour_credit),
+        'other_payable':     float(other_payable),
+        'total_payable':     float(total_payable),
+        'net_position':      float(net_position),
+    }
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # PUBLIC API
 # ══════════════════════════════════════════════════════════════════════════════
@@ -354,12 +525,14 @@ def compute_snapshot(for_date=None):
     """
     today = for_date or timezone.now().date()
 
-    inv_income, inv_payments = _invoice_payments_in(today, today)
-    off_income, off_payments = _office_payments_in(today, today)
-    oth_income, oth_records  = _other_income_in(today, today)
-    total_in = inv_income + off_income + oth_income
+    inv_income,  inv_payments           = _invoice_payments_in(today, today)
+    off_income,  off_payments           = _office_payments_in(today, today)
+    oth_income,  oth_records            = _other_income_in(today, today)
+    adv_income,  adv_rows, adv_by_meth  = _advance_payments_in(today, today)
+    total_in = inv_income + off_income + oth_income + adv_income
 
     exp_total, by_category, exp_rows, proj_exp_total, office_exp_total = _expenses_in(today, today)
+    funds = _funds_position()
 
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
     svc_recv, svc_ov_c, svc_ov_a, svc_recv_rows = _service_receivables()
@@ -379,10 +552,12 @@ def compute_snapshot(for_date=None):
         'net_today': total_in - exp_total,
         # Breakdown of inflows
         'invoice_income': inv_income,
-        'office_income': off_income,
-        'other_income': oth_income,
-        'inv_payments': inv_payments,
-        'off_payments': off_payments,
+        'advance_income': adv_income,
+        'advance_rows':   adv_rows,
+        'office_income':  off_income,
+        'other_income':   oth_income,
+        'inv_payments':   inv_payments,
+        'off_payments':   off_payments,
         # Expenses today
         'expenses': exp_rows,
         'by_category': by_category,
@@ -400,6 +575,8 @@ def compute_snapshot(for_date=None):
         'service_recv_rows': svc_recv_rows,
         # Liabilities
         'liabilities': liabilities,
+        # Funds position (all-time: where is the money)
+        'funds': funds,
         'alerts': alerts,
     }
 
@@ -410,10 +587,11 @@ def compute_report(date_from, date_to):
     Returns a comprehensive dict suitable for storing in ReportSnapshot.figures.
     """
     # ── Income ────────────────────────────────────────────────────────────────
-    inv_income,  inv_payments  = _invoice_payments_in(date_from, date_to)
-    off_income,  off_payments  = _office_payments_in(date_from, date_to)
-    oth_income,  oth_records   = _other_income_in(date_from, date_to)
-    total_income = inv_income + off_income + oth_income
+    inv_income,  inv_payments            = _invoice_payments_in(date_from, date_to)
+    off_income,  off_payments            = _office_payments_in(date_from, date_to)
+    oth_income,  oth_records             = _other_income_in(date_from, date_to)
+    adv_income,  adv_rows, adv_by_meth   = _advance_payments_in(date_from, date_to)
+    total_income = inv_income + off_income + oth_income + adv_income
 
     # ── Expenses ──────────────────────────────────────────────────────────────
     total_expenses, by_category, expense_rows, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
@@ -435,6 +613,9 @@ def compute_report(date_from, date_to):
     # ── Liabilities ───────────────────────────────────────────────────────────
     liabilities = _liabilities_summary()
 
+    # ── Funds position (all-time) ─────────────────────────────────────────────
+    funds = _funds_position()
+
     # ── Alerts ────────────────────────────────────────────────────────────────
     alerts = _build_alerts(
         inv_ov_c, inv_ov_a, svc_ov_c, svc_ov_a, by_category, total_expenses,
@@ -444,9 +625,10 @@ def compute_report(date_from, date_to):
 
     # ── Income breakdown (for ledger / journal view) ──────────────────────────
     income_breakdown = [
-        {'source': 'Invoice Payments',     'amount': float(inv_income)},
-        {'source': 'Office Service Fees',  'amount': float(off_income)},
-        {'source': 'Other Income',         'amount': float(oth_income)},
+        {'source': 'Invoice Payments (Instalments)', 'amount': float(inv_income)},
+        {'source': 'Invoice Advance Payments',        'amount': float(adv_income)},
+        {'source': 'Office Service Fees',             'amount': float(off_income)},
+        {'source': 'Other Income',                    'amount': float(oth_income)},
     ]
 
     return {
@@ -459,9 +641,21 @@ def compute_report(date_from, date_to):
         'profit_margin': float((net_profit / total_income * 100) if total_income else 0),
 
         # Income detail
-        'invoice_income': float(inv_income),
-        'office_income': float(off_income),
-        'other_income': float(oth_income),
+        'invoice_income':  float(inv_income),
+        'advance_income':  float(adv_income),
+        'advance_by_method': {k: float(v) for k, v in adv_by_meth.items()},
+        'advance_rows': [
+            {
+                'invoice_no':   inv.invoice_no,
+                'client_name':  inv.client_name,
+                'amount':       float(inv.advance_paid),
+                'method':       inv.advance_payment_method,
+                'invoice_date': str(inv.invoice_date),
+            }
+            for inv in adv_rows
+        ],
+        'office_income':   float(off_income),
+        'other_income':    float(oth_income),
         'income_breakdown': income_breakdown,
         'inv_payments': [
             {
@@ -555,6 +749,9 @@ def compute_report(date_from, date_to):
 
         # Liabilities
         'liabilities': liabilities,
+
+        # Funds position (all-time: where is the money)
+        'funds': funds,
 
         # Alerts
         'alerts': alerts,

@@ -116,6 +116,7 @@ class Debt(models.Model):
     """Money the business owes — supplier credit or loans from persons/companies."""
     DEBT_TYPE_CHOICES = [
         ('supplier_credit', 'Supplier Credit (Materials)'),
+        ('labour_credit',   'Labour / Worker Credit (Mafundi)'),
         ('personal_loan',   'Personal Loan'),
         ('company_loan',    'Company / Business Loan'),
         ('other',           'Other'),

@@ -10,7 +10,7 @@ class InvoiceForm(forms.ModelForm):
             'quote_ref', 'quotation',
             'invoice_date', 'due_date', 'completion_date',
             'description',
-            'contract_amount', 'advance_paid',
+            'contract_amount', 'advance_paid', 'advance_payment_method',
             'status', 'notes',
         ]
         widgets = {
