@@ -3,12 +3,24 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-adn-upvc-aluminum-solutions-change-in-production'
+# ── Security ──────────────────────────────────────────────────────────────────
+# In production: set SECRET_KEY env variable on PythonAnywhere
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-adn-upvc-aluminum-solutions-change-in-production'
+)
 
-DEBUG = True
+# Set DJANGO_DEBUG=False on PythonAnywhere environment variables
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*']
+# Allowed hosts: add your PythonAnywhere username below
+# e.g. ALLOWED_HOSTS = ['yourusername.pythonanywhere.com']
+_extra_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+if _extra_hosts:
+    ALLOWED_HOSTS += [h.strip() for h in _extra_hosts.split(',') if h.strip()]
 
+# ── Installed apps ────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -29,6 +41,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,6 +70,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'adn.wsgi.application'
 
+# ── Database ──────────────────────────────────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -64,6 +78,7 @@ DATABASES = {
     }
 }
 
+# ── Auth ──────────────────────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -71,32 +86,37 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ── Localisation ─────────────────────────────────────────────────────────────
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Dar_es_Salaam'
 USE_I18N = True
 USE_TZ = True
 
+# ── Static files ─────────────────────────────────────────────────────────────
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'   # collectstatic destination
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ── Crispy Forms ─────────────────────────────────────────────────────────────
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-# Company Settings
+# ── Company info (update with real details) ───────────────────────────────────
 COMPANY = {
-    'name': 'ADN uPVC & Aluminum Solutions',
-    'address': 'Arusha, Tanzania',
-    'phone': '+255 XXX XXX XXX',
-    'email': 'info@adnarusha.com',
-    'bank_name': 'CRDB Bank',
-    'bank_account': 'XXXXXXXXXXXXXXX',
-    'bank_branch': 'Arusha Branch',
-    'tin': 'XXX-XXX-XXX',
-    'website': 'www.adnarusha.com',
+    'name':         'ADN uPVC & Aluminum Solutions',
+    'address':      'Arusha, Tanzania',
+    'phone':        '+255 XXX XXX XXX',
+    'email':        'info@adnarusha.com',
+    'bank_name':    'CRDB Bank',
+    'bank_account': '0150792421302',
+    'bank_branch':  'Arusha Branch',
+    'account_name': 'ADN Hardware Solutions Limited PVC',
+    'tin':          'XXX-XXX-XXX',
+    'website':      'www.adnarusha.com',
 }
