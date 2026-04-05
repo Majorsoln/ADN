@@ -227,11 +227,39 @@ def expense_add_view(request):
 
 def expense_edit_view(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
+    from projects.models import Project, ProjectEvent
     back_project = expense.project  # Remember original linked project
+    # Snapshot old values for audit log
+    old_amount   = expense.amount
+    old_category = expense.category.name
+    old_method   = expense.payment_method
+
     if request.method == 'POST':
         form = ExpenseForm(request.POST, instance=expense)
         if form.is_valid():
             expense = form.save()
+            # Log a ProjectEvent if linked to a project (before or after edit)
+            target_project = expense.project or back_project
+            if target_project:
+                method_label = dict(expense.PAYMENT_CHOICES).get(expense.payment_method, expense.payment_method)
+                changes = []
+                if expense.amount != old_amount:
+                    changes.append(f"kiasi: TZS {old_amount:,.0f} → TZS {expense.amount:,.0f}")
+                if expense.category.name != old_category:
+                    changes.append(f"aina: {old_category} → {expense.category.name}")
+                if expense.payment_method != old_method:
+                    old_label = dict(expense.PAYMENT_CHOICES).get(old_method, old_method)
+                    changes.append(f"njia: {old_label} → {method_label}")
+                change_str = " | ".join(changes) if changes else "updated"
+                ProjectEvent.objects.create(
+                    project=target_project,
+                    event_type='expense',
+                    description=(
+                        f"Expense edited: {expense.category.name} — "
+                        f"TZS {expense.amount:,.0f} ({method_label}) [{change_str}]"
+                        + (f" — {expense.description}" if expense.description else "")
+                    ),
+                )
             messages.success(request, 'Expense updated.')
             if expense.project_id:
                 return redirect('projects:detail', pk=expense.project_id)

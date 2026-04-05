@@ -156,6 +156,14 @@ def add_payment(request, pk):
         # Log payment event on every linked project
         from projects.models import ProjectEvent
         ref_suffix = f', Ref: {payment.reference}' if payment.reference else ''
+        balance = invoice.contract_amount - total_paid
+        balance_note = ''
+        if balance < 0:
+            balance_note = f' — ⚠ Overpaid by TZS {abs(balance):,.0f}'
+        elif balance == 0:
+            balance_note = ' — Invoice fully paid ✓'
+        else:
+            balance_note = f' — Balance remaining TZS {balance:,.0f}'
         for project in invoice.projects.all():
             ProjectEvent.objects.create(
                 project=project,
@@ -163,10 +171,17 @@ def add_payment(request, pk):
                 description=(
                     f'Client payment received: TZS {payment.amount:,.0f} '
                     f'({payment.get_payment_method_display()}) — '
-                    f'Invoice {invoice.invoice_no}{ref_suffix}'
+                    f'Invoice {invoice.invoice_no}{ref_suffix}{balance_note}'
                 ),
             )
-        messages.success(request, f'Payment of TZS {payment.amount:,.0f} recorded.')
+        if total_paid > invoice.contract_amount:
+            overpaid = total_paid - invoice.contract_amount
+            messages.warning(request,
+                f'Payment recorded. Note: Total paid (TZS {total_paid:,.0f}) exceeds '
+                f'contract amount (TZS {invoice.contract_amount:,.0f}) by TZS {overpaid:,.0f}.'
+            )
+        else:
+            messages.success(request, f'Payment of TZS {payment.amount:,.0f} recorded.')
     else:
         messages.error(request, 'Invalid payment data.')
     return redirect('invoices:detail', pk=pk)

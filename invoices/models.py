@@ -88,9 +88,19 @@ class Invoice(models.Model):
         super().save(*args, **kwargs)
 
     @property
+    def total_paid(self):
+        return self.advance_paid + sum(p.amount for p in self.payments.all())
+
+    @property
     def balance_due(self):
-        total_paid = self.advance_paid + sum(p.amount for p in self.payments.all())
-        return self.contract_amount - total_paid
+        """Remaining balance. Returns 0 if overpaid (use overpaid_amount for excess)."""
+        return max(self.contract_amount - self.total_paid, Decimal('0'))
+
+    @property
+    def overpaid_amount(self):
+        """Positive value if client paid more than contract amount, else 0."""
+        excess = self.total_paid - self.contract_amount
+        return max(excess, Decimal('0'))
 
     @property
     def is_overdue(self):

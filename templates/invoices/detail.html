@@ -89,9 +89,24 @@
                 <tr style="border-top:2px solid var(--adn-border);">
                   <td class="fw-bold">Balance Due</td>
                   <td class="text-end fw-bold fs-5 {% if invoice.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
-                    TZS {{ invoice.balance_due|floatformat:0 }}
+                    {% if invoice.balance_due > 0 %}
+                      TZS {{ invoice.balance_due|floatformat:0 }}
+                    {% else %}
+                      <i class="bi bi-check-circle-fill me-1"></i>Paid in Full
+                    {% endif %}
                   </td>
                 </tr>
+                {% if invoice.overpaid_amount > 0 %}
+                <tr>
+                  <td colspan="2">
+                    <div class="alert alert-warning py-2 px-3 mb-0 small">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                      <strong>Overpayment:</strong> Client paid TZS {{ invoice.overpaid_amount|floatformat:0 }}
+                      more than the contract amount. Consider issuing a credit note or adjusting the contract.
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
