@@ -13,6 +13,9 @@
   <a href="{% url 'orders:create' project.pk %}" class="btn btn-sm btn-adn-sky">
     <i class="bi bi-cart-plus me-1"></i>Add Order
   </a>
+  <a href="{% url 'finance:expense_add' %}?from_project={{ project.pk }}" class="btn btn-sm btn-outline-danger">
+    <i class="bi bi-cash-stack me-1"></i>Add Expense
+  </a>
   {% if project.status != 'completed' and project.status != 'cancelled' %}
   <a href="{% url 'projects:complete' project.pk %}" class="btn btn-sm btn-success">
     <i class="bi bi-check2-circle me-1"></i>Complete
@@ -132,8 +135,11 @@
             <div class="small mb-1 text-warning">Balance owed: <strong>TZS {{ funding.balance_due|floatformat:0 }}</strong></div>
             {% endif %}
             <div class="small mb-1 text-danger">Materials: <strong>TZS {{ project.materials_cost|floatformat:0 }}</strong></div>
+            {% if project.direct_expenses_cost > 0 %}
+            <div class="small mb-1 text-danger">Direct Expenses: <strong>TZS {{ project.direct_expenses_cost|floatformat:0 }}</strong></div>
+            {% endif %}
             <div class="small fw-bold {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-              Profit: TZS {{ project.gross_profit|floatformat:0 }}
+              Net Profit: TZS {{ project.gross_profit|floatformat:0 }}
               {% if project.revenue > 0 %}({{ project.profit_margin|floatformat:0 }}%){% endif %}
             </div>
             {% if funding.own_funds_message %}
@@ -259,6 +265,76 @@
       </div>
     </div>
 
+    <!-- Direct Project Expenses (transport, labour, site costs, etc.) -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center py-2 px-4">
+        <span><i class="bi bi-cash-stack me-2 text-danger"></i>Project Expenses
+          <span class="badge bg-secondary rounded-pill ms-1">{{ funding.direct_expenses|length }}</span>
+          <span class="text-muted ms-2" style="font-size:.72rem;">(transport, labour, site costs, etc.)</span>
+        </span>
+        <a href="{% url 'finance:expense_add' %}?from_project={{ project.pk }}" class="btn btn-sm btn-outline-danger">
+          <i class="bi bi-plus-lg me-1"></i>Add Expense
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Paid To</th>
+              <th>Method</th>
+              <th class="text-end">Amount (TZS)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exp in funding.direct_expenses %}
+            <tr>
+              <td class="small">{{ exp.date|date:"d M Y" }}</td>
+              <td>
+                <span class="badge rounded-pill px-2" style="background:{{ exp.category.color }}20;color:{{ exp.category.color }};font-size:.7rem;">
+                  <i class="bi {{ exp.category.icon }} me-1"></i>{{ exp.category.name }}
+                </span>
+              </td>
+              <td class="small">{{ exp.description|truncatechars:50 }}</td>
+              <td class="small text-muted">{{ exp.paid_to|default:"—" }}</td>
+              <td>
+                {% if exp.payment_method == 'cash' %}<span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-cash-coin me-1"></i>Cash</span>
+                {% elif exp.payment_method == 'bank' %}<span class="badge bg-primary" style="font-size:.65rem;"><i class="bi bi-bank me-1"></i>Bank</span>
+                {% elif exp.payment_method == 'mpesa' %}<span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-phone me-1"></i>M-Pesa</span>
+                {% elif exp.payment_method == 'cheque' %}<span class="badge bg-secondary" style="font-size:.65rem;">Cheque</span>
+                {% else %}<span class="badge bg-light text-muted" style="font-size:.65rem;">{{ exp.get_payment_method_display }}</span>{% endif %}
+              </td>
+              <td class="text-end fw-semibold text-danger">{{ exp.amount|floatformat:0 }}</td>
+              <td class="text-end">
+                <a href="{% url 'finance:expense_edit' exp.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-3">
+                <i class="bi bi-cash-stack d-block fs-3 mb-1"></i>
+                No direct expenses recorded.
+                <a href="{% url 'finance:expense_add' %}?from_project={{ project.pk }}">Add first expense</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if funding.direct_expenses %}
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="5" class="text-end fw-bold">Total Direct Expenses:</td>
+              <td class="text-end fw-bold text-danger">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+
     {% if project.notes %}
     <div class="card mb-3">
       <div class="card-body">
@@ -349,10 +425,35 @@
           <span class="fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</span>
         </div>
 
-        {# ── Gross Profit ── #}
+        {# ── Direct Project Expenses ── #}
+        {% if funding.direct_expenses_by_cat %}
+        <div class="section-heading mt-2">Direct Expenses</div>
+        {% for cat in funding.direct_expenses_by_cat %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">
+            <i class="bi {{ cat.icon }} me-1" style="color:{{ cat.color }};"></i>{{ cat.name }}
+          </span>
+          <span class="fw-semibold text-danger">TZS {{ cat.total|floatformat:0 }}</span>
+        </div>
+        {% endfor %}
+        <div class="d-flex justify-content-between mb-2 small border-top pt-1">
+          <span class="fw-semibold">Total Expenses</span>
+          <span class="fw-bold text-danger">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</span>
+        </div>
+        {% endif %}
+
+        {# ── Total Cost ── #}
+        {% if funding.direct_expenses_cost > 0 %}
+        <div class="d-flex justify-content-between mb-2 small" style="background:#fff1f2;border-radius:5px;padding:4px 6px;">
+          <span class="fw-semibold text-danger"><i class="bi bi-dash-circle me-1"></i>Total Project Cost</span>
+          <span class="fw-bold text-danger">TZS {{ funding.total_cost|floatformat:0 }}</span>
+        </div>
+        {% endif %}
+
+        {# ── Net Profit ── #}
         <hr class="my-2">
         <div class="d-flex justify-content-between">
-          <span class="fw-bold">Gross Profit</span>
+          <span class="fw-bold">Net Profit</span>
           <span class="fw-bold fs-5 {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
             TZS {{ project.gross_profit|floatformat:0 }}
           </span>

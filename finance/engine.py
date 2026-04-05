@@ -68,29 +68,51 @@ def _other_income_in(date_from, date_to):
 
 def _expenses_in(date_from, date_to):
     """
-    Returns (total, by_category_list, expense_rows).
-    by_category_list: [{'name', 'icon', 'color', 'total'}, ...]
+    Returns (total, by_category_list, expense_rows,
+             project_expenses_total, office_expenses_total).
+
+    Expenses are split into:
+      - project_expenses: linked to a specific project (transport, labour, site, etc.)
+      - office_expenses:  general office/operational overhead (no project link)
+
+    by_category_list: [{'name', 'icon', 'color', 'total', 'project_total', 'office_total'}, ...]
     """
-    qs = Expense.objects.filter(date__gte=date_from, date__lte=date_to).select_related('category')
+    qs = (Expense.objects
+          .filter(date__gte=date_from, date__lte=date_to)
+          .select_related('category', 'project'))
     total = Decimal('0')
+    project_total = Decimal('0')
+    office_total  = Decimal('0')
     cat_map = {}
     rows = list(qs.order_by('-date'))
     for exp in rows:
         total += exp.amount
+        is_project = bool(exp.project_id)
+        if is_project:
+            project_total += exp.amount
+        else:
+            office_total  += exp.amount
+
         cid = exp.category_id
         if cid not in cat_map:
             cat_map[cid] = {
-                'name': exp.category.name,
-                'icon': exp.category.icon,
-                'color': exp.category.color,
-                'total': Decimal('0'),
-                'count': 0,
+                'name':          exp.category.name,
+                'icon':          exp.category.icon,
+                'color':         exp.category.color,
+                'total':         Decimal('0'),
+                'project_total': Decimal('0'),
+                'office_total':  Decimal('0'),
+                'count':         0,
             }
-        cat_map[cid]['total'] += exp.amount
-        cat_map[cid]['count'] += 1
+        cat_map[cid]['total']  += exp.amount
+        cat_map[cid]['count']  += 1
+        if is_project:
+            cat_map[cid]['project_total'] += exp.amount
+        else:
+            cat_map[cid]['office_total']  += exp.amount
 
     by_category = sorted(cat_map.values(), key=lambda x: x['total'], reverse=True)
-    return total, by_category, rows
+    return total, by_category, rows, project_total, office_total
 
 
 # ── Receivables (Python loop — properties not DB-aggregatable) ───────────────
@@ -194,39 +216,45 @@ def _project_stats(date_from, date_to):
         status='completed',
         completion_date__gte=date_from,
         completion_date__lte=date_to,
-    ).select_related('invoice').prefetch_related('orders')
+    ).select_related('invoice').prefetch_related('orders', 'expenses')
 
-    total_revenue = Decimal('0')
-    total_materials = Decimal('0')
-    total_profit = Decimal('0')
-    project_rows = []
+    total_revenue    = Decimal('0')
+    total_materials  = Decimal('0')
+    total_dir_exp    = Decimal('0')
+    total_profit     = Decimal('0')
+    project_rows     = []
 
     for p in completed:
-        rev = p.revenue
-        mat = p.materials_cost
-        profit = p.gross_profit
-        total_revenue += rev
+        rev     = p.revenue
+        mat     = p.materials_cost
+        dir_exp = p.direct_expenses_cost
+        profit  = p.gross_profit   # revenue - materials - direct_expenses
+        total_revenue   += rev
         total_materials += mat
-        total_profit += profit
+        total_dir_exp   += dir_exp
+        total_profit    += profit
         project_rows.append({
-            'name': p.name,
-            'client_name': p.client_name,
-            'completion_date': p.completion_date,
-            'revenue': rev,
-            'materials_cost': mat,
-            'gross_profit': profit,
-            'profit_margin': float(p.profit_margin),
-            'pk': p.pk,
+            'name':                  p.name,
+            'client_name':           p.client_name,
+            'completion_date':       p.completion_date,
+            'revenue':               rev,
+            'materials_cost':        mat,
+            'direct_expenses_cost':  dir_exp,
+            'total_cost':            mat + dir_exp,
+            'gross_profit':          profit,
+            'profit_margin':         float(p.profit_margin),
+            'pk':                    p.pk,
         })
 
     margin = (total_profit / total_revenue * 100) if total_revenue > 0 else Decimal('0')
     return {
-        'count': len(project_rows),
-        'total_revenue': total_revenue,
-        'total_materials': total_materials,
-        'total_profit': total_profit,
-        'profit_margin': float(margin),
-        'projects': project_rows,
+        'count':             len(project_rows),
+        'total_revenue':     total_revenue,
+        'total_materials':   total_materials,
+        'total_direct_exp':  total_dir_exp,
+        'total_profit':      total_profit,
+        'profit_margin':     float(margin),
+        'projects':          project_rows,
     }
 
 
@@ -254,7 +282,7 @@ def _monthly_trends(months=6):
         oth_income, _ = _other_income_in(first, last)
         income = inv_income + off_income + oth_income
 
-        exp_total, _, _ = _expenses_in(first, last)
+        exp_total, _, _, _, _ = _expenses_in(first, last)
 
         result.append({
             'label': label,
@@ -331,7 +359,7 @@ def compute_snapshot(for_date=None):
     oth_income, oth_records  = _other_income_in(today, today)
     total_in = inv_income + off_income + oth_income
 
-    exp_total, by_category, exp_rows = _expenses_in(today, today)
+    exp_total, by_category, exp_rows, proj_exp_total, office_exp_total = _expenses_in(today, today)
 
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
     svc_recv, svc_ov_c, svc_ov_a, svc_recv_rows = _service_receivables()
@@ -358,6 +386,8 @@ def compute_snapshot(for_date=None):
         # Expenses today
         'expenses': exp_rows,
         'by_category': by_category,
+        'project_expenses_total': proj_exp_total,
+        'office_expenses_total':  office_exp_total,
         # Live receivable totals (all-time outstanding, not filtered to today)
         'total_receivable': total_receivable,
         'invoice_receivable': inv_recv,
@@ -386,7 +416,7 @@ def compute_report(date_from, date_to):
     total_income = inv_income + off_income + oth_income
 
     # ── Expenses ──────────────────────────────────────────────────────────────
-    total_expenses, by_category, expense_rows = _expenses_in(date_from, date_to)
+    total_expenses, by_category, expense_rows, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
 
     # ── Net ───────────────────────────────────────────────────────────────────
     net_profit = total_income - total_expenses
@@ -453,26 +483,32 @@ def compute_report(date_from, date_to):
             for p in off_payments
         ],
 
-        # Expense detail
+        # Expense detail (split: project vs office)
+        'project_expenses_total': float(proj_exp_total),
+        'office_expenses_total':  float(office_exp_total),
         'by_category': [
             {
-                'name': c['name'],
-                'icon': c['icon'],
-                'color': c['color'],
-                'total': float(c['total']),
-                'count': c['count'],
+                'name':          c['name'],
+                'icon':          c['icon'],
+                'color':         c['color'],
+                'total':         float(c['total']),
+                'project_total': float(c['project_total']),
+                'office_total':  float(c['office_total']),
+                'count':         c['count'],
                 'pct': round(float(c['total']) / float(total_expenses) * 100, 1) if total_expenses else 0,
             }
             for c in by_category
         ],
         'expense_rows': [
             {
-                'date': str(e.date),
-                'category': e.category.name,
-                'description': e.description,
-                'paid_to': e.paid_to,
-                'payment_method': e.payment_method,
-                'amount': float(e.amount),
+                'date':            str(e.date),
+                'category':        e.category.name,
+                'description':     e.description,
+                'paid_to':         e.paid_to,
+                'payment_method':  e.payment_method,
+                'amount':          float(e.amount),
+                'project_name':    e.project.name if e.project_id else None,
+                'project_pk':      e.project_id,
             }
             for e in expense_rows
         ],
@@ -498,14 +534,18 @@ def compute_report(date_from, date_to):
         # Projects
         'project_stats': {
             **project_stats,
-            'total_revenue': float(project_stats['total_revenue']),
-            'total_materials': float(project_stats['total_materials']),
-            'total_profit': float(project_stats['total_profit']),
+            'total_revenue':    float(project_stats['total_revenue']),
+            'total_materials':  float(project_stats['total_materials']),
+            'total_direct_exp': float(project_stats['total_direct_exp']),
+            'total_profit':     float(project_stats['total_profit']),
             'projects': [
-                {**p, 'revenue': float(p['revenue']),
-                 'materials_cost': float(p['materials_cost']),
-                 'gross_profit': float(p['gross_profit']),
-                 'completion_date': str(p['completion_date'])}
+                {**p,
+                 'revenue':               float(p['revenue']),
+                 'materials_cost':        float(p['materials_cost']),
+                 'direct_expenses_cost':  float(p['direct_expenses_cost']),
+                 'total_cost':            float(p['total_cost']),
+                 'gross_profit':          float(p['gross_profit']),
+                 'completion_date':       str(p['completion_date'])}
                 for p in project_stats['projects']
             ],
         },

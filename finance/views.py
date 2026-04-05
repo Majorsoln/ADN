@@ -173,31 +173,76 @@ def expense_list_view(request):
 
 
 def expense_add_view(request):
+    from projects.models import Project, ProjectEvent
+
+    # Support ?from_project=<pk> to pre-link expense to a project
+    from_project_pk = request.GET.get('from_project') or request.POST.get('from_project')
+    linked_project = None
+    if from_project_pk:
+        try:
+            linked_project = Project.objects.get(pk=from_project_pk)
+        except Project.DoesNotExist:
+            pass
+
     if request.method == 'POST':
         form = ExpenseForm(request.POST)
         if form.is_valid():
-            form.save()
+            expense = form.save()
+            # Log a ProjectEvent if linked to a project
+            if expense.project_id:
+                method_label = dict(expense.PAYMENT_CHOICES).get(expense.payment_method, expense.payment_method)
+                ProjectEvent.objects.create(
+                    project=expense.project,
+                    event_type='expense',
+                    description=(
+                        f"Expense recorded: {expense.category.name} — "
+                        f"TZS {expense.amount:,.0f} ({method_label})"
+                        + (f" — {expense.description}" if expense.description else "")
+                        + (f" [paid to: {expense.paid_to}]" if expense.paid_to else "")
+                    ),
+                )
             messages.success(request, 'Expense recorded.')
             if request.POST.get('add_another'):
-                return redirect('finance:expense_add')
+                from django.urls import reverse
+                url = reverse('finance:expense_add')
+                if from_project_pk:
+                    url += f'?from_project={from_project_pk}'
+                return redirect(url)
+            # Redirect back to project if came from there
+            if expense.project_id:
+                return redirect('projects:detail', pk=expense.project_id)
             return redirect('finance:expense_list')
     else:
-        form = ExpenseForm()
-    return render(request, 'finance/expense_form.html', {'form': form, 'action': 'Add'})
+        initial = {}
+        if linked_project:
+            initial['project'] = linked_project
+        form = ExpenseForm(initial=initial)
+
+    return render(request, 'finance/expense_form.html', {
+        'form': form,
+        'action': 'Add',
+        'linked_project': linked_project,
+    })
 
 
 def expense_edit_view(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
+    back_project = expense.project  # Remember original linked project
     if request.method == 'POST':
         form = ExpenseForm(request.POST, instance=expense)
         if form.is_valid():
-            form.save()
+            expense = form.save()
             messages.success(request, 'Expense updated.')
+            if expense.project_id:
+                return redirect('projects:detail', pk=expense.project_id)
+            if back_project:
+                return redirect('projects:detail', pk=back_project.pk)
             return redirect('finance:expense_list')
     else:
         form = ExpenseForm(instance=expense)
     return render(request, 'finance/expense_form.html', {
-        'form': form, 'expense': expense, 'action': 'Edit'
+        'form': form, 'expense': expense, 'action': 'Edit',
+        'linked_project': expense.project,
     })
 
 

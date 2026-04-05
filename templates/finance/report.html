@@ -76,6 +76,18 @@
       <div class="card-body">
         <div class="text-danger fw-semibold small mb-1">TOTAL EXPENSES</div>
         <div class="fs-4 fw-bold text-danger">TZS {{ data.total_expenses|floatformat:0 }}</div>
+        {% if data.project_expenses_total or data.office_expenses_total %}
+        <div class="mt-2 border-top pt-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted"><i class="bi bi-tools me-1"></i>Project</span>
+            <span class="fw-semibold text-danger">TZS {{ data.project_expenses_total|floatformat:0 }}</span>
+          </div>
+          <div class="d-flex justify-content-between small">
+            <span class="text-muted"><i class="bi bi-building me-1"></i>Office</span>
+            <span class="fw-semibold text-danger">TZS {{ data.office_expenses_total|floatformat:0 }}</span>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -139,7 +151,7 @@
       <div class="card-body p-0">
         <table class="table table-sm mb-0">
           <thead class="table-light">
-            <tr><th>Category</th><th class="text-end">Amount</th><th>Share</th></tr>
+            <tr><th>Category</th><th class="text-end">Total</th><th class="text-end" style="font-size:.75rem;">Project</th><th class="text-end" style="font-size:.75rem;">Office</th><th>Share</th></tr>
           </thead>
           <tbody>
             {% for cat in data.by_category %}
@@ -150,7 +162,9 @@
                 <small class="text-muted">({{ cat.count }})</small>
               </td>
               <td class="text-end">TZS {{ cat.total|floatformat:0 }}</td>
-              <td style="width:120px">
+              <td class="text-end text-muted small">{% if cat.project_total %}{{ cat.project_total|floatformat:0 }}{% else %}—{% endif %}</td>
+              <td class="text-end text-muted small">{% if cat.office_total %}{{ cat.office_total|floatformat:0 }}{% else %}—{% endif %}</td>
+              <td style="width:100px">
                 <div class="progress" style="height:6px;margin-top:6px">
                   <div class="progress-bar bg-danger" style="width:{{ cat.pct }}%"></div>
                 </div>
@@ -159,7 +173,7 @@
             </tr>
             {% endfor %}
             {% if not data.by_category %}
-            <tr><td colspan="3" class="text-center text-muted py-3">No expenses in this period.</td></tr>
+            <tr><td colspan="5" class="text-center text-muted py-3">No expenses in this period.</td></tr>
             {% endif %}
           </tbody>
         </table>
@@ -360,14 +374,23 @@
     <div class="table-responsive">
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
-          <tr><th>Date</th><th>Category</th><th>Description</th><th>Paid To</th><th>Method</th><th class="text-end">Amount (TZS)</th></tr>
+          <tr><th>Date</th><th>Category</th><th>Description / Project</th><th>Paid To</th><th>Method</th><th class="text-end">Amount (TZS)</th></tr>
         </thead>
         <tbody>
           {% for e in data.expense_rows %}
           <tr>
             <td class="text-muted small">{{ e.date }}</td>
             <td>{{ e.category }}</td>
-            <td>{{ e.description|truncatechars:50 }}</td>
+            <td>
+              {{ e.description|truncatechars:40 }}
+              {% if e.project_name %}
+              <br><a href="{% url 'projects:detail' e.project_pk %}" class="badge bg-primary text-white text-decoration-none" style="font-size:.6rem;">
+                <i class="bi bi-tools me-1"></i>{{ e.project_name|truncatechars:25 }}
+              </a>
+              {% else %}
+              <br><span class="badge bg-light text-muted" style="font-size:.6rem;"><i class="bi bi-building me-1"></i>Office</span>
+              {% endif %}
+            </td>
             <td class="text-muted small">{{ e.paid_to|default:"—" }}</td>
             <td><span class="badge bg-light text-dark">{{ e.payment_method }}</span></td>
             <td class="text-end fw-semibold text-danger">{{ e.amount|floatformat:0 }}</td>

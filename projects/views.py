@@ -21,9 +21,9 @@ def _funding_analysis(project, orders):
     """
     Build a full funding picture for a project:
     - How each material order was funded (cash/bank/mpesa/…)
+    - Direct project expenses (transport, labour, site costs, etc.)
     - Client payments received (advance + InvoicePayments)
-    - Shortfall or surplus
-    - Whether own funds (beyond client payments) were used
+    - Shortfall or surplus vs total project cost
     """
     D = Decimal
 
@@ -40,6 +40,26 @@ def _funding_analysis(project, orders):
         for k, v in sorted(funded.items(), key=lambda x: -x[1])
     ]
 
+    # ── Direct project expenses (transport, labour, etc.) ────────────────────
+    direct_expenses = list(
+        project.expenses.select_related('category').order_by('date')
+    )
+    direct_expenses_cost = sum(e.amount for e in direct_expenses)
+
+    # Group direct expenses by category for summary
+    exp_cat_map = {}
+    for exp in direct_expenses:
+        cid = exp.category_id
+        if cid not in exp_cat_map:
+            exp_cat_map[cid] = {
+                'name':  exp.category.name,
+                'icon':  exp.category.icon,
+                'color': exp.category.color,
+                'total': D('0'),
+            }
+        exp_cat_map[cid]['total'] += exp.amount
+    direct_expenses_by_cat = sorted(exp_cat_map.values(), key=lambda x: -x['total'])
+
     # ── Client money received ─────────────────────────────────────────────────
     if project.invoice:
         advance_paid = project.invoice.advance_paid
@@ -54,21 +74,22 @@ def _funding_analysis(project, orders):
 
     # ── Net analysis ──────────────────────────────────────────────────────────
     materials_cost = project.materials_cost
-    # Shortfall: materials cost NOT covered by what the client has already paid
-    shortfall = max(materials_cost - total_client_received, D('0'))
-    # Surplus: client paid more than materials (profit already banked)
-    surplus   = max(total_client_received - materials_cost, D('0'))
+    total_cost     = materials_cost + direct_expenses_cost
+
+    # Shortfall: total cost NOT covered by what the client has already paid
+    shortfall = max(total_cost - total_client_received, D('0'))
+    # Surplus: client paid more than total cost (profit already banked)
+    surplus   = max(total_client_received - total_cost, D('0'))
 
     # Credit orders: find linked debts
     credit_amount = funded.get('credit', D('0'))
     credit_orders = [o for o in orders if o.payment_source == 'credit'
                      and o.status in ('ordered', 'partially_received', 'received')]
 
-    # Identify own-funds sources: bank/cash used on orders exceeding client payments
+    # Identify own-funds sources used when client hasn't covered total cost
     bank_used  = funded.get('bank', D('0'))
     cash_used  = funded.get('cash', D('0'))
     mpesa_used = funded.get('mpesa', D('0'))
-    own_funds  = bank_used + cash_used + mpesa_used
 
     own_funds_message = None
     if shortfall > 0:
@@ -81,16 +102,18 @@ def _funding_analysis(project, orders):
             parts.append(f"M-Pesa TZS {mpesa_used:,.0f}")
         if credit_amount > 0:
             parts.append(f"Credit/Debt TZS {credit_amount:,.0f}")
+        cost_desc = f"total project cost TZS {total_cost:,.0f}"
+        if direct_expenses_cost > 0:
+            cost_desc += f" (materials TZS {materials_cost:,.0f} + expenses TZS {direct_expenses_cost:,.0f})"
         if parts:
             own_funds_message = (
                 f"Own funds contributed to cover TZS {shortfall:,.0f} shortfall "
-                f"(client paid TZS {total_client_received:,.0f} vs "
-                f"materials TZS {materials_cost:,.0f}): "
+                f"(client paid TZS {total_client_received:,.0f} vs {cost_desc}): "
                 + " + ".join(parts)
             )
         else:
             own_funds_message = (
-                f"Materials cost (TZS {materials_cost:,.0f}) exceeds client payments "
+                f"{cost_desc.capitalize()} exceeds client payments "
                 f"received (TZS {total_client_received:,.0f}). "
                 f"Shortfall TZS {shortfall:,.0f} — source unspecified."
             )
@@ -99,17 +122,21 @@ def _funding_analysis(project, orders):
     balance_due = max(project.revenue - total_client_received, D('0'))
 
     return {
-        'mat_breakdown':         mat_breakdown,
-        'advance_paid':          advance_paid,
-        'inv_payments':          inv_payments,
-        'total_client_received': total_client_received,
-        'balance_due':           balance_due,
-        'materials_cost':        materials_cost,
-        'shortfall':             shortfall,
-        'surplus':               surplus,
-        'own_funds_message':     own_funds_message,
-        'credit_orders':         credit_orders,
-        'credit_amount':         credit_amount,
+        'mat_breakdown':           mat_breakdown,
+        'advance_paid':            advance_paid,
+        'inv_payments':            inv_payments,
+        'total_client_received':   total_client_received,
+        'balance_due':             balance_due,
+        'materials_cost':          materials_cost,
+        'direct_expenses':         direct_expenses,
+        'direct_expenses_cost':    direct_expenses_cost,
+        'direct_expenses_by_cat':  direct_expenses_by_cat,
+        'total_cost':              total_cost,
+        'shortfall':               shortfall,
+        'surplus':                 surplus,
+        'own_funds_message':       own_funds_message,
+        'credit_orders':           credit_orders,
+        'credit_amount':           credit_amount,
     }
 
 

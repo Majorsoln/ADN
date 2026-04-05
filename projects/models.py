@@ -79,8 +79,19 @@ class Project(models.Model):
         )
 
     @property
+    def direct_expenses_cost(self):
+        """Sum of all Expense records linked directly to this project
+        (transport, labour, site costs, etc. — not material orders)."""
+        return sum(e.amount for e in self.expenses.all())
+
+    @property
+    def total_project_cost(self):
+        """materials_cost + direct_expenses_cost."""
+        return self.materials_cost + self.direct_expenses_cost
+
+    @property
     def gross_profit(self):
-        return self.revenue - self.materials_cost
+        return self.revenue - self.total_project_cost
 
     @property
     def profit_margin(self):
@@ -121,6 +132,7 @@ class ProjectEvent(models.Model):
         ('order_edit',   'Order Edited'),
         ('order_del',    'Order Removed'),
         ('invoice',      'Invoice Linked'),
+        ('expense',      'Expense Recorded'),
         ('note',         'Note'),
         ('completed',    'Project Completed'),
     ]
@@ -133,6 +145,7 @@ class ProjectEvent(models.Model):
         'order_edit':   'bi-pencil-fill text-secondary',
         'order_del':    'bi-trash-fill text-danger',
         'invoice':      'bi-receipt-cutoff text-success',
+        'expense':      'bi-cash-stack text-danger',
         'note':         'bi-chat-left-text-fill text-muted',
         'completed':    'bi-check-circle-fill text-success',
     }

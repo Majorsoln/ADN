@@ -203,7 +203,10 @@
         {% if project.revenue_source == 'quotation' %}<small style="color:#2563eb;">(from accepted quotation)</small>
         {% elif project.revenue_source == 'invoice' %}<small style="color:#16a34a;">(from invoice)</small>{% endif %}<br>
         Materials: <strong style="color:#dc2626;">TZS {{ project.materials_cost|floatformat:0 }}</strong><br>
-        Profit: <strong style="color:{% if project.gross_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
+        {% if funding.direct_expenses_cost > 0 %}
+        Expenses: <strong style="color:#dc2626;">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</strong><br>
+        {% endif %}
+        Net Profit: <strong style="color:{% if project.gross_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
           TZS {{ project.gross_profit|floatformat:0 }}
           {% if project.revenue > 0 %}({{ project.profit_margin|floatformat:0 }}%){% endif %}
         </strong>
@@ -422,7 +425,7 @@
     {# ── Materials Payment Sources (Money Out) ── #}
     <div style="margin-bottom:14px;">
       <div style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626;margin-bottom:6px;">
-        ▼ Money Out (Materials Payments)
+        ▼ Money Out — Materials
       </div>
       {% for item in funding.mat_breakdown %}
       <div class="fin-row" style="font-size:9pt;color:#dc2626;margin-bottom:3px;">
@@ -445,9 +448,54 @@
       </div>
     </div>
 
+    {# ── Direct Project Expenses (transport, labour, etc.) ── #}
+    {% if funding.direct_expenses %}
+    <div style="margin-bottom:14px;">
+      <div style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626;margin-bottom:6px;">
+        ▼ Money Out — Direct Project Expenses
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:4px;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Date</th>
+            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Category</th>
+            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Description</th>
+            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Paid To</th>
+            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Method</th>
+            <th style="padding:4px 8px;text-align:right;color:#64748b;font-weight:600;font-size:8pt;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exp in funding.direct_expenses %}
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:4px 8px;">{{ exp.date|date:"d M Y" }}</td>
+            <td style="padding:4px 8px;">{{ exp.category.name }}</td>
+            <td style="padding:4px 8px;color:#64748b;">{{ exp.description }}</td>
+            <td style="padding:4px 8px;color:#64748b;">{{ exp.paid_to|default:"—" }}</td>
+            <td style="padding:4px 8px;">{{ exp.get_payment_method_display }}</td>
+            <td style="padding:4px 8px;text-align:right;font-weight:600;color:#dc2626;">TZS {{ exp.amount|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="fin-row text-red" style="font-size:9.5pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:5px;margin-top:3px;">
+        <span>Total Direct Expenses <span style="font-size:8pt;color:#94a3b8;">({{ funding.direct_expenses|length }} item{{ funding.direct_expenses|length|pluralize }})</span></span>
+        <span>– TZS {{ funding.direct_expenses_cost|floatformat:0 }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Total project cost (if has expenses) ── #}
+    {% if funding.direct_expenses_cost > 0 %}
+    <div class="fin-row text-red" style="font-size:10pt;font-weight:700;background:#fff1f2;border-radius:5px;padding:6px 8px;margin-bottom:8px;">
+      <span>Total Project Cost (Materials + Expenses)</span>
+      <span>– TZS {{ funding.total_cost|floatformat:0 }}</span>
+    </div>
+    {% endif %}
+
     {# ── Net Profit ── #}
     <div class="fin-row total {% if project.gross_profit >= 0 %}text-green{% else %}text-red{% endif %}">
-      <span>GROSS PROFIT</span>
+      <span>NET PROFIT</span>
       <span>TZS {{ project.gross_profit|floatformat:0 }}</span>
     </div>
     {% if project.revenue > 0 %}
