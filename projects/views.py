@@ -130,75 +130,61 @@ def _funding_analysis(project, orders):
     )
     project_debts_total = sum(d.balance for d in project_debts)
 
-    # ── Funding source summary (where did the money come from) ───────────────
-    funding_sources = []
-    for item in mat_breakdown:
-        if item['key'] == 'credit':
-            funding_sources.append({
-                'source': 'Deni (Credit/Debt)',
-                'type': 'debt',
-                'amount': item['amount'],
-                'detail': 'Materials purchased on credit — creates a liability',
-            })
-        elif item['key'] == 'cash':
-            funding_sources.append({
-                'source': 'Office Cash',
-                'type': 'office_cash',
-                'amount': item['amount'],
-                'detail': 'Paid from office cash reserves',
-            })
-        elif item['key'] == 'bank':
-            funding_sources.append({
-                'source': 'Bank Account',
-                'type': 'bank',
-                'amount': item['amount'],
-                'detail': 'Paid from business bank account',
-            })
-        elif item['key'] == 'mpesa':
-            funding_sources.append({
-                'source': 'M-Pesa',
-                'type': 'mpesa',
-                'amount': item['amount'],
-                'detail': 'Paid via M-Pesa mobile money',
-            })
-        elif item['key'] == 'cheque':
-            funding_sources.append({
-                'source': 'Cheque',
-                'type': 'cheque',
-                'amount': item['amount'],
-                'detail': 'Paid by cheque',
-            })
-        else:
-            funding_sources.append({
-                'source': 'Unspecified',
-                'type': 'other',
-                'amount': item['amount'],
-                'detail': 'Payment source not recorded',
-            })
-
-    # Also add direct expense funding sources
-    exp_method_map = {}
+    # ── Consolidated funds used (materials + expenses by payment source) ─────
+    # Merge all outflows into a single per-source view
+    funds_used = {}
+    # Materials by payment source
+    for order in orders:
+        if order.status in ('ordered', 'partially_received', 'received'):
+            ps = order.payment_source
+            key = 'credit' if ps == 'credit' else ps
+            if key not in funds_used:
+                funds_used[key] = {'materials': D('0'), 'expenses': D('0')}
+            funds_used[key]['materials'] += order.total_cost
+    # Expenses by payment method
     for exp in direct_expenses:
         m = exp.payment_method
-        exp_method_map[m] = exp_method_map.get(m, D('0')) + exp.amount
-    for m, amt in sorted(exp_method_map.items(), key=lambda x: -x[1]):
-        label_map = {
-            'cash': 'Office Cash (Expenses)',
-            'bank': 'Bank Account (Expenses)',
-            'mpesa': 'M-Pesa (Expenses)',
-            'cheque': 'Cheque (Expenses)',
-            'other': 'Other (Expenses)',
-        }
-        funding_sources.append({
-            'source': label_map.get(m, f'{m} (Expenses)'),
-            'type': m,
-            'amount': amt,
-            'detail': 'Direct project expense',
+        if m not in funds_used:
+            funds_used[m] = {'materials': D('0'), 'expenses': D('0')}
+        funds_used[m]['expenses'] += exp.amount
+
+    source_info = {
+        'cash':   {'label': 'Office Cash',    'icon': 'cash',   'color': '#16a34a'},
+        'bank':   {'label': 'Bank Account',   'icon': 'bank',   'color': '#2563eb'},
+        'mpesa':  {'label': 'M-Pesa',         'icon': 'mpesa',  'color': '#059669'},
+        'cheque': {'label': 'Cheque',         'icon': 'cheque', 'color': '#7c3aed'},
+        'credit': {'label': 'Deni (Credit)',  'icon': 'credit', 'color': '#dc2626'},
+        'other':  {'label': 'Other',          'icon': 'other',  'color': '#94a3b8'},
+    }
+    funds_used_rows = []
+    for key, vals in sorted(funds_used.items(), key=lambda x: -(x[1]['materials'] + x[1]['expenses'])):
+        info = source_info.get(key, source_info['other'])
+        total = vals['materials'] + vals['expenses']
+        funds_used_rows.append({
+            'key':       key,
+            'label':     info['label'],
+            'color':     info['color'],
+            'materials': vals['materials'],
+            'expenses':  vals['expenses'],
+            'total':     total,
+            'is_debt':   key == 'credit',
         })
+
+    # Advance payment method label
+    advance_method = ''
+    if project.invoice and advance_paid > 0:
+        m = project.invoice.advance_payment_method or ''
+        method_labels = {
+            'cash': 'Cash', 'bank_transfer': 'Bank', 'bank': 'Bank',
+            'mobile_money': 'M-Pesa', 'mpesa': 'M-Pesa',
+            'cheque': 'Cheque',
+        }
+        advance_method = method_labels.get(m, m.replace('_', ' ').title() if m else '')
 
     return {
         'mat_breakdown':           mat_breakdown,
         'advance_paid':            advance_paid,
+        'advance_method':          advance_method,
         'inv_payments':            inv_payments,
         'total_client_received':   total_client_received,
         'balance_due':             balance_due,
@@ -214,7 +200,7 @@ def _funding_analysis(project, orders):
         'credit_amount':           credit_amount,
         'project_debts':           project_debts,
         'project_debts_total':     project_debts_total,
-        'funding_sources':         funding_sources,
+        'funds_used_rows':         funds_used_rows,
     }
 
 

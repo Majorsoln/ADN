@@ -368,214 +368,237 @@
   </table>
   {% endif %}
 
-  <!-- ── Financial Summary ── -->
-  <div class="fin-box">
-    <div class="sec">Financial Summary — Money In / Money Out</div>
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- A. AKAUNTI YA MTEJA — Client Account                                -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="fin-box" style="border-color:#1a2e5a;">
+    <div class="sec">A. Akaunti ya Mteja — Client Account</div>
 
-    {# ── Client Payments (Money In) ── #}
-    <div style="margin-bottom:14px;">
+    {# Contract value #}
+    <div class="fin-row" style="font-size:11pt;font-weight:700;">
+      <span>Thamani ya Mkataba (Contract Value)
+        {% if project.invoice %}
+        <span style="font-size:8pt;color:#94a3b8;font-weight:400;">— Invoice {{ project.invoice.invoice_no }}</span>
+        {% elif project.quotation %}
+        <span style="font-size:8pt;color:#2563eb;font-weight:400;">— Quote {{ project.quotation.quote_no }}</span>
+        {% endif %}
+      </span>
+      <span>TZS {{ project.revenue|floatformat:0 }}</span>
+    </div>
+
+    <div style="border-left:3px solid #16a34a;padding-left:12px;margin:10px 0;">
       <div style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#16a34a;margin-bottom:6px;">
-        ▲ Money In (Client Payments)
-      </div>
-      <div class="fin-row" style="font-size:10pt;">
-        <span>Contract Value
-          {% if project.revenue_source == 'invoice' %}
-          <span style="font-size:8pt;color:#94a3b8;">(Invoice {{ project.invoice.invoice_no }})</span>
-          {% elif project.revenue_source == 'quotation' %}
-          <span style="font-size:8pt;color:#2563eb;">(Accepted Quote {{ project.quotation.quote_no }})</span>
-          {% endif %}
-        </span>
-        <span style="font-weight:600;">TZS {{ project.revenue|floatformat:0 }}</span>
+        Malipo Yaliyopokelewa (Payments Received)
       </div>
       {% if funding.advance_paid %}
-      <div class="fin-row" style="font-size:9pt;color:#1d4ed8;margin-bottom:3px;">
-        <span>&nbsp;&nbsp;&nbsp;Advance paid</span>
-        <span>TZS {{ funding.advance_paid|floatformat:0 }}</span>
+      <div class="fin-row" style="font-size:9.5pt;margin-bottom:3px;">
+        <span>Advance
+          {% if funding.advance_method %}
+          <span style="font-size:8pt;color:#94a3b8;">via {{ funding.advance_method }}</span>
+          {% endif %}
+        </span>
+        <span style="color:#16a34a;font-weight:600;">TZS {{ funding.advance_paid|floatformat:0 }}</span>
       </div>
       {% endif %}
       {% for pay in funding.inv_payments %}
-      <div class="fin-row" style="font-size:9pt;color:#1d4ed8;margin-bottom:3px;">
-        <span>&nbsp;&nbsp;&nbsp;Payment {{ forloop.counter }}
-          ({% if pay.payment_method == 'bank_transfer' %}Bank
-          {% elif pay.payment_method == 'mobile_money' %}M-Pesa
-          {% elif pay.payment_method == 'cash' %}Cash
-          {% else %}{{ pay.get_payment_method_display }}{% endif %})
-          {{ pay.payment_date|date:"d M Y" }}
+      <div class="fin-row" style="font-size:9.5pt;margin-bottom:3px;">
+        <span>Payment {{ forloop.counter }}
+          <span style="font-size:8pt;color:#94a3b8;">
+            via {% if pay.payment_method == 'bank_transfer' %}Bank{% elif pay.payment_method == 'mobile_money' %}M-Pesa{% elif pay.payment_method == 'cash' %}Cash{% else %}{{ pay.get_payment_method_display }}{% endif %}
+            · {{ pay.payment_date|date:"d M Y" }}
+          </span>
         </span>
-        <span>TZS {{ pay.amount|floatformat:0 }}</span>
+        <span style="color:#16a34a;font-weight:600;">TZS {{ pay.amount|floatformat:0 }}</span>
       </div>
       {% endfor %}
-      <div class="fin-row" style="font-size:9.5pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:5px;margin-top:3px;">
-        <span>Total Received from Client</span>
+      {% if not funding.advance_paid and not funding.inv_payments %}
+      <div style="font-size:9pt;color:#94a3b8;padding:4px 0;">Hakuna malipo yaliyopokelewa bado.</div>
+      {% endif %}
+      <div class="fin-row" style="font-size:10pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:6px;margin-top:4px;">
+        <span>Jumla Iliyopokelewa (Total Received)</span>
         <span class="text-green">TZS {{ funding.total_client_received|floatformat:0 }}</span>
       </div>
-      {% if funding.balance_due > 0 %}
-      <div class="fin-row" style="font-size:8.5pt;color:#d97706;">
-        <span>Balance Still Owed by Client</span>
-        <span style="font-weight:600;">TZS {{ funding.balance_due|floatformat:0 }}</span>
-      </div>
-      {% elif project.revenue > 0 %}
-      <div class="fin-row" style="font-size:8.5pt;color:#16a34a;">
-        <span>Balance Still Owed by Client</span>
-        <span style="font-weight:600;">Fully Paid ✓</span>
-      </div>
-      {% endif %}
     </div>
 
-    {# ── Materials Payment Sources (Money Out) ── #}
-    <div style="margin-bottom:14px;">
-      <div style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626;margin-bottom:6px;">
-        ▼ Money Out — Materials
+    {# Balance due - prominent #}
+    {% if funding.balance_due > 0 %}
+    <div style="background:#fff1f2;border:2px solid #dc2626;border-radius:8px;padding:12px 16px;margin-top:10px;">
+      <div class="fin-row" style="font-size:12pt;font-weight:800;color:#dc2626;margin-bottom:0;">
+        <span>Mteja Anadaiwa (Balance Due)</span>
+        <span>TZS {{ funding.balance_due|floatformat:0 }}</span>
       </div>
-      {% for item in funding.mat_breakdown %}
-      <div class="fin-row" style="font-size:9pt;color:#dc2626;margin-bottom:3px;">
-        <span>&nbsp;&nbsp;&nbsp;
-          {% if item.key == 'cash' %}Cash
-          {% elif item.key == 'bank' %}Bank Transfer
-          {% elif item.key == 'mpesa' %}M-Pesa
-          {% elif item.key == 'cheque' %}Cheque
-          {% elif item.key == 'credit' %}On Credit (Debt)
-          {% else %}Unspecified{% endif %}
-        </span>
-        <span>TZS {{ item.amount|floatformat:0 }}</span>
-      </div>
-      {% empty %}
-      <div style="font-size:9pt;color:#94a3b8;">No finalised orders.</div>
-      {% endfor %}
-      <div class="fin-row text-red" style="font-size:9.5pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:5px;margin-top:3px;">
-        <span>Total Materials Cost <span style="font-size:8pt;color:#94a3b8;">({{ orders|length }} order{{ orders|length|pluralize }})</span></span>
-        <span>– TZS {{ project.materials_cost|floatformat:0 }}</span>
+      <div style="font-size:8.5pt;color:#92400e;margin-top:4px;">
+        Kiasi hiki bado hakijalipwa na mteja. Contract TZS {{ project.revenue|floatformat:0 }} - Received TZS {{ funding.total_client_received|floatformat:0 }} = <strong>TZS {{ funding.balance_due|floatformat:0 }}</strong>
       </div>
     </div>
-
-    {# ── Direct Project Expenses (transport, labour, etc.) ── #}
-    {% if funding.direct_expenses %}
-    <div style="margin-bottom:14px;">
-      <div style="font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#dc2626;margin-bottom:6px;">
-        ▼ Money Out — Direct Project Expenses
+    {% elif project.revenue > 0 %}
+    <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:10px 16px;margin-top:10px;">
+      <div class="fin-row" style="font-size:11pt;font-weight:700;color:#16a34a;margin-bottom:0;">
+        <span>Mteja Amelipa Yote (Fully Paid)</span>
+        <span>✓</span>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:4px;">
-        <thead>
-          <tr style="background:#f8fafc;">
-            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Date</th>
-            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Category</th>
-            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Description</th>
-            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Paid To</th>
-            <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;font-size:8pt;">Method</th>
-            <th style="padding:4px 8px;text-align:right;color:#64748b;font-weight:600;font-size:8pt;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for exp in funding.direct_expenses %}
-          <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:4px 8px;">{{ exp.date|date:"d M Y" }}</td>
-            <td style="padding:4px 8px;">{{ exp.category.name }}</td>
-            <td style="padding:4px 8px;color:#64748b;">{{ exp.description }}</td>
-            <td style="padding:4px 8px;color:#64748b;">{{ exp.paid_to|default:"—" }}</td>
-            <td style="padding:4px 8px;">{{ exp.get_payment_method_display }}</td>
-            <td style="padding:4px 8px;text-align:right;font-weight:600;color:#dc2626;">TZS {{ exp.amount|floatformat:0 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div class="fin-row text-red" style="font-size:9.5pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:5px;margin-top:3px;">
-        <span>Total Direct Expenses <span style="font-size:8pt;color:#94a3b8;">({{ funding.direct_expenses|length }} item{{ funding.direct_expenses|length|pluralize }})</span></span>
-        <span>– TZS {{ funding.direct_expenses_cost|floatformat:0 }}</span>
-      </div>
-    </div>
-    {% endif %}
-
-    {# ── Total project cost (if has expenses) ── #}
-    {% if funding.direct_expenses_cost > 0 %}
-    <div class="fin-row text-red" style="font-size:10pt;font-weight:700;background:#fff1f2;border-radius:5px;padding:6px 8px;margin-bottom:8px;">
-      <span>Total Project Cost (Materials + Expenses)</span>
-      <span>– TZS {{ funding.total_cost|floatformat:0 }}</span>
-    </div>
-    {% endif %}
-
-    {# ── Net Profit ── #}
-    <div class="fin-row total {% if project.gross_profit >= 0 %}text-green{% else %}text-red{% endif %}">
-      <span>NET PROFIT</span>
-      <span>TZS {{ project.gross_profit|floatformat:0 }}</span>
-    </div>
-    {% if project.revenue > 0 %}
-    <div style="text-align:right;font-size:8.5pt;color:#64748b;margin-top:4px;">
-      Profit Margin: <strong>{{ project.profit_margin|floatformat:1 }}%</strong>
-    </div>
-    {% endif %}
-
-    {# ── Own funds / shortfall alert ── #}
-    {% if funding.own_funds_message %}
-    <div style="margin-top:12px;padding:10px 12px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:6px;font-size:9pt;color:#92400e;">
-      <strong>⚠ Other Source Contributed:</strong> {{ funding.own_funds_message }}
-    </div>
-    {% endif %}
-    {% if funding.surplus and funding.surplus > 0 %}
-    <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:6px;font-size:9pt;color:#15803d;">
-      <strong>✓ Fully Covered:</strong> Client payments exceed materials cost by TZS {{ funding.surplus|floatformat:0 }}.
     </div>
     {% endif %}
   </div>
 
-  <!-- ── Funding Sources — Where did the money come from? ── -->
-  {% if funding.funding_sources %}
-  <div style="border:2px solid #334155;border-radius:10px;padding:18px;margin:22px 0;page-break-inside:avoid;">
-    <div class="sec">Funding Sources — Where Did the Money Come From?</div>
-    <p style="font-size:8.5pt;color:#64748b;margin-bottom:12px;">
-      This section shows where the funds used to run this project originated — whether from office cash, bank account, M-Pesa, or on credit (debt).
-    </p>
-    <table style="width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:8px;">
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- B. GHARAMA ZA MRADI — Project Costs                                  -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="fin-box" style="border-color:#dc2626;">
+    <div class="sec">B. Gharama za Mradi — Project Costs</div>
+
+    <div class="fin-row" style="font-size:10pt;">
+      <span>Materials (Vifaa)
+        <span style="font-size:8pt;color:#94a3b8;">— {{ orders|length }} order{{ orders|length|pluralize }}</span>
+      </span>
+      <span style="font-weight:600;color:#dc2626;">TZS {{ funding.materials_cost|floatformat:0 }}</span>
+    </div>
+
+    {% if funding.direct_expenses %}
+    <div class="fin-row" style="font-size:10pt;">
+      <span>Direct Expenses (Gharama za Moja kwa Moja)
+        <span style="font-size:8pt;color:#94a3b8;">— {{ funding.direct_expenses|length }} item{{ funding.direct_expenses|length|pluralize }}</span>
+      </span>
+      <span style="font-weight:600;color:#dc2626;">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</span>
+    </div>
+    {# Expense detail table #}
+    <table style="width:100%;border-collapse:collapse;font-size:8.5pt;margin:6px 0 8px 0;">
       <thead>
-        <tr style="background:#334155;color:#fff;">
-          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Source</th>
-          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Details</th>
-          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Amount (TZS)</th>
+        <tr style="background:#f8fafc;">
+          <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;">Tarehe</th>
+          <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;">Aina</th>
+          <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;">Maelezo</th>
+          <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;">Amelipwa</th>
+          <th style="padding:4px 8px;text-align:left;color:#64748b;font-weight:600;">Njia</th>
+          <th style="padding:4px 8px;text-align:right;color:#64748b;font-weight:600;">Kiasi (TZS)</th>
         </tr>
       </thead>
       <tbody>
-        {% for src in funding.funding_sources %}
-        <tr style="border-bottom:1px solid #e2e8f0;{% if src.type == 'debt' %}background:#fff1f2;{% endif %}">
-          <td style="padding:6px 10px;font-weight:600;{% if src.type == 'debt' %}color:#dc2626;{% elif src.type == 'office_cash' %}color:#16a34a;{% elif src.type == 'bank' %}color:#2563eb;{% elif src.type == 'mpesa' %}color:#059669;{% else %}color:#64748b;{% endif %}">
-            {% if src.type == 'debt' %}⚠{% endif %} {{ src.source }}
+        {% for exp in funding.direct_expenses %}
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:4px 8px;">{{ exp.date|date:"d M Y" }}</td>
+          <td style="padding:4px 8px;">{{ exp.category.name }}</td>
+          <td style="padding:4px 8px;color:#64748b;">{{ exp.description }}</td>
+          <td style="padding:4px 8px;color:#64748b;">{{ exp.paid_to|default:"—" }}</td>
+          <td style="padding:4px 8px;">{{ exp.get_payment_method_display }}</td>
+          <td style="padding:4px 8px;text-align:right;font-weight:600;color:#dc2626;">{{ exp.amount|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <div style="background:#fff1f2;border-radius:6px;padding:10px 14px;margin-top:8px;">
+      <div class="fin-row" style="font-size:12pt;font-weight:800;color:#dc2626;margin-bottom:0;">
+        <span>Jumla ya Gharama (Total Project Cost)</span>
+        <span>TZS {{ funding.total_cost|floatformat:0 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- C. FEDHA ZIMETOKA WAPI — Where Did the Funds Come From?              -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  {% if funding.funds_used_rows %}
+  <div class="fin-box" style="border-color:#334155;">
+    <div class="sec">C. Fedha Zimetoka Wapi — Where Did the Funds Come From?</div>
+    <p style="font-size:8.5pt;color:#64748b;margin-bottom:10px;">
+      Hii inaonesha kila chanzo cha fedha kilichotumika kufadhili mradi huu — iwe ni cash ya ofisi, account ya benki, au deni.
+    </p>
+
+    <table style="width:100%;border-collapse:collapse;font-size:9.5pt;">
+      <thead>
+        <tr style="background:#334155;color:#fff;">
+          <th style="padding:7px 10px;text-align:left;font-size:8pt;font-weight:600;">Chanzo (Source)</th>
+          <th style="padding:7px 10px;text-align:right;font-size:8pt;font-weight:600;">Materials</th>
+          <th style="padding:7px 10px;text-align:right;font-size:8pt;font-weight:600;">Expenses</th>
+          <th style="padding:7px 10px;text-align:right;font-size:8pt;font-weight:600;">Jumla (Total)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for src in funding.funds_used_rows %}
+        <tr style="border-bottom:1px solid #e2e8f0;{% if src.is_debt %}background:#fff1f2;{% endif %}">
+          <td style="padding:7px 10px;font-weight:700;color:{{ src.color }};">
+            {% if src.is_debt %}⚠ {% endif %}{{ src.label }}
           </td>
-          <td style="padding:6px 10px;color:#64748b;font-size:8.5pt;">{{ src.detail }}</td>
-          <td style="padding:6px 10px;text-align:right;font-weight:700;">{{ src.amount|floatformat:0 }}</td>
+          <td style="padding:7px 10px;text-align:right;">{% if src.materials %}{{ src.materials|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td style="padding:7px 10px;text-align:right;">{% if src.expenses %}{{ src.expenses|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td style="padding:7px 10px;text-align:right;font-weight:700;">{{ src.total|floatformat:0 }}</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
         <tr style="background:#f1f5f9;border-top:2px solid #334155;">
-          <td colspan="2" style="padding:7px 10px;font-weight:700;font-size:9.5pt;">Total Funds Used</td>
-          <td style="padding:7px 10px;text-align:right;font-weight:800;font-size:10pt;">{{ funding.total_cost|floatformat:0 }}</td>
+          <td style="padding:8px 10px;font-weight:700;font-size:10pt;">Jumla ya Fedha Zilizotumika</td>
+          <td style="padding:8px 10px;text-align:right;font-weight:700;">{{ funding.materials_cost|floatformat:0 }}</td>
+          <td style="padding:8px 10px;text-align:right;font-weight:700;">{{ funding.direct_expenses_cost|floatformat:0 }}</td>
+          <td style="padding:8px 10px;text-align:right;font-weight:800;font-size:10pt;">{{ funding.total_cost|floatformat:0 }}</td>
         </tr>
       </tfoot>
     </table>
 
     {% if funding.credit_amount > 0 %}
-    <div style="padding:8px 12px;background:#fff1f2;border:1.5px solid #fecaca;border-radius:6px;font-size:9pt;color:#dc2626;margin-top:8px;">
-      <strong>⚠ Deni (Debt):</strong> TZS {{ funding.credit_amount|floatformat:0 }} of materials were purchased on credit.
-      This amount is a liability that must be repaid.
+    <div style="padding:10px 12px;background:#fff1f2;border:1.5px solid #fecaca;border-radius:6px;font-size:9pt;color:#dc2626;margin-top:10px;">
+      <strong>⚠ Deni:</strong> TZS {{ funding.credit_amount|floatformat:0 }} ya vifaa vilinunuliwa kwa deni. Kiasi hiki ni deni ambalo lazima kilipwe.
+    </div>
+    {% endif %}
+
+    {% if funding.shortfall > 0 %}
+    <div style="padding:10px 12px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:6px;font-size:9pt;color:#92400e;margin-top:8px;">
+      <strong>Taarifa:</strong> Mteja amelipa TZS {{ funding.total_client_received|floatformat:0 }} lakini gharama za mradi ni TZS {{ funding.total_cost|floatformat:0 }}.
+      Tofauti ya TZS {{ funding.shortfall|floatformat:0 }} imetolewa kutoka vyanzo vya ofisi/biashara au deni.
+    </div>
+    {% endif %}
+    {% if funding.surplus > 0 %}
+    <div style="padding:10px 12px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:6px;font-size:9pt;color:#15803d;margin-top:8px;">
+      <strong>✓ Fedha za Mteja Zimezidi:</strong> Malipo ya mteja yanazidi gharama za mradi kwa TZS {{ funding.surplus|floatformat:0 }}.
     </div>
     {% endif %}
   </div>
   {% endif %}
 
-  <!-- ── Project Debts / Liabilities ── -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- D. FAIDA — Profit Summary                                            -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="fin-box" style="border-color:{% if project.gross_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
+    <div class="sec">D. Faida ya Mradi — Profit Summary</div>
+    <div class="fin-row" style="font-size:10pt;">
+      <span>Revenue (Mapato)</span>
+      <span style="font-weight:600;">TZS {{ project.revenue|floatformat:0 }}</span>
+    </div>
+    <div class="fin-row" style="font-size:10pt;">
+      <span>Total Cost (Gharama)</span>
+      <span style="font-weight:600;color:#dc2626;">– TZS {{ funding.total_cost|floatformat:0 }}</span>
+    </div>
+    <div class="fin-row total {% if project.gross_profit >= 0 %}text-green{% else %}text-red{% endif %}">
+      <span>NET PROFIT (FAIDA)</span>
+      <span>TZS {{ project.gross_profit|floatformat:0 }}</span>
+    </div>
+    {% if project.revenue > 0 %}
+    <div style="text-align:right;font-size:9pt;color:#64748b;margin-top:4px;">
+      Profit Margin: <strong>{{ project.profit_margin|floatformat:1 }}%</strong>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- E. MADENI YA MRADI — Project Debts                                   -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
   {% if funding.project_debts %}
-  <div style="border:2px solid #dc2626;border-radius:10px;padding:18px;margin:22px 0;page-break-inside:avoid;">
-    <div class="sec" style="color:#dc2626;border-bottom-color:#fecaca;">Project Debts — What is Owed (Deni)</div>
-    <p style="font-size:8.5pt;color:#64748b;margin-bottom:12px;">
-      These are debts (deni) incurred for this project that are still outstanding.
+  <div class="fin-box" style="border-color:#dc2626;">
+    <div class="sec" style="color:#dc2626;border-bottom-color:#fecaca;">E. Madeni ya Mradi — Project Debts (Deni)</div>
+    <p style="font-size:8.5pt;color:#64748b;margin-bottom:10px;">
+      Haya ni madeni yaliyopatikana kwa mradi huu ambayo bado hayajalipwa.
     </p>
     <table style="width:100%;border-collapse:collapse;font-size:9pt;">
       <thead>
         <tr style="background:#dc2626;color:#fff;">
-          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Creditor</th>
-          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Type</th>
-          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Description</th>
-          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Total Debt</th>
-          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Paid</th>
-          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Balance</th>
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Mdai (Creditor)</th>
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Aina</th>
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Maelezo</th>
+          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Deni Lote</th>
+          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Kilicholipwa</th>
+          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Salio</th>
         </tr>
       </thead>
       <tbody>
@@ -592,16 +615,11 @@
       </tbody>
       <tfoot>
         <tr style="background:#fff1f2;border-top:2px solid #dc2626;">
-          <td colspan="5" style="padding:7px 10px;font-weight:700;font-size:9.5pt;">Total Outstanding Debt for This Project</td>
+          <td colspan="5" style="padding:7px 10px;font-weight:700;font-size:9.5pt;">Jumla ya Deni la Mradi</td>
           <td style="padding:7px 10px;text-align:right;font-weight:800;font-size:10pt;color:#dc2626;">TZS {{ funding.project_debts_total|floatformat:0 }}</td>
         </tr>
       </tfoot>
     </table>
-    {% if funding.project_debts.0.due_date %}
-    <div style="margin-top:8px;font-size:8.5pt;color:#92400e;">
-      <strong>Note:</strong> Ensure debts are paid before due dates to maintain good supplier relationships.
-    </div>
-    {% endif %}
   </div>
   {% endif %}
 
