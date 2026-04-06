@@ -9,6 +9,7 @@ from .models import Project, ProjectEvent
 from .forms import ProjectForm
 from office.models import OfficeIncome
 from orders.models import MaterialOrder
+from finance.models import Debt
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -121,6 +122,80 @@ def _funding_analysis(project, orders):
     # Balance still owed by client
     balance_due = max(project.revenue - total_client_received, D('0'))
 
+    # ── Project-linked debts (what the business owes for this project) ───────
+    project_debts = list(
+        Debt.objects.filter(project=project)
+        .exclude(status='settled')
+        .prefetch_related('payments')
+    )
+    project_debts_total = sum(d.balance for d in project_debts)
+
+    # ── Funding source summary (where did the money come from) ───────────────
+    funding_sources = []
+    for item in mat_breakdown:
+        if item['key'] == 'credit':
+            funding_sources.append({
+                'source': 'Deni (Credit/Debt)',
+                'type': 'debt',
+                'amount': item['amount'],
+                'detail': 'Materials purchased on credit — creates a liability',
+            })
+        elif item['key'] == 'cash':
+            funding_sources.append({
+                'source': 'Office Cash',
+                'type': 'office_cash',
+                'amount': item['amount'],
+                'detail': 'Paid from office cash reserves',
+            })
+        elif item['key'] == 'bank':
+            funding_sources.append({
+                'source': 'Bank Account',
+                'type': 'bank',
+                'amount': item['amount'],
+                'detail': 'Paid from business bank account',
+            })
+        elif item['key'] == 'mpesa':
+            funding_sources.append({
+                'source': 'M-Pesa',
+                'type': 'mpesa',
+                'amount': item['amount'],
+                'detail': 'Paid via M-Pesa mobile money',
+            })
+        elif item['key'] == 'cheque':
+            funding_sources.append({
+                'source': 'Cheque',
+                'type': 'cheque',
+                'amount': item['amount'],
+                'detail': 'Paid by cheque',
+            })
+        else:
+            funding_sources.append({
+                'source': 'Unspecified',
+                'type': 'other',
+                'amount': item['amount'],
+                'detail': 'Payment source not recorded',
+            })
+
+    # Also add direct expense funding sources
+    exp_method_map = {}
+    for exp in direct_expenses:
+        m = exp.payment_method
+        exp_method_map[m] = exp_method_map.get(m, D('0')) + exp.amount
+    for m, amt in sorted(exp_method_map.items(), key=lambda x: -x[1]):
+        label_map = {
+            'cash': 'Office Cash (Expenses)',
+            'bank': 'Bank Account (Expenses)',
+            'mpesa': 'M-Pesa (Expenses)',
+            'cheque': 'Cheque (Expenses)',
+            'other': 'Other (Expenses)',
+        }
+        funding_sources.append({
+            'source': label_map.get(m, f'{m} (Expenses)'),
+            'type': m,
+            'amount': amt,
+            'detail': 'Direct project expense',
+        })
+
     return {
         'mat_breakdown':           mat_breakdown,
         'advance_paid':            advance_paid,
@@ -137,6 +212,9 @@ def _funding_analysis(project, orders):
         'own_funds_message':       own_funds_message,
         'credit_orders':           credit_orders,
         'credit_amount':           credit_amount,
+        'project_debts':           project_debts,
+        'project_debts_total':     project_debts_total,
+        'funding_sources':         funding_sources,
     }
 
 

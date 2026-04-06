@@ -76,14 +76,6 @@
     .text-red { color:#dc2626; }
     .text-green { color:#16a34a; }
 
-    /* ── Timeline ── */
-    .timeline { margin:22px 0; }
-    .tl-row { display:flex; gap:10px; padding:5px 0; border-bottom:1px solid #f1f5f9; font-size:8.5pt; }
-    .tl-dot { width:8px; height:8px; border-radius:50%; background:#3aacdc; flex-shrink:0; margin-top:4px; }
-    .tl-dot.note { background:#94a3b8; }
-    .tl-date { color:#94a3b8; width:100px; flex-shrink:0; }
-    .tl-desc { color:#334155; flex:1; }
-
     /* ── Signature ── */
     .sig-row { display:flex; gap:40px; margin-top:32px; }
     .sig-block { flex:1; }
@@ -173,12 +165,20 @@
       <div class="sub">{{ project.client_phone|default:"—" }}</div>
     </div>
     <div class="meta-box">
-      <div class="lbl">Timeline</div>
-      <div class="val">{{ project.days_elapsed }} days</div>
+      <div class="lbl">Client Account</div>
+      <div class="val" style="{% if funding.balance_due > 0 %}color:#dc2626{% else %}color:#16a34a{% endif %}">
+        {% if funding.balance_due > 0 %}
+        TZS {{ funding.balance_due|floatformat:0 }}
+        {% else %}
+        Fully Paid ✓
+        {% endif %}
+      </div>
       <div class="sub">
-        Start: {{ project.start_date|date:"d M Y" }}<br>
-        {% if project.target_date %}Target: {{ project.target_date|date:"d M Y" }}<br>{% endif %}
-        {% if project.completion_date %}Completed: {{ project.completion_date|date:"d M Y" }}{% else %}In progress{% endif %}
+        {% if funding.balance_due > 0 %}
+        <strong style="color:#dc2626;">Client owes this amount</strong><br>
+        {% endif %}
+        Paid: TZS {{ funding.total_client_received|floatformat:0 }}<br>
+        Contract: TZS {{ project.revenue|floatformat:0 }}
       </div>
     </div>
     <div class="meta-box">
@@ -202,14 +202,14 @@
         Revenue: <strong>TZS {{ project.revenue|floatformat:0 }}</strong>
         {% if project.revenue_source == 'quotation' %}<small style="color:#2563eb;">(from accepted quotation)</small>
         {% elif project.revenue_source == 'invoice' %}<small style="color:#16a34a;">(from invoice)</small>{% endif %}<br>
-        Materials: <strong style="color:#dc2626;">TZS {{ project.materials_cost|floatformat:0 }}</strong><br>
-        {% if funding.direct_expenses_cost > 0 %}
-        Expenses: <strong style="color:#dc2626;">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</strong><br>
-        {% endif %}
+        Total Cost: <strong style="color:#dc2626;">TZS {{ funding.total_cost|floatformat:0 }}</strong><br>
         Net Profit: <strong style="color:{% if project.gross_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
           TZS {{ project.gross_profit|floatformat:0 }}
           {% if project.revenue > 0 %}({{ project.profit_margin|floatformat:0 }}%){% endif %}
-        </strong>
+        </strong><br>
+        {% if funding.project_debts_total > 0 %}
+        <span style="color:#dc2626;">Deni: <strong>TZS {{ funding.project_debts_total|floatformat:0 }}</strong></span>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -517,17 +517,91 @@
     {% endif %}
   </div>
 
-  <!-- ── Project Timeline / Activity Log ── -->
-  {% if events %}
-  <div class="timeline">
-    <div class="sec">Project Timeline</div>
-    {% for event in events|slice:":30" %}
-    <div class="tl-row">
-      <div class="tl-dot {% if event.event_type == 'note' %}note{% endif %}"></div>
-      <div class="tl-date">{{ event.created_at|date:"d M Y, H:i" }}</div>
-      <div class="tl-desc">{{ event.description }}</div>
+  <!-- ── Funding Sources — Where did the money come from? ── -->
+  {% if funding.funding_sources %}
+  <div style="border:2px solid #334155;border-radius:10px;padding:18px;margin:22px 0;page-break-inside:avoid;">
+    <div class="sec">Funding Sources — Where Did the Money Come From?</div>
+    <p style="font-size:8.5pt;color:#64748b;margin-bottom:12px;">
+      This section shows where the funds used to run this project originated — whether from office cash, bank account, M-Pesa, or on credit (debt).
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:8px;">
+      <thead>
+        <tr style="background:#334155;color:#fff;">
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Source</th>
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Details</th>
+          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Amount (TZS)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for src in funding.funding_sources %}
+        <tr style="border-bottom:1px solid #e2e8f0;{% if src.type == 'debt' %}background:#fff1f2;{% endif %}">
+          <td style="padding:6px 10px;font-weight:600;{% if src.type == 'debt' %}color:#dc2626;{% elif src.type == 'office_cash' %}color:#16a34a;{% elif src.type == 'bank' %}color:#2563eb;{% elif src.type == 'mpesa' %}color:#059669;{% else %}color:#64748b;{% endif %}">
+            {% if src.type == 'debt' %}⚠{% endif %} {{ src.source }}
+          </td>
+          <td style="padding:6px 10px;color:#64748b;font-size:8.5pt;">{{ src.detail }}</td>
+          <td style="padding:6px 10px;text-align:right;font-weight:700;">{{ src.amount|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:#f1f5f9;border-top:2px solid #334155;">
+          <td colspan="2" style="padding:7px 10px;font-weight:700;font-size:9.5pt;">Total Funds Used</td>
+          <td style="padding:7px 10px;text-align:right;font-weight:800;font-size:10pt;">{{ funding.total_cost|floatformat:0 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    {% if funding.credit_amount > 0 %}
+    <div style="padding:8px 12px;background:#fff1f2;border:1.5px solid #fecaca;border-radius:6px;font-size:9pt;color:#dc2626;margin-top:8px;">
+      <strong>⚠ Deni (Debt):</strong> TZS {{ funding.credit_amount|floatformat:0 }} of materials were purchased on credit.
+      This amount is a liability that must be repaid.
     </div>
-    {% endfor %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ── Project Debts / Liabilities ── -->
+  {% if funding.project_debts %}
+  <div style="border:2px solid #dc2626;border-radius:10px;padding:18px;margin:22px 0;page-break-inside:avoid;">
+    <div class="sec" style="color:#dc2626;border-bottom-color:#fecaca;">Project Debts — What is Owed (Deni)</div>
+    <p style="font-size:8.5pt;color:#64748b;margin-bottom:12px;">
+      These are debts (deni) incurred for this project that are still outstanding.
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:9pt;">
+      <thead>
+        <tr style="background:#dc2626;color:#fff;">
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Creditor</th>
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Type</th>
+          <th style="padding:6px 10px;text-align:left;font-size:8pt;font-weight:600;">Description</th>
+          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Total Debt</th>
+          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Paid</th>
+          <th style="padding:6px 10px;text-align:right;font-size:8pt;font-weight:600;">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for debt in funding.project_debts %}
+        <tr style="border-bottom:1px solid #fecaca;">
+          <td style="padding:6px 10px;font-weight:600;">{{ debt.creditor_name }}</td>
+          <td style="padding:6px 10px;font-size:8.5pt;">{{ debt.get_debt_type_display }}</td>
+          <td style="padding:6px 10px;color:#64748b;font-size:8.5pt;">{{ debt.description }}</td>
+          <td style="padding:6px 10px;text-align:right;">{{ debt.amount|floatformat:0 }}</td>
+          <td style="padding:6px 10px;text-align:right;color:#16a34a;">{{ debt.total_paid|floatformat:0 }}</td>
+          <td style="padding:6px 10px;text-align:right;font-weight:700;color:#dc2626;">{{ debt.balance|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background:#fff1f2;border-top:2px solid #dc2626;">
+          <td colspan="5" style="padding:7px 10px;font-weight:700;font-size:9.5pt;">Total Outstanding Debt for This Project</td>
+          <td style="padding:7px 10px;text-align:right;font-weight:800;font-size:10pt;color:#dc2626;">TZS {{ funding.project_debts_total|floatformat:0 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+    {% if funding.project_debts.0.due_date %}
+    <div style="margin-top:8px;font-size:8.5pt;color:#92400e;">
+      <strong>Note:</strong> Ensure debts are paid before due dates to maintain good supplier relationships.
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 
