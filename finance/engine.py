@@ -141,6 +141,26 @@ def _expenses_in(date_from, date_to):
     return total, by_category, rows, project_total, office_total
 
 
+# ── Debt repayment aggregation ────────────────────────────────────────────────
+
+def _debt_payments_in(date_from, date_to):
+    """
+    Sum of DebtPayment amounts in the period, grouped by payment_source.
+    These represent actual cash/bank outflows when debts are being settled.
+    Returns (total, rows, by_source_dict).
+    """
+    qs = DebtPayment.objects.filter(
+        payment_date__gte=date_from, payment_date__lte=date_to,
+    ).select_related('debt')
+    total = _sum_qs(qs, 'amount')
+    rows = list(qs.order_by('-payment_date'))
+    by_source = {}
+    for dp in rows:
+        s = dp.payment_source or 'other'
+        by_source[s] = by_source.get(s, Decimal('0')) + dp.amount
+    return total, rows, by_source
+
+
 # ── Receivables (Python loop — properties not DB-aggregatable) ───────────────
 
 def _invoice_receivables():
@@ -306,7 +326,8 @@ def _monthly_trends(months=6):
         inv_income, _ = _invoice_payments_in(first, last)
         off_income, _ = _office_payments_in(first, last)
         oth_income, _ = _other_income_in(first, last)
-        income = inv_income + off_income + oth_income
+        adv_income, _, _ = _advance_payments_in(first, last)
+        income = inv_income + off_income + oth_income + adv_income
 
         exp_total, _, _, _, _ = _expenses_in(first, last)
 
@@ -445,6 +466,11 @@ def _funds_position():
     ).prefetch_related('items'):
         accounts[_norm_out(order.payment_source)]['out'] += order.total_cost
 
+    # 6. Debt repayments — cash actually leaving accounts to settle debts
+    #    (when payment_source='credit' created a Debt, paying it back IS a cash outflow)
+    for dp in DebtPayment.objects.all().only('amount', 'payment_source'):
+        accounts[_norm_out(dp.payment_source)]['out'] += dp.amount
+
     # ── CREDIT WE OWE (Payables) ───────────────────────────────────────────
     outstanding_debts = list(
         Debt.objects.exclude(status='settled').prefetch_related('payments')
@@ -532,6 +558,8 @@ def compute_snapshot(for_date=None):
     total_in = inv_income + off_income + oth_income + adv_income
 
     exp_total, by_category, exp_rows, proj_exp_total, office_exp_total = _expenses_in(today, today)
+    debt_pmt_total, debt_pmt_rows, debt_pmt_by_source = _debt_payments_in(today, today)
+    total_out = exp_total + debt_pmt_total
     funds = _funds_position()
 
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
@@ -548,8 +576,9 @@ def compute_snapshot(for_date=None):
     return {
         'date': today,
         'total_in': total_in,
-        'total_out': exp_total,
-        'net_today': total_in - exp_total,
+        'total_out': total_out,
+        'exp_total': exp_total,
+        'net_today': total_in - total_out,
         # Breakdown of inflows
         'invoice_income': inv_income,
         'advance_income': adv_income,
@@ -563,6 +592,10 @@ def compute_snapshot(for_date=None):
         'by_category': by_category,
         'project_expenses_total': proj_exp_total,
         'office_expenses_total':  office_exp_total,
+        # Debt repayments today (real cash leaving the account)
+        'debt_payments': debt_pmt_rows,
+        'debt_payments_total': debt_pmt_total,
+        'debt_payments_by_source': debt_pmt_by_source,
         # Live receivable totals (all-time outstanding, not filtered to today)
         'total_receivable': total_receivable,
         'invoice_receivable': inv_recv,
@@ -596,8 +629,14 @@ def compute_report(date_from, date_to):
     # ── Expenses ──────────────────────────────────────────────────────────────
     total_expenses, by_category, expense_rows, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
 
+    # ── Debt repayments in period ─────────────────────────────────────────────
+    debt_pmt_total, debt_pmt_rows, debt_pmt_by_source = _debt_payments_in(date_from, date_to)
+
     # ── Net ───────────────────────────────────────────────────────────────────
+    # net_profit = operating income minus operating expenses (P&L view)
     net_profit = total_income - total_expenses
+    # net_cash_flow = income minus all cash outflows including debt repayments
+    net_cash_flow = total_income - total_expenses - debt_pmt_total
 
     # ── Receivables ───────────────────────────────────────────────────────────
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
@@ -637,7 +676,9 @@ def compute_report(date_from, date_to):
         'date_to': str(date_to),
         'total_income': float(total_income),
         'total_expenses': float(total_expenses),
+        'debt_payments_total': float(debt_pmt_total),
         'net_profit': float(net_profit),
+        'net_cash_flow': float(net_cash_flow),
         'profit_margin': float((net_profit / total_income * 100) if total_income else 0),
 
         # Income detail
@@ -705,6 +746,20 @@ def compute_report(date_from, date_to):
                 'project_pk':      e.project_id,
             }
             for e in expense_rows
+        ],
+
+        # Debt repayments in period (cash outflows for settling debts)
+        'debt_payments_by_source': {k: float(v) for k, v in debt_pmt_by_source.items()},
+        'debt_payment_rows': [
+            {
+                'creditor_name':  dp.debt.creditor_name,
+                'debt_type':      dp.debt.get_debt_type_display(),
+                'amount':         float(dp.amount),
+                'payment_date':   str(dp.payment_date),
+                'payment_source': dp.payment_source,
+                'reference':      dp.reference,
+            }
+            for dp in debt_pmt_rows
         ],
 
         # Receivables
