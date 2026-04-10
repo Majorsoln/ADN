@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}AR — Fedha Tunazodai{% endblock %}
+{% block title %}Accounts Receivable (AR){% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div>
     <h2 class="mb-0"><i class="bi bi-arrow-down-circle text-success me-2"></i>Accounts Receivable (AR)</h2>
-    <small class="text-muted">Fedha ambazo wateja bado hawajalipa — tunasubiri kupokea</small>
+    <small class="text-muted">Money clients still owe us — pending payments (Fedha tunazodai kutoka kwa wateja)</small>
   </div>
   <a href="{% url 'finance:full_report' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-bar-chart-line me-1"></i>Ripoti Kamili
+    <i class="bi bi-bar-chart-line me-1"></i>Full Report
   </a>
 </div>
 
@@ -16,18 +16,18 @@
 <div class="alert border-0 mb-4 py-3" style="background:#f0fdf4;border-left:5px solid #16a34a!important;">
   <div class="row g-3 align-items-center text-center">
     <div class="col-sm-4">
-      <div class="small text-muted">Jumla Inayodaiwa (AR)</div>
+      <div class="small text-muted">Total Outstanding (AR)</div>
       <div class="fs-3 fw-bold text-success">TZS {{ data.total_ar|floatformat:0 }}</div>
     </div>
     <div class="col-sm-4">
-      <div class="small text-muted">Invoices Zisizolipwa</div>
+      <div class="small text-muted">Unpaid Invoices (Invoices zisizolipwa)</div>
       <div class="fs-5 fw-bold">TZS {{ data.inv_total_outstanding|floatformat:0 }}</div>
       <div class="small text-muted">{{ data.inv_rows|length }} invoice(s)</div>
     </div>
     <div class="col-sm-4">
-      <div class="small text-muted">Huduma za Ofisi Zisizolipwa</div>
+      <div class="small text-muted">Office Services Unpaid (Huduma za ofisi)</div>
       <div class="fs-5 fw-bold">TZS {{ data.svc_total_outstanding|floatformat:0 }}</div>
-      <div class="small text-muted">{{ data.svc_rows|length }} rekodi</div>
+      <div class="small text-muted">{{ data.svc_rows|length }} record(s)</div>
     </div>
   </div>
 </div>
@@ -37,8 +37,8 @@
    ══════════════════════════════════════════════════════════════════ #}
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f0fdf4;">
-    <span><i class="bi bi-receipt-cutoff me-2 text-success"></i>Invoices — Malipo ya Miradi</span>
-    <span class="text-success fw-bold">Baki: TZS {{ data.inv_total_outstanding|floatformat:0 }}</span>
+    <span><i class="bi bi-receipt-cutoff me-2 text-success"></i>Project Invoices — Amounts Due</span>
+    <span class="text-success fw-bold">Balance: TZS {{ data.inv_total_outstanding|floatformat:0 }}</span>
   </div>
 
   {# Summary by method #}
@@ -47,25 +47,25 @@
     <div class="row g-2 text-center">
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
-          <div class="small text-muted">Mkataba Wote</div>
+          <div class="small text-muted">Contract Total</div>
           <div class="fw-bold">TZS {{ data.inv_total_contract|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-          <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Kilichopokelewa — Cash</div>
+          <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Received — Cash</div>
           <div class="fw-bold text-success">TZS {{ data.inv_recv_cash|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
-          <div class="small text-muted"><i class="bi bi-bank me-1"></i>Kilichopokelewa — Bank</div>
+          <div class="small text-muted"><i class="bi bi-bank me-1"></i>Received — Bank</div>
           <div class="fw-bold text-primary">TZS {{ data.inv_recv_bank|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#fff7ed;border:1px solid #fed7aa;">
-          <div class="small text-muted"><i class="bi bi-phone me-1"></i>M-Pesa / Nyingine</div>
+          <div class="small text-muted"><i class="bi bi-phone me-1"></i>M-Pesa / Other</div>
           <div class="fw-bold" style="color:#c2410c;">TZS {{ data.inv_recv_mpesa|floatformat:0 }}</div>
         </div>
       </div>
@@ -79,21 +79,21 @@
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
           <tr>
-            <th>Invoice / Mradi</th>
-            <th>Mteja</th>
-            <th>Tarehe / Mwisho</th>
-            <th class="text-end">Mkataba</th>
-            <th class="text-end text-success">Pokelewa Cash</th>
-            <th class="text-end text-primary">Pokelewa Bank</th>
-            <th class="text-end text-warning">Baki Inayodaiwa</th>
-            <th>Hali</th>
+            <th>Invoice / Project</th>
+            <th>Client (Mteja)</th>
+            <th>Date / Due</th>
+            <th class="text-end">Contract</th>
+            <th class="text-end text-success">Cash Recv.</th>
+            <th class="text-end text-primary">Bank Recv.</th>
+            <th class="text-end text-warning">Balance Due</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
           {% for r in data.inv_rows %}
           <tr class="{% if r.is_overdue %}table-danger{% endif %}">
             <td>
-              <a href="{% url 'finance:ar_report' %}#inv-{{ r.pk }}" class="fw-semibold text-decoration-none">{{ r.invoice_no }}</a>
+              <a href="{% url 'invoices:detail' r.pk %}" class="fw-semibold text-decoration-none">{{ r.invoice_no }}</a>
               {% if r.project_name != '—' %}
               <br><a href="{% url 'projects:detail' r.project_pk %}" class="badge bg-primary text-white text-decoration-none" style="font-size:.65rem;">
                 <i class="bi bi-tools me-1"></i>{{ r.project_name|truncatechars:25 }}
@@ -113,15 +113,15 @@
             <td class="text-end text-primary fw-semibold">{{ r.recv_bank|floatformat:0 }}</td>
             <td class="text-end fw-bold text-warning">{{ r.balance|floatformat:0 }}</td>
             <td>
-              {% if r.is_overdue %}<span class="badge bg-danger">Imechelewa</span>
-              {% else %}<span class="badge bg-warning text-dark">Inasubiri</span>{% endif %}
+              {% if r.is_overdue %}<span class="badge bg-danger">Overdue</span>
+              {% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}
             </td>
           </tr>
           {% endfor %}
         </tbody>
         <tfoot class="table-light fw-bold">
           <tr>
-            <td colspan="3">JUMLA</td>
+            <td colspan="3">TOTAL</td>
             <td class="text-end">TZS {{ data.inv_total_contract|floatformat:0 }}</td>
             <td class="text-end text-success">{{ data.inv_recv_cash|floatformat:0 }}</td>
             <td class="text-end text-primary">{{ data.inv_recv_bank|floatformat:0 }}</td>
@@ -134,7 +134,7 @@
     {% else %}
     <div class="text-center text-muted py-4">
       <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
-      Hakuna invoice inayodaiwa — wote wamelipa!
+      All invoices have been paid — nothing outstanding!
     </div>
     {% endif %}
   </div>
@@ -145,8 +145,8 @@
    ══════════════════════════════════════════════════════════════════ #}
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f0fdf4;">
-    <span><i class="bi bi-building me-2 text-success"></i>Huduma za Ofisi — Malipo Yanayodaiwa</span>
-    <span class="text-success fw-bold">Baki: TZS {{ data.svc_total_outstanding|floatformat:0 }}</span>
+    <span><i class="bi bi-building me-2 text-success"></i>Office Services — Amounts Due (Huduma za Ofisi)</span>
+    <span class="text-success fw-bold">Balance: TZS {{ data.svc_total_outstanding|floatformat:0 }}</span>
   </div>
 
   {% if data.svc_total_received %}
@@ -154,25 +154,25 @@
     <div class="row g-2 text-center">
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
-          <div class="small text-muted">Jumla ya Malipo</div>
+          <div class="small text-muted">Total Charged</div>
           <div class="fw-bold">TZS {{ data.svc_total_charge|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-          <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Cash Iliyopokelewa</div>
+          <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Received — Cash</div>
           <div class="fw-bold text-success">TZS {{ data.svc_recv_cash|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
-          <div class="small text-muted"><i class="bi bi-bank me-1"></i>Bank Iliyopokelewa</div>
+          <div class="small text-muted"><i class="bi bi-bank me-1"></i>Received — Bank</div>
           <div class="fw-bold text-primary">TZS {{ data.svc_recv_bank|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#fff7ed;border:1px solid #fed7aa;">
-          <div class="small text-muted">M-Pesa / Nyingine</div>
+          <div class="small text-muted">M-Pesa / Other</div>
           <div class="fw-bold" style="color:#c2410c;">TZS {{ data.svc_recv_mpesa|floatformat:0 }}</div>
         </div>
       </div>
@@ -186,14 +186,14 @@
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
           <tr>
-            <th>Mteja</th>
-            <th>Kazi</th>
-            <th>Tarehe / Mwisho</th>
-            <th class="text-end">Malipo Yote</th>
-            <th class="text-end text-success">Pokelewa Cash</th>
-            <th class="text-end text-primary">Pokelewa Bank</th>
-            <th class="text-end text-warning">Baki</th>
-            <th>Hali</th>
+            <th>Client (Mteja)</th>
+            <th>Work Done</th>
+            <th>Date / Due</th>
+            <th class="text-end">Charged</th>
+            <th class="text-end text-success">Cash Recv.</th>
+            <th class="text-end text-primary">Bank Recv.</th>
+            <th class="text-end text-warning">Balance</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
@@ -218,15 +218,15 @@
             <td class="text-end text-primary fw-semibold">{{ r.recv_bank|floatformat:0 }}</td>
             <td class="text-end fw-bold text-warning">{{ r.balance|floatformat:0 }}</td>
             <td>
-              {% if r.is_overdue %}<span class="badge bg-danger">Imechelewa</span>
-              {% else %}<span class="badge bg-warning text-dark">Inasubiri</span>{% endif %}
+              {% if r.is_overdue %}<span class="badge bg-danger">Overdue</span>
+              {% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}
             </td>
           </tr>
           {% endfor %}
         </tbody>
         <tfoot class="table-light fw-bold">
           <tr>
-            <td colspan="3">JUMLA</td>
+            <td colspan="3">TOTAL</td>
             <td class="text-end">TZS {{ data.svc_total_charge|floatformat:0 }}</td>
             <td class="text-end text-success">{{ data.svc_recv_cash|floatformat:0 }}</td>
             <td class="text-end text-primary">{{ data.svc_recv_bank|floatformat:0 }}</td>
@@ -239,7 +239,7 @@
     {% else %}
     <div class="text-center text-muted py-4">
       <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
-      Hakuna huduma ya ofisi inayodaiwa.
+      All office service records have been paid.
     </div>
     {% endif %}
   </div>

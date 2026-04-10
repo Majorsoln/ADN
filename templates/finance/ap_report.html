@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}AP — Madeni Yetu{% endblock %}
+{% block title %}Accounts Payable (AP){% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div>
     <h2 class="mb-0"><i class="bi bi-arrow-up-circle text-danger me-2"></i>Accounts Payable (AP)</h2>
-    <small class="text-muted">Madeni ambayo bado hatujalipa — tunapaswa kulipa</small>
+    <small class="text-muted">Money the business owes — outstanding debts &amp; liabilities (Madeni yetu)</small>
   </div>
   <a href="{% url 'finance:full_report' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-bar-chart-line me-1"></i>Ripoti Kamili
+    <i class="bi bi-bar-chart-line me-1"></i>Full Report
   </a>
 </div>
 
@@ -16,22 +16,22 @@
 <div class="alert border-0 mb-4 py-3" style="background:#fff1f2;border-left:5px solid #dc2626!important;">
   <div class="row g-3 align-items-center text-center">
     <div class="col-sm-3">
-      <div class="small text-muted">Jumla Deni (AP)</div>
+      <div class="small text-muted">Total Outstanding (AP)</div>
       <div class="fs-3 fw-bold text-danger">TZS {{ data.total_outstanding|floatformat:0 }}</div>
     </div>
     <div class="col-sm-3">
-      <div class="small text-muted">Deni la Awali</div>
+      <div class="small text-muted">Original Amount (Deni la Awali)</div>
       <div class="fs-5 fw-bold">TZS {{ data.total_original|floatformat:0 }}</div>
     </div>
     <div class="col-sm-3">
       <div class="p-1 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-        <div class="small text-muted">Kilicholipwa — Cash</div>
+        <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Repaid — Cash</div>
         <div class="fw-bold text-success">TZS {{ data.repaid_cash|floatformat:0 }}</div>
       </div>
     </div>
     <div class="col-sm-3">
       <div class="p-1 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
-        <div class="small text-muted">Kilicholipwa — Bank</div>
+        <div class="small text-muted"><i class="bi bi-bank me-1"></i>Repaid — Bank</div>
         <div class="fw-bold text-primary">TZS {{ data.repaid_bank|floatformat:0 }}</div>
       </div>
     </div>
@@ -46,7 +46,7 @@
     <span>
       <i class="bi bi-exclamation-triangle me-2 text-danger"></i>{{ section.label }}
     </span>
-    <span class="text-danger fw-bold">Baki: TZS {{ section.total_outstanding|floatformat:0 }}</span>
+    <span class="text-danger fw-bold">Balance: TZS {{ section.total_outstanding|floatformat:0 }}</span>
   </div>
 
   {# Method summary for this type #}
@@ -54,25 +54,25 @@
     <div class="row g-2 text-center">
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
-          <div class="small text-muted">Deni la Awali</div>
+          <div class="small text-muted">Original (Deni la Awali)</div>
           <div class="fw-bold">TZS {{ section.total_original|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-          <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Lipa kwa Cash</div>
+          <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Repaid via Cash</div>
           <div class="fw-bold text-success">TZS {{ section.repaid_cash|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
-          <div class="small text-muted"><i class="bi bi-bank me-1"></i>Lipa kwa Bank</div>
+          <div class="small text-muted"><i class="bi bi-bank me-1"></i>Repaid via Bank</div>
           <div class="fw-bold text-primary">TZS {{ section.repaid_bank|floatformat:0 }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#fff1f2;border:1px solid #fecaca;">
-          <div class="small text-muted">Bado Inabaki</div>
+          <div class="small text-muted">Still Owed (Baki)</div>
           <div class="fw-bold text-danger">TZS {{ section.total_outstanding|floatformat:0 }}</div>
         </div>
       </div>
@@ -84,14 +84,14 @@
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
           <tr>
-            <th>Deni (Creditor)</th>
-            <th>Maelezo</th>
-            <th>Tarehe / Mwisho</th>
-            <th class="text-end">Deni la Awali</th>
-            <th class="text-end text-success">Lipa Cash</th>
-            <th class="text-end text-primary">Lipa Bank</th>
-            <th class="text-end text-danger">Baki</th>
-            <th>Hali</th>
+            <th>Creditor / Source</th>
+            <th>Details</th>
+            <th>Date / Due</th>
+            <th class="text-end">Original</th>
+            <th class="text-end text-success">Cash Paid</th>
+            <th class="text-end text-primary">Bank Paid</th>
+            <th class="text-end text-danger">Balance</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -100,13 +100,51 @@
             <td>
               <div class="fw-semibold">{{ r.creditor_name }}</div>
               {% if r.creditor_phone %}<div class="small text-muted">{{ r.creditor_phone }}</div>{% endif %}
+              {# Source badges #}
+              {% if r.source_type == 'material_order' %}
+                <span class="badge bg-info text-dark" style="font-size:.65rem;">
+                  <i class="bi bi-cart3 me-1"></i>Material Order
+                </span>
+              {% elif r.source_type == 'expense' %}
+                <span class="badge bg-warning text-dark" style="font-size:.65rem;">
+                  <i class="bi bi-receipt-cutoff me-1"></i>Credit Expense
+                </span>
+              {% else %}
+                <span class="badge bg-secondary" style="font-size:.65rem;">
+                  <i class="bi bi-pencil me-1"></i>Manual
+                </span>
+              {% endif %}
+              {# Project link #}
               {% if r.project_name %}
-              <a href="{% url 'projects:detail' r.project_pk %}" class="badge bg-primary text-white text-decoration-none" style="font-size:.65rem;">
+              <br><a href="{% url 'projects:detail' r.project_pk %}" class="badge bg-primary text-white text-decoration-none" style="font-size:.65rem;">
                 <i class="bi bi-tools me-1"></i>{{ r.project_name|truncatechars:20 }}
               </a>
               {% endif %}
             </td>
-            <td class="small text-muted">{{ r.description|truncatechars:40 }}</td>
+            <td class="small">
+              {# Show order context if this came from a material order #}
+              {% if r.order_ctx %}
+                <div class="text-muted">
+                  <i class="bi bi-cart3 me-1"></i>
+                  <strong>{{ r.order_ctx.supplier }}</strong>
+                  — {{ r.order_ctx.items_count }} item(s)
+                </div>
+                <div class="text-muted">Status: {{ r.order_ctx.status }}</div>
+              {% elif r.expense_ctx %}
+                <div class="text-muted">
+                  <i class="bi bi-tag me-1"></i>
+                  <strong>{{ r.expense_ctx.category }}</strong>
+                </div>
+                {% if r.expense_ctx.description %}
+                <div class="text-muted">{{ r.expense_ctx.description|truncatechars:35 }}</div>
+                {% endif %}
+                {% if r.expense_ctx.paid_to %}
+                <div class="text-muted">To: {{ r.expense_ctx.paid_to }}</div>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">{{ r.description|truncatechars:40 }}</span>
+              {% endif %}
+            </td>
             <td class="small">
               <div class="text-muted">{{ r.date_incurred }}</div>
               {% if r.due_date %}
@@ -120,9 +158,16 @@
             <td class="text-end text-primary fw-semibold">{{ r.repaid_bank|floatformat:0 }}</td>
             <td class="text-end fw-bold text-danger">{{ r.balance|floatformat:0 }}</td>
             <td>
-              {% if r.is_overdue %}<span class="badge bg-danger">Imechelewa</span>
+              {% if r.is_overdue %}
+                <span class="badge bg-danger">Overdue</span>
+                <br>
+                <a href="{% url 'finance:debt_pay' r.pk %}" class="badge bg-outline-danger text-danger border border-danger text-decoration-none mt-1" style="font-size:.7rem;">
+                  <i class="bi bi-cash me-1"></i>Pay
+                </a>
               {% else %}
-                <a href="{% url 'finance:debt_pay' r.pk %}" class="badge bg-warning text-dark text-decoration-none">Lipa</a>
+                <a href="{% url 'finance:debt_pay' r.pk %}" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size:.75rem;">
+                  <i class="bi bi-cash me-1"></i>Pay (Lipa)
+                </a>
               {% endif %}
             </td>
           </tr>
@@ -130,7 +175,7 @@
         </tbody>
         <tfoot class="table-light fw-bold">
           <tr>
-            <td colspan="3">JUMLA — {{ section.label }}</td>
+            <td colspan="3">TOTAL — {{ section.label }}</td>
             <td class="text-end">TZS {{ section.total_original|floatformat:0 }}</td>
             <td class="text-end text-success">{{ section.repaid_cash|floatformat:0 }}</td>
             <td class="text-end text-primary">{{ section.repaid_bank|floatformat:0 }}</td>
@@ -145,10 +190,10 @@
 {% empty %}
 <div class="text-center text-muted py-5">
   <i class="bi bi-check-circle-fill text-success display-4 d-block mb-3"></i>
-  <h5>Hakuna madeni yanayodaiwa!</h5>
-  <p class="text-muted">Madeni yote yameshalipwa.</p>
+  <h5>No outstanding debts!</h5>
+  <p class="text-muted">All liabilities have been settled (Madeni yote yameshalipwa).</p>
   <a href="{% url 'finance:debt_add' %}" class="btn btn-outline-danger btn-sm">
-    <i class="bi bi-plus-circle me-1"></i>Ongeza Deni
+    <i class="bi bi-plus-circle me-1"></i>Add Debt Manually
   </a>
 </div>
 {% endfor %}
@@ -159,19 +204,19 @@
   <div class="card-body py-3">
     <div class="row g-3 text-center fw-bold">
       <div class="col-sm-3">
-        <div class="small text-muted">JUMLA DENI LA AWALI</div>
+        <div class="small text-muted">TOTAL ORIGINAL DEBT</div>
         <div class="fs-5">TZS {{ data.total_original|floatformat:0 }}</div>
       </div>
       <div class="col-sm-3">
-        <div class="small text-muted">KILICHOLIPWA (Cash)</div>
+        <div class="small text-muted">REPAID (Cash)</div>
         <div class="fs-5 text-success">TZS {{ data.repaid_cash|floatformat:0 }}</div>
       </div>
       <div class="col-sm-3">
-        <div class="small text-muted">KILICHOLIPWA (Bank)</div>
+        <div class="small text-muted">REPAID (Bank)</div>
         <div class="fs-5 text-primary">TZS {{ data.repaid_bank|floatformat:0 }}</div>
       </div>
       <div class="col-sm-3">
-        <div class="small text-muted">JUMLA BAKI (AP)</div>
+        <div class="small text-muted">TOTAL OUTSTANDING (AP)</div>
         <div class="fs-4 text-danger">TZS {{ data.total_outstanding|floatformat:0 }}</div>
       </div>
     </div>

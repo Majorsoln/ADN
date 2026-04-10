@@ -245,38 +245,35 @@
       <i class="bi bi-currency-dollar"></i> Service Rates
     </a>
 
-    <div class="nav-section mt-2">Finance — Ripoti</div>
+    <div class="nav-section mt-2">Finance — Reports</div>
     <a href="{% url 'finance:snapshot' %}" class="nav-link {% if request.path == '/finance/' %}active{% endif %}">
-      <i class="bi bi-speedometer"></i> Muhtasari wa Leo
+      <i class="bi bi-speedometer"></i> Daily Snapshot
     </a>
     <a href="{% url 'finance:ar_report' %}" class="nav-link {% if 'finance/ar' in request.path %}active{% endif %}">
-      <i class="bi bi-arrow-down-circle"></i> AR — Fedha Tunazodai
+      <i class="bi bi-arrow-down-circle"></i> AR — Receivables
     </a>
     <a href="{% url 'finance:ap_report' %}" class="nav-link {% if 'finance/ap' in request.path %}active{% endif %}">
-      <i class="bi bi-arrow-up-circle"></i> AP — Madeni Yetu
+      <i class="bi bi-arrow-up-circle"></i> AP — Payables
     </a>
     <a href="{% url 'finance:office_report' %}" class="nav-link {% if 'finance/office' in request.path %}active{% endif %}">
-      <i class="bi bi-building"></i> Huduma za Ofisi
+      <i class="bi bi-building"></i> Office Services
     </a>
     <a href="{% url 'finance:projects_report' %}" class="nav-link {% if 'finance/projects' in request.path %}active{% endif %}">
-      <i class="bi bi-clipboard-check"></i> Miradi — Ripoti
+      <i class="bi bi-clipboard-check"></i> Projects Report
     </a>
     <a href="{% url 'finance:full_report' %}" class="nav-link {% if 'finance/full' in request.path %}active{% endif %}">
-      <i class="bi bi-bar-chart-line"></i> Ripoti Kamili
+      <i class="bi bi-bar-chart-line"></i> Full Report
     </a>
 
-    <div class="nav-section mt-2">Finance — Matumizi</div>
+    <div class="nav-section mt-2">Finance — Expenses</div>
     <a href="{% url 'finance:expense_list' %}" class="nav-link {% if 'finance/expense' in request.path %}active{% endif %}">
-      <i class="bi bi-receipt-cutoff"></i> Gharama
+      <i class="bi bi-receipt-cutoff"></i> All Expenses
     </a>
     <a href="{% url 'finance:expense_add' %}" class="nav-link">
-      <i class="bi bi-plus-circle"></i> Ongeza Gharama
+      <i class="bi bi-plus-circle"></i> Add Expense
     </a>
-    <a href="{% url 'finance:debt_list' %}" class="nav-link {% if 'finance/debt' in request.path %}active{% endif %}">
-      <i class="bi bi-exclamation-triangle"></i> Madeni &amp; Deni
-    </a>
-    <a href="{% url 'finance:debt_add' %}" class="nav-link">
-      <i class="bi bi-plus-circle"></i> Ongeza Deni
+    <a href="{% url 'finance:debt_add' %}" class="nav-link {% if request.resolver_match.url_name == 'debt_add' %}active{% endif %}">
+      <i class="bi bi-plus-circle"></i> Add Debt (Manual)
     </a>
   </div>
 

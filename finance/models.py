@@ -47,6 +47,7 @@ class Expense(models.Model):
         ('bank',   'Bank Transfer'),
         ('mpesa',  'M-Pesa / Mobile Money'),
         ('cheque', 'Cheque'),
+        ('credit', 'On Credit (Debt Created)'),
         ('other',  'Other'),
     ]
 
@@ -145,6 +146,9 @@ class Debt(models.Model):
     material_order = models.ForeignKey('orders.MaterialOrder', on_delete=models.SET_NULL,
                                         null=True, blank=True, related_name='debts',
                                         help_text='Order that created this debt (if any)')
+    expense        = models.ForeignKey('Expense', on_delete=models.SET_NULL,
+                                        null=True, blank=True, related_name='debts',
+                                        help_text='Expense recorded on credit that created this debt')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

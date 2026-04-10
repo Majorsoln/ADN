@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Ripoti Kamili{% endblock %}
+{% block title %}Full Financial Report{% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div>
-    <h2 class="mb-0"><i class="bi bi-bar-chart-line text-primary me-2"></i>Ripoti Kamili</h2>
-    <small class="text-muted">Muhtasari wa fedha zote — kipindi kilichochaguliwa</small>
+    <h2 class="mb-0"><i class="bi bi-bar-chart-line text-primary me-2"></i>Full Financial Report</h2>
+    <small class="text-muted">Combined summary for the selected period (Ripoti kamili ya fedha)</small>
   </div>
 </div>
 
@@ -14,20 +14,20 @@
   <div class="card-body py-2">
     <form method="get" class="row g-2 align-items-end">
       <div class="col-sm-3">
-        <label class="form-label small mb-1">Kipindi</label>
+        <label class="form-label small mb-1">Period (Kipindi)</label>
         {{ form.period }}
       </div>
       <div class="col-sm-3" id="date-from-wrap">
-        <label class="form-label small mb-1">Kuanzia</label>
+        <label class="form-label small mb-1">From (Kuanzia)</label>
         {{ form.date_from }}
       </div>
       <div class="col-sm-3" id="date-to-wrap">
-        <label class="form-label small mb-1">Hadi</label>
+        <label class="form-label small mb-1">To (Hadi)</label>
         {{ form.date_to }}
       </div>
       <div class="col-sm-3">
         <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-arrow-clockwise me-1"></i>Onyesha
+          <i class="bi bi-arrow-clockwise me-1"></i>Show
         </button>
       </div>
     </form>
@@ -37,10 +37,10 @@
 {% if data %}
 
 {# ══════════════════════════════════════════════════════════
-   BLOCK 1 — MTIRIRIKO WA PESA KWA AKAUNTI (Period Cash Flow)
+   BLOCK 1 — CASH FLOW BY ACCOUNT (Period)
    ══════════════════════════════════════════════════════════ #}
 <h5 class="text-uppercase text-muted small fw-bold mb-2 mt-3">
-  <i class="bi bi-arrow-left-right me-1"></i>Mtiririko wa Pesa kwa Akaunti — {{ date_from }} hadi {{ date_to }}
+  <i class="bi bi-arrow-left-right me-1"></i>Cash Flow by Account — {{ date_from }} to {{ date_to }}
 </h5>
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body p-0">
@@ -49,10 +49,10 @@
       <table class="table table-sm mb-0">
         <thead class="table-light">
           <tr>
-            <th>Akaunti</th>
-            <th class="text-end text-success">Iliingia (+)</th>
-            <th class="text-end text-danger">Ilitoka (−)</th>
-            <th class="text-end">Net (Kipindi Hiki)</th>
+            <th>Account</th>
+            <th class="text-end text-success">In (+)</th>
+            <th class="text-end text-danger">Out (−)</th>
+            <th class="text-end">Net (This Period)</th>
           </tr>
         </thead>
         <tbody>
@@ -72,7 +72,7 @@
         </tbody>
         <tfoot class="table-light fw-bold">
           <tr>
-            <td>JUMLA</td>
+            <td>TOTAL</td>
             <td class="text-end text-success">+TZS {{ data.total_income|floatformat:0 }}</td>
             <td class="text-end text-danger">−TZS {{ data.total_expenses|floatformat:0 }}</td>
             <td class="text-end {% if data.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
@@ -83,38 +83,38 @@
       </table>
     </div>
     {% else %}
-    <div class="text-center text-muted py-3">Hakuna muamala katika kipindi hiki.</div>
+    <div class="text-center text-muted py-3">No transactions in this period.</div>
     {% endif %}
   </div>
 </div>
 
-{# ── Income sources breakdown ── #}
+{# ── Income & Expense sources breakdown ── #}
 <div class="row g-3 mb-4">
   <div class="col-md-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-header fw-semibold bg-success bg-opacity-10 text-success">
-        <i class="bi bi-arrow-down-circle-fill me-2"></i>Vyanzo vya Mapato
+        <i class="bi bi-arrow-down-circle-fill me-2"></i>Income Sources (Vyanzo vya Mapato)
       </div>
       <div class="card-body p-0">
         <table class="table table-sm mb-0">
           {% if data.invoice_income %}
-          <tr><td><i class="bi bi-receipt-cutoff me-1"></i>Malipo ya Invoice</td>
+          <tr><td><i class="bi bi-receipt-cutoff me-1"></i>Invoice Payments</td>
               <td class="text-end fw-semibold text-success">TZS {{ data.invoice_income|floatformat:0 }}</td></tr>
           {% endif %}
           {% if data.advance_income %}
-          <tr><td><i class="bi bi-cash me-1"></i>Malipo ya Awali (Advance)</td>
+          <tr><td><i class="bi bi-cash me-1"></i>Advance Payments</td>
               <td class="text-end fw-semibold text-success">TZS {{ data.advance_income|floatformat:0 }}</td></tr>
           {% endif %}
           {% if data.office_income %}
-          <tr><td><i class="bi bi-building me-1"></i>Huduma za Ofisi</td>
+          <tr><td><i class="bi bi-building me-1"></i>Office Services</td>
               <td class="text-end fw-semibold text-success">TZS {{ data.office_income|floatformat:0 }}</td></tr>
           {% endif %}
           {% if data.other_income %}
-          <tr><td><i class="bi bi-three-dots me-1"></i>Mapato Mengine</td>
+          <tr><td><i class="bi bi-three-dots me-1"></i>Other Income</td>
               <td class="text-end fw-semibold text-success">TZS {{ data.other_income|floatformat:0 }}</td></tr>
           {% endif %}
           <tr class="table-success fw-bold">
-            <td>JUMLA MAPATO</td>
+            <td>TOTAL INCOME</td>
             <td class="text-end">TZS {{ data.total_income|floatformat:0 }}</td>
           </tr>
         </table>
@@ -124,24 +124,24 @@
   <div class="col-md-6">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-header fw-semibold bg-danger bg-opacity-10 text-danger">
-        <i class="bi bi-arrow-up-circle-fill me-2"></i>Vyanzo vya Gharama
+        <i class="bi bi-arrow-up-circle-fill me-2"></i>Outflow Sources (Vyanzo vya Gharama)
       </div>
       <div class="card-body p-0">
         <table class="table table-sm mb-0">
           {% if data.project_expenses_total %}
-          <tr><td><i class="bi bi-tools me-1"></i>Gharama za Miradi</td>
+          <tr><td><i class="bi bi-tools me-1"></i>Project Expenses</td>
               <td class="text-end fw-semibold text-danger">TZS {{ data.project_expenses_total|floatformat:0 }}</td></tr>
           {% endif %}
           {% if data.office_expenses_total %}
-          <tr><td><i class="bi bi-building me-1"></i>Gharama za Ofisi</td>
+          <tr><td><i class="bi bi-building me-1"></i>Office Expenses</td>
               <td class="text-end fw-semibold text-danger">TZS {{ data.office_expenses_total|floatformat:0 }}</td></tr>
           {% endif %}
           {% if data.debt_payments_total %}
-          <tr><td><i class="bi bi-arrow-return-right me-1"></i>Malipo ya Madeni</td>
+          <tr><td><i class="bi bi-arrow-return-right me-1"></i>Debt Repayments</td>
               <td class="text-end fw-semibold text-danger">TZS {{ data.debt_payments_total|floatformat:0 }}</td></tr>
           {% endif %}
           <tr class="table-danger fw-bold">
-            <td>JUMLA ILITOKA</td>
+            <td>TOTAL OUTFLOWS</td>
             <td class="text-end">TZS {{ data.total_expenses|floatformat:0 }}</td>
           </tr>
         </table>
@@ -151,10 +151,10 @@
 </div>
 
 {# ══════════════════════════════════════════════════════════
-   BLOCK 2 — PESA ZIKO WAPI (All-Time Funds Position)
+   BLOCK 2 — WHERE IS THE MONEY? (All-Time Funds Position)
    ══════════════════════════════════════════════════════════ #}
 <h5 class="text-uppercase text-muted small fw-bold mb-2 mt-3">
-  <i class="bi bi-wallet2 me-1"></i>Pesa Ziko Wapi — Salio la Sasa (Tangu Mwanzo)
+  <i class="bi bi-wallet2 me-1"></i>Where Is the Money? — All-Time Funds Position (Pesa Ziko Wapi)
 </h5>
 <div class="card border-0 shadow-sm mb-4" style="border-left:4px solid #1a2e5a!important;">
   <div class="card-body">
@@ -167,15 +167,15 @@
             <span class="fw-semibold" style="color:{{ acc.color }};">{{ acc.label }}</span>
           </div>
           <div class="d-flex justify-content-between small mb-1">
-            <span class="text-muted">Iliingia</span>
+            <span class="text-muted">In (Iliingia)</span>
             <span class="text-success fw-semibold">+TZS {{ acc.in|floatformat:0 }}</span>
           </div>
           <div class="d-flex justify-content-between small mb-2">
-            <span class="text-muted">Ilitoka</span>
+            <span class="text-muted">Out (Ilitoka)</span>
             <span class="text-danger fw-semibold">−TZS {{ acc.out|floatformat:0 }}</span>
           </div>
           <div class="border-top pt-2 d-flex justify-content-between fw-bold">
-            <span class="small">Salio</span>
+            <span class="small">Balance (Salio)</span>
             <span class="{% if acc.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
               TZS {{ acc.balance|floatformat:0 }}
             </span>
@@ -185,7 +185,7 @@
       {% endfor %}
       <div class="col-sm-6 col-lg-3">
         <div class="border rounded p-3 h-100" style="background:#f8fafc;">
-          <div class="small text-muted fw-semibold mb-2">JUMLA YA PESA HALISI</div>
+          <div class="small text-muted fw-semibold mb-2">TOTAL LIQUID CASH</div>
           <div class="fs-4 fw-bold {% if data.funds.total_liquid >= 0 %}text-success{% else %}text-danger{% endif %}">
             TZS {{ data.funds.total_liquid|floatformat:0 }}
           </div>
@@ -197,23 +197,23 @@
     <hr class="my-3">
 
     <div class="row g-3">
-      {# AR — Fedha Tunazodai #}
+      {# AR — Receivables #}
       <div class="col-md-6">
         <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
           <div class="fw-semibold mb-2 text-success">
             <i class="bi bi-arrow-down-circle-fill me-2"></i>
-            AR — Fedha Tunazodai (Wateja Wanaotudai)
+            AR — Money Clients Owe Us (Fedha Tunazodai)
           </div>
           <div class="d-flex justify-content-between small mb-1">
-            <span class="text-muted">Invoices zisizolipwa</span>
+            <span class="text-muted">Unpaid invoices</span>
             <span class="fw-semibold">TZS {{ data.ar_inv_outstanding|floatformat:0 }}</span>
           </div>
           <div class="d-flex justify-content-between small mb-2">
-            <span class="text-muted">Huduma za ofisi</span>
+            <span class="text-muted">Office services</span>
             <span class="fw-semibold">TZS {{ data.ar_svc_outstanding|floatformat:0 }}</span>
           </div>
           <div class="d-flex justify-content-between border-top pt-2 fw-bold">
-            <span>Jumla AR</span>
+            <span>Total AR</span>
             <span class="text-success">TZS {{ data.ar_total|floatformat:0 }}</span>
           </div>
           <div class="mt-2">
@@ -224,19 +224,19 @@
         </div>
       </div>
 
-      {# AP — Madeni Yetu #}
+      {# AP — Payables #}
       <div class="col-md-6">
         <div class="p-3 rounded" style="background:#fff1f2;border:1px solid #fecaca;">
           <div class="fw-semibold mb-2 text-danger">
             <i class="bi bi-arrow-up-circle-fill me-2"></i>
-            AP — Madeni Yetu (Tunawadulia Wengine)
+            AP — Money We Owe (Madeni Yetu)
           </div>
           <div class="d-flex justify-content-between small mb-2">
-            <span class="text-muted">Madeni yote yanayodaiwa</span>
+            <span class="text-muted">All outstanding liabilities</span>
             <span class="fw-semibold">TZS {{ data.ap_total|floatformat:0 }}</span>
           </div>
           <div class="d-flex justify-content-between border-top pt-2 fw-bold">
-            <span>Jumla AP</span>
+            <span>Total AP</span>
             <span class="text-danger">TZS {{ data.ap_total|floatformat:0 }}</span>
           </div>
           <div class="mt-2">
@@ -253,7 +253,7 @@
     {# Net position formula #}
     <div class="p-3 rounded text-center" style="background:#1a2e5a;color:#fff;">
       <div class="small mb-2 opacity-75">
-        NAFASI YA FEDHA = Pesa Halisi + AR (Tunazodai) − AP (Tunaodaiwa)
+        NET POSITION = Liquid Cash + AR (Receivables) − AP (Payables)
       </div>
       <div class="fs-3 fw-bold">
         <span class="opacity-75">TZS {{ data.funds.total_liquid|floatformat:0 }}</span>
@@ -279,7 +279,7 @@
       <div class="card-body text-center">
         <i class="bi bi-arrow-down-circle text-success fs-2 mb-2 d-block"></i>
         <div class="fw-semibold">AR Report</div>
-        <div class="small text-muted">Fedha Tunazodai</div>
+        <div class="small text-muted">Amounts clients owe us</div>
       </div>
     </a>
   </div>
@@ -288,7 +288,7 @@
       <div class="card-body text-center">
         <i class="bi bi-arrow-up-circle text-danger fs-2 mb-2 d-block"></i>
         <div class="fw-semibold">AP Report</div>
-        <div class="small text-muted">Madeni Yetu</div>
+        <div class="small text-muted">Amounts we owe others</div>
       </div>
     </a>
   </div>
@@ -297,7 +297,7 @@
       <div class="card-body text-center">
         <i class="bi bi-building text-info fs-2 mb-2 d-block"></i>
         <div class="fw-semibold">Office Services</div>
-        <div class="small text-muted">Huduma za Ofisi</div>
+        <div class="small text-muted">All service records</div>
       </div>
     </a>
   </div>
@@ -305,8 +305,8 @@
     <a href="{% url 'finance:projects_report' %}" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
       <div class="card-body text-center">
         <i class="bi bi-clipboard-check text-primary fs-2 mb-2 d-block"></i>
-        <div class="fw-semibold">Miradi</div>
-        <div class="small text-muted">Ripoti ya Miradi</div>
+        <div class="fw-semibold">Projects</div>
+        <div class="small text-muted">Revenue &amp; profit per project</div>
       </div>
     </a>
   </div>
@@ -315,7 +315,7 @@
 {% else %}
 <div class="text-center text-muted py-5">
   <i class="bi bi-bar-chart display-3 d-block mb-3"></i>
-  Chagua kipindi hapo juu na bonyeza "Onyesha".
+  Select a period above and click "Show".
 </div>
 {% endif %}
 

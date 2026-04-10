@@ -768,10 +768,11 @@ def compute_ap_report():
     Returns outstanding balances owed BY the business (unsettled debts).
     Grouped by debt type (supplier credit, labour credit, loans…).
     Each row shows how much has been repaid by cash vs bank.
+    Includes context from linked material orders and credit expenses.
     """
     debts = Debt.objects.exclude(status='settled').select_related(
-        'project', 'material_order',
-    ).prefetch_related('payments').order_by('due_date', '-date_incurred')
+        'project', 'material_order', 'expense', 'expense__category',
+    ).prefetch_related('payments', 'material_order__items').order_by('due_date', '-date_incurred')
 
     grand_original    = Decimal('0')
     grand_repaid      = Decimal('0')
@@ -813,6 +814,39 @@ def compute_ap_report():
         g['repaid_mpesa']      += row_repaid['mpesa']
         g['repaid_other']      += row_repaid['cheque'] + row_repaid['other']
 
+        # Material order context (credit purchase)
+        order_ctx = None
+        if d.material_order_id:
+            o = d.material_order
+            order_ctx = {
+                'pk':        o.pk,
+                'supplier':  o.supplier_name,
+                'date':      o.order_date,
+                'status':    o.get_status_display(),
+                'items_count': o.items.count(),
+                'total':     float(o.total_cost),
+            }
+
+        # Expense context (credit expense)
+        expense_ctx = None
+        if d.expense_id:
+            e = d.expense
+            expense_ctx = {
+                'pk':          e.pk,
+                'category':    e.category.name,
+                'description': e.description,
+                'date':        e.date,
+                'paid_to':     e.paid_to,
+            }
+
+        # Determine source type for display
+        if order_ctx:
+            source_type = 'material_order'
+        elif expense_ctx:
+            source_type = 'expense'
+        else:
+            source_type = 'manual'
+
         g['rows'].append({
             'pk':              d.pk,
             'creditor_name':   d.creditor_name,
@@ -830,6 +864,9 @@ def compute_ap_report():
             'repaid_other':    float(row_repaid['cheque'] + row_repaid['other']),
             'project_name':    d.project.name if d.project_id else None,
             'project_pk':      d.project_id,
+            'source_type':     source_type,
+            'order_ctx':       order_ctx,
+            'expense_ctx':     expense_ctx,
         })
 
     # Serialise by_type for the template

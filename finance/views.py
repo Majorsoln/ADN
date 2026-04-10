@@ -243,6 +243,22 @@ def expense_add_view(request):
         form = ExpenseForm(request.POST)
         if form.is_valid():
             expense = form.save()
+            # Auto-create a Debt when expense is recorded on credit
+            if expense.payment_method == 'credit':
+                Debt.objects.get_or_create(
+                    expense=expense,
+                    defaults={
+                        'creditor_name': expense.paid_to or 'Unknown Creditor',
+                        'debt_type':     'other',
+                        'amount':        expense.amount,
+                        'date_incurred': expense.date,
+                        'description':   (
+                            f"{expense.category.name} on credit"
+                            + (f" — {expense.description}" if expense.description else "")
+                        ),
+                        'project': expense.project,
+                    },
+                )
             # Log a ProjectEvent if linked to a project
             if expense.project_id:
                 method_label = dict(expense.PAYMENT_CHOICES).get(expense.payment_method, expense.payment_method)
@@ -293,6 +309,26 @@ def expense_edit_view(request, pk):
         form = ExpenseForm(request.POST, instance=expense)
         if form.is_valid():
             expense = form.save()
+            # Sync linked Debt if expense is on credit
+            if expense.payment_method == 'credit':
+                debt, created = Debt.objects.get_or_create(
+                    expense=expense,
+                    defaults={
+                        'creditor_name': expense.paid_to or 'Unknown Creditor',
+                        'debt_type':     'other',
+                        'amount':        expense.amount,
+                        'date_incurred': expense.date,
+                        'description':   (
+                            f"{expense.category.name} on credit"
+                            + (f" — {expense.description}" if expense.description else "")
+                        ),
+                        'project': expense.project,
+                    },
+                )
+                if not created and debt.amount != expense.amount:
+                    debt.amount = expense.amount
+                    debt.creditor_name = expense.paid_to or debt.creditor_name
+                    debt.save(update_fields=['amount', 'creditor_name'])
             # Log a ProjectEvent if linked to a project (before or after edit)
             target_project = expense.project or back_project
             if target_project:

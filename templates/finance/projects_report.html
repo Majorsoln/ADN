@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Miradi — Ripoti{% endblock %}
+{% block title %}Projects — Financial Report{% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div>
-    <h2 class="mb-0"><i class="bi bi-clipboard-check text-primary me-2"></i>Miradi — Ripoti</h2>
-    <small class="text-muted">Mapato, gharama na faida kwa kila mradi — jumla na kila mmoja</small>
+    <h2 class="mb-0"><i class="bi bi-clipboard-check text-primary me-2"></i>Projects — Financial Report</h2>
+    <small class="text-muted">Revenue, costs &amp; profit per project — individual &amp; cumulative (Miradi — Ripoti ya Fedha)</small>
   </div>
   <a href="{% url 'finance:full_report' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-bar-chart-line me-1"></i>Ripoti Kamili
+    <i class="bi bi-bar-chart-line me-1"></i>Full Report
   </a>
 </div>
 
@@ -17,19 +17,19 @@
   <div class="col-sm-6 col-lg-3">
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
-        <div class="small text-muted mb-1">Jumla ya Mapato</div>
+        <div class="small text-muted mb-1">Total Revenue (Mapato)</div>
         <div class="fs-4 fw-bold text-success">TZS {{ data.total_revenue|floatformat:0 }}</div>
-        <div class="small text-muted mt-1">{{ data.rows|length }} mradi</div>
+        <div class="small text-muted mt-1">{{ data.rows|length }} project(s)</div>
       </div>
     </div>
   </div>
   <div class="col-sm-6 col-lg-3">
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
-        <div class="small text-muted mb-1">Jumla ya Gharama</div>
+        <div class="small text-muted mb-1">Total Cost (Gharama)</div>
         <div class="fs-4 fw-bold text-danger">TZS {{ data.total_cost|floatformat:0 }}</div>
         <div class="small text-muted mt-1">
-          Malighafi: {{ data.total_materials|floatformat:0 }} | Exp: {{ data.total_expenses|floatformat:0 }}
+          Materials: {{ data.total_materials|floatformat:0 }} | Expenses: {{ data.total_expenses|floatformat:0 }}
         </div>
       </div>
     </div>
@@ -37,7 +37,7 @@
   <div class="col-sm-6 col-lg-3">
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
-        <div class="small text-muted mb-1">Jumla ya Faida</div>
+        <div class="small text-muted mb-1">Total Profit (Faida)</div>
         <div class="fs-4 fw-bold {% if data.total_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
           TZS {{ data.total_profit|floatformat:0 }}
         </div>
@@ -48,9 +48,9 @@
   <div class="col-sm-6 col-lg-3">
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
-        <div class="small text-muted mb-1">Bado Hawajalipa (AR)</div>
+        <div class="small text-muted mb-1">Outstanding (AR — Bado Hawajalipa)</div>
         <div class="fs-4 fw-bold text-warning">TZS {{ data.total_outstanding|floatformat:0 }}</div>
-        <div class="small text-muted mt-1">Kilicholipwa: {{ data.total_received|floatformat:0 }}</div>
+        <div class="small text-muted mt-1">Received: {{ data.total_received|floatformat:0 }}</div>
       </div>
     </div>
   </div>
@@ -59,7 +59,7 @@
 {# ── Revenue by method ── #}
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header fw-semibold" style="background:#f0f4ff;">
-    <i class="bi bi-cash-stack me-2 text-primary"></i>Mapato Yaliyopokelewa kwa Njia ya Malipo (Jumla)
+    <i class="bi bi-cash-stack me-2 text-primary"></i>Revenue Received by Payment Method (Jumla)
   </div>
   <div class="card-body">
     <div class="row g-3 text-center">
@@ -83,7 +83,7 @@
       </div>
       <div class="col-sm-3">
         <div class="p-3 rounded" style="background:#fef9c3;border:1px solid #fde68a;">
-          <div class="small text-muted mb-1"><i class="bi bi-clock me-1"></i>Bado Hawajalipa</div>
+          <div class="small text-muted mb-1"><i class="bi bi-clock me-1"></i>Still Pending (Bado hawajalipa)</div>
           <div class="fs-5 fw-bold text-warning">TZS {{ data.total_outstanding|floatformat:0 }}</div>
         </div>
       </div>
@@ -94,7 +94,7 @@
 {# ── Projects table ── #}
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-header fw-semibold">
-    <i class="bi bi-list-ul me-2"></i>Orodha ya Miradi Yote
+    <i class="bi bi-list-ul me-2"></i>All Projects (Orodha ya Miradi Yote)
   </div>
   <div class="card-body p-0">
     {% if data.rows %}
@@ -102,15 +102,15 @@
       <table class="table table-sm table-hover mb-0">
         <thead class="table-light">
           <tr>
-            <th>Mradi / Mteja</th>
-            <th>Hali</th>
-            <th class="text-end">Mapato</th>
-            <th class="text-end text-success">Pokelewa Cash</th>
-            <th class="text-end text-primary">Pokelewa Bank</th>
-            <th class="text-end text-warning">Bado Hajalipa</th>
-            <th class="text-end">Malighafi</th>
-            <th class="text-end">Gharama</th>
-            <th class="text-end">Faida</th>
+            <th>Project / Client</th>
+            <th>Status</th>
+            <th class="text-end">Revenue</th>
+            <th class="text-end text-success">Cash In</th>
+            <th class="text-end text-primary">Bank In</th>
+            <th class="text-end text-warning">Outstanding</th>
+            <th class="text-end">Materials</th>
+            <th class="text-end">Expenses</th>
+            <th class="text-end">Profit</th>
             <th>Margin</th>
           </tr>
         </thead>
@@ -161,7 +161,7 @@
         </tbody>
         <tfoot class="table-light fw-bold">
           <tr>
-            <td colspan="2">JUMLA ({{ data.rows|length }} miradi)</td>
+            <td colspan="2">TOTAL ({{ data.rows|length }} projects)</td>
             <td class="text-end">TZS {{ data.total_revenue|floatformat:0 }}</td>
             <td class="text-end text-success">{{ data.rev_cash|floatformat:0 }}</td>
             <td class="text-end text-primary">{{ data.rev_bank|floatformat:0 }}</td>
@@ -179,7 +179,7 @@
     {% else %}
     <div class="text-center text-muted py-5">
       <i class="bi bi-clipboard display-4 d-block mb-3"></i>
-      Hakuna miradi iliyoandikwa bado.
+      No projects recorded yet.
     </div>
     {% endif %}
   </div>
