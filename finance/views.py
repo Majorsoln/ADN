@@ -9,7 +9,12 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.views.decorators.http import require_POST
 
-from .engine import compute_snapshot, compute_report
+from .engine import (
+    compute_snapshot, compute_report,
+    compute_ar_report, compute_ap_report,
+    compute_office_report, compute_projects_report,
+    compute_full_report,
+)
 from .forms import ExpenseForm, ReportFilterForm, SaveReportForm, DebtForm, DebtPaymentForm
 from .models import Expense, ExpenseCategory, ReportSnapshot, Debt, DebtPayment
 
@@ -31,6 +36,56 @@ def snapshot_view(request):
         'prev_date': for_date - timedelta(days=1),
         'next_date': for_date + timedelta(days=1),
         'is_today': for_date == date.today(),
+    })
+
+
+# ── Focused Reports ───────────────────────────────────────────────────────────
+
+def ar_report_view(request):
+    """Accounts Receivable — Fedha Tunazodai."""
+    data = compute_ar_report()
+    return render(request, 'finance/ar_report.html', {'data': data})
+
+
+def ap_report_view(request):
+    """Accounts Payable — Madeni Yetu."""
+    data = compute_ap_report()
+    return render(request, 'finance/ap_report.html', {'data': data})
+
+
+def office_report_view(request):
+    """Office Services Report — all records with cash/bank breakdown."""
+    data = compute_office_report()
+    return render(request, 'finance/office_report.html', {'data': data})
+
+
+def projects_report_view(request):
+    """Projects Report — individual + accumulative with cash/bank breakdown."""
+    data = compute_projects_report()
+    return render(request, 'finance/projects_report.html', {'data': data})
+
+
+def full_report_view(request):
+    """Full combined report for a selected period."""
+    form = ReportFilterForm(request.GET or None)
+    data = None
+    date_from = date_to = None
+
+    if request.GET and form.is_valid():
+        date_from, date_to = form.resolve_period()
+        data = compute_full_report(date_from, date_to)
+    elif not request.GET:
+        today = date.today()
+        date_from = date(today.year, today.month, 1)
+        date_to = today
+        form = ReportFilterForm(initial={'period': 'this_month'})
+        data = compute_full_report(date_from, date_to)
+
+    return render(request, 'finance/full_report.html', {
+        'form': form,
+        'data': data,
+        'date_from': date_from,
+        'date_to': date_to,
     })
 
 

@@ -245,27 +245,38 @@
       <i class="bi bi-currency-dollar"></i> Service Rates
     </a>
 
-    <div class="nav-section mt-2">Finance</div>
+    <div class="nav-section mt-2">Finance — Ripoti</div>
     <a href="{% url 'finance:snapshot' %}" class="nav-link {% if request.path == '/finance/' %}active{% endif %}">
-      <i class="bi bi-speedometer"></i> Daily Snapshot
+      <i class="bi bi-speedometer"></i> Muhtasari wa Leo
     </a>
-    <a href="{% url 'finance:report' %}" class="nav-link {% if 'finance/report' in request.path %}active{% endif %}">
-      <i class="bi bi-bar-chart-line"></i> Business Report
+    <a href="{% url 'finance:ar_report' %}" class="nav-link {% if 'finance/ar' in request.path %}active{% endif %}">
+      <i class="bi bi-arrow-down-circle"></i> AR — Fedha Tunazodai
     </a>
+    <a href="{% url 'finance:ap_report' %}" class="nav-link {% if 'finance/ap' in request.path %}active{% endif %}">
+      <i class="bi bi-arrow-up-circle"></i> AP — Madeni Yetu
+    </a>
+    <a href="{% url 'finance:office_report' %}" class="nav-link {% if 'finance/office' in request.path %}active{% endif %}">
+      <i class="bi bi-building"></i> Huduma za Ofisi
+    </a>
+    <a href="{% url 'finance:projects_report' %}" class="nav-link {% if 'finance/projects' in request.path %}active{% endif %}">
+      <i class="bi bi-clipboard-check"></i> Miradi — Ripoti
+    </a>
+    <a href="{% url 'finance:full_report' %}" class="nav-link {% if 'finance/full' in request.path %}active{% endif %}">
+      <i class="bi bi-bar-chart-line"></i> Ripoti Kamili
+    </a>
+
+    <div class="nav-section mt-2">Finance — Matumizi</div>
     <a href="{% url 'finance:expense_list' %}" class="nav-link {% if 'finance/expense' in request.path %}active{% endif %}">
-      <i class="bi bi-receipt-cutoff"></i> Expenses
+      <i class="bi bi-receipt-cutoff"></i> Gharama
     </a>
     <a href="{% url 'finance:expense_add' %}" class="nav-link">
-      <i class="bi bi-plus-circle"></i> Record Expense
-    </a>
-    <a href="{% url 'finance:archive' %}" class="nav-link {% if 'finance/archive' in request.path %}active{% endif %}">
-      <i class="bi bi-archive"></i> Report Archive
+      <i class="bi bi-plus-circle"></i> Ongeza Gharama
     </a>
     <a href="{% url 'finance:debt_list' %}" class="nav-link {% if 'finance/debt' in request.path %}active{% endif %}">
-      <i class="bi bi-exclamation-triangle"></i> Debts &amp; Liabilities
+      <i class="bi bi-exclamation-triangle"></i> Madeni &amp; Deni
     </a>
     <a href="{% url 'finance:debt_add' %}" class="nav-link">
-      <i class="bi bi-plus-circle"></i> Record Debt
+      <i class="bi bi-plus-circle"></i> Ongeza Deni
     </a>
   </div>
 

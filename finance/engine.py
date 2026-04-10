@@ -304,6 +304,80 @@ def _project_stats(date_from, date_to):
     }
 
 
+# ── Period cash-flow by payment method ───────────────────────────────────────
+
+# Shared normaliser (used by both helpers below)
+def _norm_method(m):
+    m = (m or '').lower()
+    if m == 'cash':                    return 'cash'
+    if m in ('bank_transfer', 'bank'): return 'bank'
+    if m in ('mobile_money', 'mpesa'): return 'mpesa'
+    if m == 'cheque':                  return 'cheque'
+    return 'other'
+
+
+def _income_by_method(date_from, date_to):
+    """
+    All income received in the period, grouped by payment method.
+    Sources: InvoicePayment + Invoice.advance_paid + OfficeServicePayment + OfficeIncome(other)
+    Returns dict keyed by canonical method ('cash','bank','mpesa','cheque','other').
+    """
+    D = Decimal
+    totals = {k: D('0') for k in ['cash', 'bank', 'mpesa', 'cheque', 'other']}
+
+    for p in InvoicePayment.objects.filter(
+            payment_date__gte=date_from, payment_date__lte=date_to,
+    ).only('amount', 'payment_method'):
+        totals[_norm_method(p.payment_method)] += p.amount
+
+    for inv in Invoice.objects.filter(
+            invoice_date__gte=date_from, invoice_date__lte=date_to,
+            advance_paid__gt=0,
+    ).only('advance_paid', 'advance_payment_method'):
+        totals[_norm_method(inv.advance_payment_method)] += inv.advance_paid
+
+    for p in OfficeServicePayment.objects.filter(
+            payment_date__gte=date_from, payment_date__lte=date_to,
+    ).only('amount', 'payment_method'):
+        totals[_norm_method(p.payment_method)] += p.amount
+
+    for inc in OfficeIncome.objects.filter(
+            source='other', date__gte=date_from, date__lte=date_to,
+    ).only('amount', 'payment_method'):
+        totals[_norm_method(inc.payment_method)] += inc.amount
+
+    return {k: float(v) for k, v in totals.items()}
+
+
+def _outflows_by_method(date_from, date_to):
+    """
+    All cash/bank outflows in the period, grouped by payment method.
+    Sources: Expense + MaterialOrder (non-credit) + DebtPayment
+    Returns dict keyed by canonical method.
+    """
+    D = Decimal
+    totals = {k: D('0') for k in ['cash', 'bank', 'mpesa', 'cheque', 'other']}
+
+    for exp in Expense.objects.filter(
+            date__gte=date_from, date__lte=date_to,
+    ).only('amount', 'payment_method'):
+        totals[_norm_method(exp.payment_method)] += exp.amount
+
+    for order in MaterialOrder.objects.filter(
+            order_date__gte=date_from, order_date__lte=date_to,
+            payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
+            status__in=['ordered', 'partially_received', 'received'],
+    ).prefetch_related('items'):
+        totals[_norm_method(order.payment_source)] += order.total_cost
+
+    for dp in DebtPayment.objects.filter(
+            payment_date__gte=date_from, payment_date__lte=date_to,
+    ).only('amount', 'payment_source'):
+        totals[_norm_method(dp.payment_source)] += dp.amount
+
+    return {k: float(v) for k, v in totals.items()}
+
+
 # ── Monthly trend (last N months) ────────────────────────────────────────────
 
 def _monthly_trends(months=6):
@@ -541,6 +615,490 @@ def _funds_position():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# FOCUSED REPORTS  (AR · AP · Office · Projects · Full)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _method_bucket():
+    """Return a fresh dict for tracking amounts by payment method."""
+    return {k: Decimal('0') for k in ['cash', 'bank', 'mpesa', 'cheque', 'other']}
+
+
+def _safe_key(key):
+    return key if key in ('cash', 'bank', 'mpesa', 'cheque') else 'other'
+
+
+def compute_ar_report():
+    """
+    Accounts Receivable — Fedha Tunazodai.
+    Returns outstanding balances owed TO the business:
+      1. Invoice balances (project clients who haven't paid in full)
+      2. Office service balances
+    Every row shows how much was received by cash vs bank so far.
+    """
+    D = Decimal
+
+    # ── Invoice AR ─────────────────────────────────────────────────────────
+    invoices = Invoice.objects.filter(
+        status__in=['draft', 'sent', 'overdue'],
+    ).prefetch_related('payments', 'projects')
+
+    inv_rows = []
+    inv_grand_contract   = D('0')
+    inv_grand_received   = D('0')
+    inv_grand_outstanding = D('0')
+    inv_grand_by_method  = _method_bucket()
+
+    for inv in invoices:
+        bal = inv.balance_due
+        if bal <= 0:
+            continue
+
+        row_by_method = _method_bucket()
+        # Advance payment
+        k = _safe_key(_norm_method(inv.advance_payment_method))
+        row_by_method[k]       += inv.advance_paid
+        inv_grand_by_method[k] += inv.advance_paid
+        # Instalment payments
+        for p in inv.payments.all():
+            k = _safe_key(_norm_method(p.payment_method))
+            row_by_method[k]       += p.amount
+            inv_grand_by_method[k] += p.amount
+
+        inv_grand_contract    += inv.contract_amount
+        inv_grand_received    += inv.total_paid
+        inv_grand_outstanding += bal
+
+        proj = inv.projects.first()
+        inv_rows.append({
+            'pk':               inv.pk,
+            'invoice_no':       inv.invoice_no,
+            'client_name':      inv.client_name,
+            'client_phone':     inv.client_phone,
+            'project_name':     proj.name if proj else '—',
+            'project_pk':       proj.pk   if proj else None,
+            'invoice_date':     inv.invoice_date,
+            'due_date':         inv.due_date,
+            'contract_amount':  float(inv.contract_amount),
+            'total_received':   float(inv.total_paid),
+            'balance':          float(bal),
+            'is_overdue':       inv.is_overdue,
+            'recv_cash':        float(row_by_method['cash']),
+            'recv_bank':        float(row_by_method['bank']),
+            'recv_mpesa':       float(row_by_method['mpesa']),
+            'recv_cheque':      float(row_by_method['cheque']),
+            'recv_other':       float(row_by_method['other']),
+        })
+
+    inv_rows.sort(key=lambda r: (not r['is_overdue'], r['due_date'] or date.max))
+
+    # ── Office Service AR ───────────────────────────────────────────────────
+    svc_records = OfficeServiceRecord.objects.exclude(
+        status='paid'
+    ).prefetch_related('payments').order_by('-date_recorded')
+
+    svc_rows = []
+    svc_grand_charge      = D('0')
+    svc_grand_received    = D('0')
+    svc_grand_outstanding = D('0')
+    svc_grand_by_method   = _method_bucket()
+
+    for rec in svc_records:
+        bal = rec.balance
+        if bal <= 0:
+            continue
+
+        row_by_method = _method_bucket()
+        for p in rec.payments.all():
+            k = _safe_key(_norm_method(p.payment_method))
+            row_by_method[k]        += p.amount
+            svc_grand_by_method[k]  += p.amount
+
+        svc_grand_charge      += rec.total_charge
+        svc_grand_received    += rec.total_paid
+        svc_grand_outstanding += bal
+
+        svc_rows.append({
+            'pk':               rec.pk,
+            'client_name':      rec.client_name,
+            'client_phone':     rec.client_phone,
+            'work_description': rec.work_description,
+            'num_windows':      rec.num_windows,
+            'num_doors':        rec.num_doors,
+            'date_recorded':    rec.date_recorded,
+            'due_date':         rec.due_date,
+            'total_charge':     float(rec.total_charge),
+            'total_received':   float(rec.total_paid),
+            'balance':          float(bal),
+            'is_overdue':       rec.is_overdue,
+            'recv_cash':        float(row_by_method['cash']),
+            'recv_bank':        float(row_by_method['bank']),
+            'recv_mpesa':       float(row_by_method['mpesa']),
+            'recv_other':       float(row_by_method['cheque'] + row_by_method['other']),
+        })
+
+    svc_rows.sort(key=lambda r: (not r['is_overdue'], r['due_date'] or date.max))
+
+    return {
+        # Invoice receivables
+        'inv_rows':              inv_rows,
+        'inv_total_contract':    float(inv_grand_contract),
+        'inv_total_received':    float(inv_grand_received),
+        'inv_total_outstanding': float(inv_grand_outstanding),
+        'inv_recv_cash':         float(inv_grand_by_method['cash']),
+        'inv_recv_bank':         float(inv_grand_by_method['bank']),
+        'inv_recv_mpesa':        float(inv_grand_by_method['mpesa']),
+        'inv_recv_other':        float(inv_grand_by_method['cheque'] + inv_grand_by_method['other']),
+        # Office service receivables
+        'svc_rows':              svc_rows,
+        'svc_total_charge':      float(svc_grand_charge),
+        'svc_total_received':    float(svc_grand_received),
+        'svc_total_outstanding': float(svc_grand_outstanding),
+        'svc_recv_cash':         float(svc_grand_by_method['cash']),
+        'svc_recv_bank':         float(svc_grand_by_method['bank']),
+        'svc_recv_mpesa':        float(svc_grand_by_method['mpesa']),
+        'svc_recv_other':        float(svc_grand_by_method['cheque'] + svc_grand_by_method['other']),
+        # Grand total
+        'total_ar': float(inv_grand_outstanding + svc_grand_outstanding),
+    }
+
+
+def compute_ap_report():
+    """
+    Accounts Payable — Madeni Yetu.
+    Returns outstanding balances owed BY the business (unsettled debts).
+    Grouped by debt type (supplier credit, labour credit, loans…).
+    Each row shows how much has been repaid by cash vs bank.
+    """
+    debts = Debt.objects.exclude(status='settled').select_related(
+        'project', 'material_order',
+    ).prefetch_related('payments').order_by('due_date', '-date_incurred')
+
+    grand_original    = Decimal('0')
+    grand_repaid      = Decimal('0')
+    grand_outstanding = Decimal('0')
+    grand_repaid_by   = _method_bucket()
+    by_type           = {}   # key → {label, rows, totals…}
+
+    for d in debts:
+        bal = d.balance
+        row_repaid = _method_bucket()
+        for p in d.payments.all():
+            k = _safe_key(_norm_method(p.payment_source))
+            row_repaid[k]       += p.amount
+            grand_repaid_by[k]  += p.amount
+
+        grand_original    += d.amount
+        grand_repaid      += d.total_paid
+        grand_outstanding += bal
+
+        dtype = d.debt_type
+        if dtype not in by_type:
+            by_type[dtype] = {
+                'label':            d.get_debt_type_display(),
+                'rows':             [],
+                'total_original':   Decimal('0'),
+                'total_repaid':     Decimal('0'),
+                'total_outstanding': Decimal('0'),
+                'repaid_cash':      Decimal('0'),
+                'repaid_bank':      Decimal('0'),
+                'repaid_mpesa':     Decimal('0'),
+                'repaid_other':     Decimal('0'),
+            }
+        g = by_type[dtype]
+        g['total_original']    += d.amount
+        g['total_repaid']      += d.total_paid
+        g['total_outstanding'] += bal
+        g['repaid_cash']       += row_repaid['cash']
+        g['repaid_bank']       += row_repaid['bank']
+        g['repaid_mpesa']      += row_repaid['mpesa']
+        g['repaid_other']      += row_repaid['cheque'] + row_repaid['other']
+
+        g['rows'].append({
+            'pk':              d.pk,
+            'creditor_name':   d.creditor_name,
+            'creditor_phone':  d.creditor_phone,
+            'description':     d.description,
+            'date_incurred':   d.date_incurred,
+            'due_date':        d.due_date,
+            'original_amount': float(d.amount),
+            'total_repaid':    float(d.total_paid),
+            'balance':         float(bal),
+            'is_overdue':      d.is_overdue,
+            'repaid_cash':     float(row_repaid['cash']),
+            'repaid_bank':     float(row_repaid['bank']),
+            'repaid_mpesa':    float(row_repaid['mpesa']),
+            'repaid_other':    float(row_repaid['cheque'] + row_repaid['other']),
+            'project_name':    d.project.name if d.project_id else None,
+            'project_pk':      d.project_id,
+        })
+
+    # Serialise by_type for the template
+    type_sections = [
+        {
+            'type':              k,
+            'label':             v['label'],
+            'rows':              v['rows'],
+            'total_original':    float(v['total_original']),
+            'total_repaid':      float(v['total_repaid']),
+            'total_outstanding': float(v['total_outstanding']),
+            'repaid_cash':       float(v['repaid_cash']),
+            'repaid_bank':       float(v['repaid_bank']),
+            'repaid_mpesa':      float(v['repaid_mpesa']),
+            'repaid_other':      float(v['repaid_other']),
+        }
+        for k, v in by_type.items()
+    ]
+
+    return {
+        'type_sections':    type_sections,
+        'total_original':   float(grand_original),
+        'total_repaid':     float(grand_repaid),
+        'total_outstanding': float(grand_outstanding),
+        'repaid_cash':      float(grand_repaid_by['cash']),
+        'repaid_bank':      float(grand_repaid_by['bank']),
+        'repaid_mpesa':     float(grand_repaid_by['mpesa']),
+        'repaid_other':     float(grand_repaid_by['cheque'] + grand_repaid_by['other']),
+    }
+
+
+def compute_office_report():
+    """
+    Office Services — all records (pending, partial, paid).
+    Shows per-client breakdown and cash vs bank payment totals.
+    """
+    records = OfficeServiceRecord.objects.prefetch_related(
+        'payments'
+    ).order_by('-date_recorded')
+
+    rows = []
+    grand_charged      = Decimal('0')
+    grand_received     = Decimal('0')
+    grand_outstanding  = Decimal('0')
+    grand_by_method    = _method_bucket()
+
+    for rec in records:
+        charge = rec.total_charge
+        paid   = rec.total_paid
+        bal    = rec.balance
+
+        row_by = _method_bucket()
+        for p in rec.payments.all():
+            k = _safe_key(_norm_method(p.payment_method))
+            row_by[k]            += p.amount
+            grand_by_method[k]   += p.amount
+
+        grand_charged     += charge
+        grand_received    += paid
+        grand_outstanding += bal
+
+        rows.append({
+            'pk':               rec.pk,
+            'client_name':      rec.client_name,
+            'client_phone':     rec.client_phone,
+            'work_description': rec.work_description,
+            'num_windows':      rec.num_windows,
+            'num_doors':        rec.num_doors,
+            'date_recorded':    rec.date_recorded,
+            'due_date':         rec.due_date,
+            'status':           rec.status,
+            'status_display':   rec.get_status_display(),
+            'total_charge':     float(charge),
+            'total_paid':       float(paid),
+            'balance':          float(bal),
+            'is_overdue':       rec.is_overdue,
+            'paid_cash':        float(row_by['cash']),
+            'paid_bank':        float(row_by['bank']),
+            'paid_mpesa':       float(row_by['mpesa']),
+            'paid_other':       float(row_by['cheque'] + row_by['other']),
+        })
+
+    return {
+        'rows':               rows,
+        'total_charged':      float(grand_charged),
+        'total_received':     float(grand_received),
+        'total_outstanding':  float(grand_outstanding),
+        'received_cash':      float(grand_by_method['cash']),
+        'received_bank':      float(grand_by_method['bank']),
+        'received_mpesa':     float(grand_by_method['mpesa']),
+        'received_other':     float(grand_by_method['cheque'] + grand_by_method['other']),
+    }
+
+
+def compute_projects_report():
+    """
+    All non-cancelled projects — individual + accumulative.
+    Revenue tracked by payment method (cash/bank/mpesa).
+    Shows cost breakdown (materials + direct expenses) and profit margin.
+    """
+    projects = Project.objects.select_related(
+        'invoice',
+    ).prefetch_related(
+        'orders', 'expenses', 'invoice__payments',
+    ).exclude(status='cancelled').order_by('-created_at')
+
+    rows             = []
+    grand_revenue    = Decimal('0')
+    grand_materials  = Decimal('0')
+    grand_expenses   = Decimal('0')
+    grand_profit     = Decimal('0')
+    grand_rev_by     = _method_bucket()
+    grand_received   = Decimal('0')
+    grand_outstanding = Decimal('0')
+
+    for p in projects:
+        rev  = p.revenue
+        mat  = p.materials_cost
+        exp  = p.direct_expenses_cost
+        prof = rev - mat - exp
+
+        grand_revenue   += rev
+        grand_materials += mat
+        grand_expenses  += exp
+        grand_profit    += prof
+
+        # Revenue collected by method
+        row_rev_by = _method_bucket()
+        received   = Decimal('0')
+        if p.invoice_id:
+            inv = p.invoice
+            k   = _safe_key(_norm_method(inv.advance_payment_method))
+            row_rev_by[k]   += inv.advance_paid
+            grand_rev_by[k] += inv.advance_paid
+            received        += inv.advance_paid
+            for pmt in inv.payments.all():
+                k = _safe_key(_norm_method(pmt.payment_method))
+                row_rev_by[k]   += pmt.amount
+                grand_rev_by[k] += pmt.amount
+                received        += pmt.amount
+            outstanding = inv.balance_due
+        else:
+            outstanding = rev   # not invoiced yet → full amount outstanding
+
+        grand_received    += received
+        grand_outstanding += outstanding
+
+        rows.append({
+            'pk':              p.pk,
+            'name':            p.name,
+            'client_name':     p.client_name,
+            'status':          p.status,
+            'status_display':  p.get_status_display(),
+            'start_date':      p.start_date,
+            'completion_date': p.completion_date,
+            'revenue':         float(rev),
+            'materials_cost':  float(mat),
+            'expenses_cost':   float(exp),
+            'total_cost':      float(mat + exp),
+            'gross_profit':    float(prof),
+            'profit_margin':   float(p.profit_margin),
+            'rev_cash':        float(row_rev_by['cash']),
+            'rev_bank':        float(row_rev_by['bank']),
+            'rev_mpesa':       float(row_rev_by['mpesa']),
+            'rev_other':       float(row_rev_by['cheque'] + row_rev_by['other']),
+            'rev_received':    float(received),
+            'rev_outstanding': float(outstanding),
+            'has_invoice':     bool(p.invoice_id),
+            'invoice_no':      p.invoice.invoice_no if p.invoice_id else None,
+        })
+
+    margin = (grand_profit / grand_revenue * 100) if grand_revenue > 0 else Decimal('0')
+
+    return {
+        'rows':              rows,
+        'total_revenue':     float(grand_revenue),
+        'total_materials':   float(grand_materials),
+        'total_expenses':    float(grand_expenses),
+        'total_cost':        float(grand_materials + grand_expenses),
+        'total_profit':      float(grand_profit),
+        'profit_margin':     float(margin),
+        'total_received':    float(grand_received),
+        'total_outstanding': float(grand_outstanding),
+        'rev_cash':          float(grand_rev_by['cash']),
+        'rev_bank':          float(grand_rev_by['bank']),
+        'rev_mpesa':         float(grand_rev_by['mpesa']),
+        'rev_other':         float(grand_rev_by['cheque'] + grand_rev_by['other']),
+    }
+
+
+def compute_full_report(date_from, date_to):
+    """
+    Full combined report for a period:
+      - Cash/Bank account balance (all-time)
+      - AR summary
+      - AP summary
+      - Period income + expenses broken down by cash/bank
+    """
+    # Period income & expenses by method
+    inc_by  = _income_by_method(date_from, date_to)
+    out_by  = _outflows_by_method(date_from, date_to)
+
+    METHOD_LABELS = {
+        'cash':   ('Cash (Fedha Taslimu)', 'bi-cash-coin',  '#16a34a'),
+        'bank':   ('Bank Transfer',        'bi-bank',       '#2563eb'),
+        'mpesa':  ('M-Pesa / Mobile',      'bi-phone',      '#059669'),
+        'cheque': ('Cheque',               'bi-file-text',  '#7c3aed'),
+        'other':  ('Nyingine',             'bi-three-dots', '#94a3b8'),
+    }
+    cashflow_by_method = []
+    for key in ['cash', 'bank', 'mpesa', 'cheque', 'other']:
+        i = inc_by.get(key, 0)
+        o = out_by.get(key, 0)
+        if i == 0 and o == 0:
+            continue
+        lbl, icon, color = METHOD_LABELS[key]
+        cashflow_by_method.append({
+            'key': key, 'label': lbl, 'icon': icon, 'color': color,
+            'in': i, 'out': o, 'net': i - o,
+        })
+
+    total_income   = sum(inc_by.values())
+    total_expenses = sum(out_by.values())
+
+    # AR & AP summaries (all-time outstanding)
+    ar = compute_ar_report()
+    ap = compute_ap_report()
+
+    # All-time funds position (cash/bank balances)
+    funds = _funds_position()
+
+    # Period income sources
+    inv_income, _ = _invoice_payments_in(date_from, date_to)
+    off_income, _ = _office_payments_in(date_from, date_to)
+    oth_income, _ = _other_income_in(date_from, date_to)
+    adv_income, _, _ = _advance_payments_in(date_from, date_to)
+
+    exp_total, by_category, _, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
+    debt_pmt_total, _, _ = _debt_payments_in(date_from, date_to)
+
+    return {
+        'date_from':          str(date_from),
+        'date_to':            str(date_to),
+        # Period summary
+        'total_income':       total_income,
+        'total_expenses':     exp_total,
+        'debt_payments_total': float(debt_pmt_total),
+        'net_profit':         float(Decimal(str(total_income)) - exp_total),
+        # Income sources in period
+        'invoice_income':     float(inv_income),
+        'advance_income':     float(adv_income),
+        'office_income':      float(off_income),
+        'other_income':       float(oth_income),
+        'project_expenses_total': float(proj_exp_total),
+        'office_expenses_total':  float(office_exp_total),
+        'by_category':        by_category,
+        # Cash flow by account for the period
+        'cashflow_by_method': cashflow_by_method,
+        # AR & AP (all-time outstanding)
+        'ar_total':           ar['total_ar'],
+        'ar_inv_outstanding': ar['inv_total_outstanding'],
+        'ar_svc_outstanding': ar['svc_total_outstanding'],
+        'ap_total':           ap['total_outstanding'],
+        # Funds position
+        'funds':              funds,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # PUBLIC API
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -655,6 +1213,28 @@ def compute_report(date_from, date_to):
     # ── Funds position (all-time) ─────────────────────────────────────────────
     funds = _funds_position()
 
+    # ── Period cash-flow by method ────────────────────────────────────────────
+    income_by_method   = _income_by_method(date_from, date_to)
+    outflows_by_method = _outflows_by_method(date_from, date_to)
+    _METHOD_LABELS = {
+        'cash':   ('Cash (Fedha Taslimu)', 'bi-cash-coin',  '#16a34a'),
+        'bank':   ('Bank Transfer',        'bi-bank',       '#2563eb'),
+        'mpesa':  ('M-Pesa / Mobile',      'bi-phone',      '#059669'),
+        'cheque': ('Cheque',               'bi-file-text',  '#7c3aed'),
+        'other':  ('Nyingine',             'bi-three-dots', '#94a3b8'),
+    }
+    cashflow_by_method = []
+    for key in ['cash', 'bank', 'mpesa', 'cheque', 'other']:
+        inc  = income_by_method.get(key, 0)
+        out  = outflows_by_method.get(key, 0)
+        if inc == 0 and out == 0:
+            continue
+        lbl, icon, color = _METHOD_LABELS[key]
+        cashflow_by_method.append({
+            'key': key, 'label': lbl, 'icon': icon, 'color': color,
+            'in': inc, 'out': out, 'net': inc - out,
+        })
+
     # ── Alerts ────────────────────────────────────────────────────────────────
     alerts = _build_alerts(
         inv_ov_c, inv_ov_a, svc_ov_c, svc_ov_a, by_category, total_expenses,
@@ -662,12 +1242,15 @@ def compute_report(date_from, date_to):
         debt_overdue_amount=liabilities['overdue_amount'],
     )
 
-    # ── Income breakdown (for ledger / journal view) ──────────────────────────
+    # ── Income breakdown (only non-zero sources) ──────────────────────────────
     income_breakdown = [
-        {'source': 'Invoice Payments (Instalments)', 'amount': float(inv_income)},
-        {'source': 'Invoice Advance Payments',        'amount': float(adv_income)},
-        {'source': 'Office Service Fees',             'amount': float(off_income)},
-        {'source': 'Other Income',                    'amount': float(oth_income)},
+        row for row in [
+            {'source': 'Malipo ya Invoice (Instalments)', 'amount': float(inv_income)},
+            {'source': 'Malipo ya Awali (Advances)',       'amount': float(adv_income)},
+            {'source': 'Huduma za Ofisi (Office Services)', 'amount': float(off_income)},
+            {'source': 'Mapato Mengine (Other)',             'amount': float(oth_income)},
+        ]
+        if row['amount'] > 0
     ]
 
     return {
@@ -798,6 +1381,11 @@ def compute_report(date_from, date_to):
                 for p in project_stats['projects']
             ],
         },
+
+        # Period cash-flow by method
+        'income_by_method':   income_by_method,
+        'outflows_by_method': outflows_by_method,
+        'cashflow_by_method': cashflow_by_method,
 
         # Trends
         'monthly_trends': trends,

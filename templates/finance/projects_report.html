@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Miradi — Ripoti{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0"><i class="bi bi-clipboard-check text-primary me-2"></i>Miradi — Ripoti</h2>
+    <small class="text-muted">Mapato, gharama na faida kwa kila mradi — jumla na kila mmoja</small>
+  </div>
+  <a href="{% url 'finance:full_report' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-bar-chart-line me-1"></i>Ripoti Kamili
+  </a>
+</div>
+
+{# ── Accumulative summary ── #}
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Jumla ya Mapato</div>
+        <div class="fs-4 fw-bold text-success">TZS {{ data.total_revenue|floatformat:0 }}</div>
+        <div class="small text-muted mt-1">{{ data.rows|length }} mradi</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Jumla ya Gharama</div>
+        <div class="fs-4 fw-bold text-danger">TZS {{ data.total_cost|floatformat:0 }}</div>
+        <div class="small text-muted mt-1">
+          Malighafi: {{ data.total_materials|floatformat:0 }} | Exp: {{ data.total_expenses|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Jumla ya Faida</div>
+        <div class="fs-4 fw-bold {% if data.total_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
+          TZS {{ data.total_profit|floatformat:0 }}
+        </div>
+        <div class="small text-muted mt-1">Margin: {{ data.profit_margin|floatformat:1 }}%</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Bado Hawajalipa (AR)</div>
+        <div class="fs-4 fw-bold text-warning">TZS {{ data.total_outstanding|floatformat:0 }}</div>
+        <div class="small text-muted mt-1">Kilicholipwa: {{ data.total_received|floatformat:0 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Revenue by method ── #}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold" style="background:#f0f4ff;">
+    <i class="bi bi-cash-stack me-2 text-primary"></i>Mapato Yaliyopokelewa kwa Njia ya Malipo (Jumla)
+  </div>
+  <div class="card-body">
+    <div class="row g-3 text-center">
+      <div class="col-sm-3">
+        <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+          <div class="small text-muted mb-1"><i class="bi bi-cash-coin me-1"></i>Cash</div>
+          <div class="fs-5 fw-bold text-success">TZS {{ data.rev_cash|floatformat:0 }}</div>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div class="p-3 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
+          <div class="small text-muted mb-1"><i class="bi bi-bank me-1"></i>Bank Transfer</div>
+          <div class="fs-5 fw-bold text-primary">TZS {{ data.rev_bank|floatformat:0 }}</div>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #a7f3d0;">
+          <div class="small text-muted mb-1"><i class="bi bi-phone me-1"></i>M-Pesa</div>
+          <div class="fs-5 fw-bold" style="color:#059669;">TZS {{ data.rev_mpesa|floatformat:0 }}</div>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div class="p-3 rounded" style="background:#fef9c3;border:1px solid #fde68a;">
+          <div class="small text-muted mb-1"><i class="bi bi-clock me-1"></i>Bado Hawajalipa</div>
+          <div class="fs-5 fw-bold text-warning">TZS {{ data.total_outstanding|floatformat:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Projects table ── #}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-list-ul me-2"></i>Orodha ya Miradi Yote
+  </div>
+  <div class="card-body p-0">
+    {% if data.rows %}
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Mradi / Mteja</th>
+            <th>Hali</th>
+            <th class="text-end">Mapato</th>
+            <th class="text-end text-success">Pokelewa Cash</th>
+            <th class="text-end text-primary">Pokelewa Bank</th>
+            <th class="text-end text-warning">Bado Hajalipa</th>
+            <th class="text-end">Malighafi</th>
+            <th class="text-end">Gharama</th>
+            <th class="text-end">Faida</th>
+            <th>Margin</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in data.rows %}
+          <tr>
+            <td>
+              <a href="{% url 'projects:detail' r.pk %}" class="fw-semibold text-decoration-none">
+                {{ r.name|truncatechars:30 }}
+              </a>
+              <br>
+              <span class="small text-muted">{{ r.client_name }}</span>
+              {% if r.invoice_no %}
+              <br><span class="badge bg-light text-dark" style="font-size:.65rem;">{{ r.invoice_no }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge
+                {% if r.status == 'completed' %}bg-success
+                {% elif r.status == 'in_progress' %}bg-primary
+                {% elif r.status == 'ordered' %}bg-info text-dark
+                {% else %}bg-secondary{% endif %}">
+                {{ r.status_display }}
+              </span>
+            </td>
+            <td class="text-end fw-semibold">{{ r.revenue|floatformat:0 }}</td>
+            <td class="text-end text-success">{{ r.rev_cash|floatformat:0 }}</td>
+            <td class="text-end text-primary">{{ r.rev_bank|floatformat:0 }}</td>
+            <td class="text-end {% if r.rev_outstanding > 0 %}text-warning fw-semibold{% else %}text-muted{% endif %}">
+              {{ r.rev_outstanding|floatformat:0 }}
+            </td>
+            <td class="text-end text-muted">{{ r.materials_cost|floatformat:0 }}</td>
+            <td class="text-end text-muted">{{ r.expenses_cost|floatformat:0 }}</td>
+            <td class="text-end fw-bold {% if r.gross_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+              {{ r.gross_profit|floatformat:0 }}
+            </td>
+            <td>
+              <div class="progress" style="height:5px;margin-top:7px;min-width:60px">
+                <div class="progress-bar {% if r.profit_margin >= 0 %}bg-success{% else %}bg-danger{% endif %}"
+                     style="width:{% if r.profit_margin >= 0 %}{{ r.profit_margin|floatformat:0 }}{% else %}100{% endif %}%"></div>
+              </div>
+              <small class="{% if r.profit_margin >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ r.profit_margin|floatformat:1 }}%
+              </small>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="2">JUMLA ({{ data.rows|length }} miradi)</td>
+            <td class="text-end">TZS {{ data.total_revenue|floatformat:0 }}</td>
+            <td class="text-end text-success">{{ data.rev_cash|floatformat:0 }}</td>
+            <td class="text-end text-primary">{{ data.rev_bank|floatformat:0 }}</td>
+            <td class="text-end text-warning">{{ data.total_outstanding|floatformat:0 }}</td>
+            <td class="text-end text-muted">{{ data.total_materials|floatformat:0 }}</td>
+            <td class="text-end text-muted">{{ data.total_expenses|floatformat:0 }}</td>
+            <td class="text-end {% if data.total_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+              TZS {{ data.total_profit|floatformat:0 }}
+            </td>
+            <td><small>{{ data.profit_margin|floatformat:1 }}%</small></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-clipboard display-4 d-block mb-3"></i>
+      Hakuna miradi iliyoandikwa bado.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
