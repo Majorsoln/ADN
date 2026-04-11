@@ -95,25 +95,30 @@ def _advance_payments_in(date_from, date_to):
 def _expenses_in(date_from, date_to):
     """
     Returns (total, by_category_list, expense_rows,
-             project_expenses_total, office_expenses_total).
+             project_expenses_total, office_expenses_total, credit_total).
 
-    Expenses are split into:
-      - project_expenses: linked to a specific project (transport, labour, site, etc.)
-      - office_expenses:  general office/operational overhead (no project link)
+    total           = ALL expenses in period (P&L basis, includes credit).
+    credit_total    = subset paid on credit (Debt created; no cash moved).
+    cash_total      = total - credit_total  (actual cash/bank paid out).
 
-    by_category_list: [{'name', 'icon', 'color', 'total', 'project_total', 'office_total'}, ...]
+    by_category_list: [{'name', 'icon', 'color', 'total', 'credit_total',
+                         'project_total', 'office_total', 'count'}, ...]
     """
     qs = (Expense.objects
           .filter(date__gte=date_from, date__lte=date_to)
           .select_related('category', 'project'))
-    total = Decimal('0')
+    total        = Decimal('0')
+    credit_total = Decimal('0')
     project_total = Decimal('0')
     office_total  = Decimal('0')
     cat_map = {}
     rows = list(qs.order_by('-date'))
     for exp in rows:
         total += exp.amount
+        is_credit  = (exp.payment_method == 'credit')
         is_project = bool(exp.project_id)
+        if is_credit:
+            credit_total += exp.amount
         if is_project:
             project_total += exp.amount
         else:
@@ -126,19 +131,22 @@ def _expenses_in(date_from, date_to):
                 'icon':          exp.category.icon,
                 'color':         exp.category.color,
                 'total':         Decimal('0'),
+                'credit_total':  Decimal('0'),
                 'project_total': Decimal('0'),
                 'office_total':  Decimal('0'),
                 'count':         0,
             }
         cat_map[cid]['total']  += exp.amount
         cat_map[cid]['count']  += 1
+        if is_credit:
+            cat_map[cid]['credit_total'] += exp.amount
         if is_project:
             cat_map[cid]['project_total'] += exp.amount
         else:
             cat_map[cid]['office_total']  += exp.amount
 
     by_category = sorted(cat_map.values(), key=lambda x: x['total'], reverse=True)
-    return total, by_category, rows, project_total, office_total
+    return total, by_category, rows, project_total, office_total, credit_total
 
 
 # ── Debt repayment aggregation ────────────────────────────────────────────────
@@ -407,7 +415,8 @@ def _monthly_trends(months=6):
         adv_income, _, _ = _advance_payments_in(first, last)
         income = inv_income + off_income + oth_income + adv_income
 
-        exp_total, _, _, _, _ = _expenses_in(first, last)
+        exp_total, _, _, _, _, credit_exp = _expenses_in(first, last)
+        exp_total = exp_total - credit_exp   # cash-only for trend chart
 
         result.append({
             'label': label,
@@ -1313,15 +1322,9 @@ def compute_full_report(date_from, date_to):
     total_cash_out = sum(out_by.values())   # actual cash/bank paid out
     net_cash_flow  = total_cash_in - total_cash_out
 
-    # ── P&L view — expenses when incurred (includes credit, excludes debt pmts)
-    exp_total, by_category, _, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
-    # For P&L: exclude credit expenses since they don't reflect cash; they're
-    # tracked separately as Debt. Net profit = cash received - cash expenses only.
-    cash_exp_total = exp_total - sum(
-        e.amount for e in Expense.objects.filter(
-            date__gte=date_from, date__lte=date_to, payment_method='credit',
-        )
-    )
+    # ── Expenses breakdown ────────────────────────────────────────────────
+    exp_total, by_category, _, proj_exp_total, office_exp_total, credit_exp_total = _expenses_in(date_from, date_to)
+    cash_exp_total = exp_total - credit_exp_total  # cash-only (no credit)
 
     # ── AR & AP summaries (all-time outstanding) ───────────────────────────
     ar = compute_ar_report()
@@ -1361,6 +1364,7 @@ def compute_full_report(date_from, date_to):
         'project_expenses_total': float(proj_exp_total),
         'office_expenses_total':  float(office_exp_total),
         'debt_payments_total':    float(debt_pmt_total),
+        'credit_exp_total':       float(credit_exp_total),  # new debts (no cash)
         'by_category':            by_category,
         # ── Cash flow by account for the period ───────────────────────────
         'cashflow_by_method': cashflow_by_method,
@@ -1393,9 +1397,10 @@ def compute_snapshot(for_date=None):
     adv_income,  adv_rows, adv_by_meth  = _advance_payments_in(today, today)
     total_in = inv_income + off_income + oth_income + adv_income
 
-    exp_total, by_category, exp_rows, proj_exp_total, office_exp_total = _expenses_in(today, today)
+    exp_total, by_category, exp_rows, proj_exp_total, office_exp_total, credit_exp_total = _expenses_in(today, today)
+    cash_exp_total = exp_total - credit_exp_total  # only expenses paid in cash/bank
     debt_pmt_total, debt_pmt_rows, debt_pmt_by_source = _debt_payments_in(today, today)
-    total_out = exp_total + debt_pmt_total
+    total_out = cash_exp_total + debt_pmt_total    # real cash leaving accounts
     funds = _funds_position()
 
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
@@ -1411,9 +1416,10 @@ def compute_snapshot(for_date=None):
 
     return {
         'date': today,
-        'total_in': total_in,
-        'total_out': total_out,
-        'exp_total': exp_total,
+        'total_in':  total_in,
+        'total_out': total_out,          # cash-only: excludes credit expenses
+        'exp_total': cash_exp_total,     # cash expenses only (for "money out" display)
+        'credit_exp_total': credit_exp_total,  # new debts recorded today (no cash)
         'net_today': total_in - total_out,
         # Breakdown of inflows
         'invoice_income': inv_income,
@@ -1423,7 +1429,7 @@ def compute_snapshot(for_date=None):
         'other_income':   oth_income,
         'inv_payments':   inv_payments,
         'off_payments':   off_payments,
-        # Expenses today
+        # Expenses today (ALL including credit — template marks credit rows)
         'expenses': exp_rows,
         'by_category': by_category,
         'project_expenses_total': proj_exp_total,
@@ -1463,16 +1469,17 @@ def compute_report(date_from, date_to):
     total_income = inv_income + off_income + oth_income + adv_income
 
     # ── Expenses ──────────────────────────────────────────────────────────────
-    total_expenses, by_category, expense_rows, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
+    total_expenses, by_category, expense_rows, proj_exp_total, office_exp_total, credit_exp_total = _expenses_in(date_from, date_to)
+    cash_expenses = total_expenses - credit_exp_total  # actual cash paid
 
     # ── Debt repayments in period ─────────────────────────────────────────────
     debt_pmt_total, debt_pmt_rows, debt_pmt_by_source = _debt_payments_in(date_from, date_to)
 
     # ── Net ───────────────────────────────────────────────────────────────────
-    # net_profit = operating income minus operating expenses (P&L view)
-    net_profit = total_income - total_expenses
+    # net_profit = cash income minus cash expenses (consistent cash-basis)
+    net_profit = total_income - cash_expenses
     # net_cash_flow = income minus all cash outflows including debt repayments
-    net_cash_flow = total_income - total_expenses - debt_pmt_total
+    net_cash_flow = total_income - cash_expenses - debt_pmt_total
 
     # ── Receivables ───────────────────────────────────────────────────────────
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
@@ -1588,6 +1595,7 @@ def compute_report(date_from, date_to):
                 'icon':          c['icon'],
                 'color':         c['color'],
                 'total':         float(c['total']),
+                'credit_total':  float(c['credit_total']),
                 'project_total': float(c['project_total']),
                 'office_total':  float(c['office_total']),
                 'count':         c['count'],

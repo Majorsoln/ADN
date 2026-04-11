@@ -56,24 +56,29 @@
   <div class="col-sm-4">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body text-center">
-        <div class="text-danger fw-semibold small mb-1">MONEY OUT</div>
+        <div class="text-danger fw-semibold small mb-1">MONEY OUT (Cash Paid)</div>
         <div class="fs-3 fw-bold text-danger">TZS {{ data.total_out|floatformat:0 }}</div>
         <div class="small text-muted mt-1">
-          {{ data.expenses|length }} gharama
-          {% if data.debt_payments %}&nbsp;+&nbsp;{{ data.debt_payments|length }} malipo ya madeni{% endif %}
+          Cash expenses + debt repayments
         </div>
-        {% if data.debt_payments %}
         <div class="border-top mt-2 pt-2">
           <div class="d-flex justify-content-between small">
-            <span class="text-muted"><i class="bi bi-receipt me-1"></i>Gharama</span>
+            <span class="text-muted"><i class="bi bi-receipt me-1"></i>Cash Expenses</span>
             <span class="text-danger">TZS {{ data.exp_total|floatformat:0 }}</span>
           </div>
+          {% if data.credit_exp_total %}
           <div class="d-flex justify-content-between small mt-1">
-            <span class="text-muted"><i class="bi bi-arrow-return-right me-1"></i>Madeni</span>
+            <span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i>Credit (Madeni mapya)</span>
+            <span class="text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
+          </div>
+          {% endif %}
+          {% if data.debt_payments %}
+          <div class="d-flex justify-content-between small mt-1">
+            <span class="text-muted"><i class="bi bi-arrow-return-right me-1"></i>Malipo ya Madeni</span>
             <span class="text-danger">TZS {{ data.debt_payments_total|floatformat:0 }}</span>
           </div>
+          {% endif %}
         </div>
-        {% endif %}
       </div>
     </div>
   </div>
@@ -148,22 +153,38 @@
           <i class="bi bi-plus"></i> Add
         </a>
       </div>
+      {% if data.credit_exp_total %}
+      <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background:#fef9c3;">
+        <span class="small"><i class="bi bi-exclamation-circle me-1 text-warning"></i>
+          Credit expenses — <strong>no cash paid</strong> (madeni mapya yaliyoandikwa)</span>
+        <span class="small fw-bold text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
+      </div>
+      {% endif %}
       <div class="card-body p-0">
         {% if data.expenses %}
         <div class="table-responsive">
           <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
-              <tr><th>Category</th><th>Description</th><th class="text-end">Amount (TZS)</th></tr>
+              <tr><th>Category</th><th>Description</th><th>Method</th><th class="text-end">Amount (TZS)</th></tr>
             </thead>
             <tbody>
               {% for e in data.expenses %}
-              <tr>
+              <tr {% if e.payment_method == 'credit' %}class="table-warning"{% endif %}>
                 <td>
                   <i class="bi {{ e.category.icon }}" style="color:{{ e.category.color }}"></i>
                   {{ e.category.name }}
                 </td>
-                <td class="text-muted small">{{ e.description|truncatechars:40 }}</td>
-                <td class="text-end fw-semibold text-danger">{{ e.amount|floatformat:0 }}</td>
+                <td class="text-muted small">{{ e.description|truncatechars:35 }}</td>
+                <td>
+                  {% if e.payment_method == 'credit' %}
+                  <span class="badge bg-warning text-dark" style="font-size:.65rem;">Credit (Deni)</span>
+                  {% else %}
+                  <span class="badge bg-light text-dark" style="font-size:.65rem;">{{ e.payment_method }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-end fw-semibold {% if e.payment_method == 'credit' %}text-warning{% else %}text-danger{% endif %}">
+                  {{ e.amount|floatformat:0 }}
+                </td>
               </tr>
               {% endfor %}
             </tbody>

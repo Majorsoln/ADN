@@ -261,16 +261,31 @@
               <td class="text-end fw-semibold">TZS {{ data.debt_payments_total|floatformat:0 }}</td>
             </tr>
             {% endif %}
+            {% if data.credit_exp_total %}
+            <tr>
+              <td colspan="2" class="pt-2 pb-1">
+                <div class="px-2 py-2 rounded d-flex justify-content-between align-items-center" style="background:#fef9c3;border:1px solid #fde68a;">
+                  <span class="small">
+                    <i class="bi bi-exclamation-circle me-1 text-warning"></i>
+                    <strong>New credit expenses</strong>
+                    <span class="text-muted"> — no cash paid (madeni mapya)</span>
+                  </span>
+                  <span class="small fw-bold text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
+                </div>
+              </td>
+            </tr>
+            {% endif %}
             {% if data.by_category %}
             <tr>
               <td colspan="2" class="pb-0 pt-2">
-                <div class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.05em;">Breakdown by Category</div>
+                <div class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.05em;">By Category (incl. credit)</div>
                 {% for cat in data.by_category %}
                 <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
                   <span class="small">
                     <i class="bi {{ cat.icon }} me-1" style="color:{{ cat.color }};"></i>
                     {{ cat.name }}
                     <span class="text-muted">({{ cat.count }}×)</span>
+                    {% if cat.credit_total %}<span class="badge bg-warning text-dark ms-1" style="font-size:.6rem;">{{ cat.credit_total|floatformat:0 }} credit</span>{% endif %}
                   </span>
                   <span class="small fw-semibold text-danger">TZS {{ cat.total|floatformat:0 }}</span>
                 </div>
