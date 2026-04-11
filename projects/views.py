@@ -10,6 +10,7 @@ from .forms import ProjectForm
 from office.models import OfficeIncome
 from orders.models import MaterialOrder
 from finance.models import Debt
+from accounts.decorators import login_required, editor_required, admin_required
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -206,6 +207,7 @@ def _funding_analysis(project, orders):
 
 # ── Views ─────────────────────────────────────────────────────────────────────
 
+@login_required
 def list_view(request):
     qs = Project.objects.all()
     status_filter = request.GET.get('status', '')
@@ -239,6 +241,7 @@ def list_view(request):
     })
 
 
+@editor_required
 def create_view(request):
     # Pre-fill from quotation
     quote_pk = request.GET.get('from_quote')
@@ -277,6 +280,7 @@ def create_view(request):
     })
 
 
+@login_required
 def detail_view(request, pk):
     project = get_object_or_404(Project, pk=pk)
     orders  = list(project.orders.prefetch_related('items').all())
@@ -292,6 +296,7 @@ def detail_view(request, pk):
     })
 
 
+@editor_required
 def edit_view(request, pk):
     project = get_object_or_404(Project, pk=pk)
     old_status  = project.status
@@ -319,6 +324,7 @@ def edit_view(request, pk):
     })
 
 
+@admin_required
 def delete_view(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
@@ -329,6 +335,7 @@ def delete_view(request, pk):
     return render(request, 'projects/confirm_delete.html', {'project': project})
 
 
+@login_required
 def report_view(request, pk):
     """Final project report — printable as PDF."""
     project = get_object_or_404(Project, pk=pk)
@@ -344,6 +351,7 @@ def report_view(request, pk):
     })
 
 
+@editor_required
 def complete_view(request, pk):
     """Mark project completed and record gross profit to OfficeIncome."""
     project = get_object_or_404(Project, pk=pk)
@@ -378,6 +386,7 @@ def complete_view(request, pk):
     })
 
 
+@editor_required
 @require_POST
 def add_note_view(request, pk):
     """Add a manual note to the project timeline."""
@@ -389,6 +398,7 @@ def add_note_view(request, pk):
     return redirect('projects:detail', pk=pk)
 
 
+@editor_required
 @require_POST
 def update_status_view(request, pk):
     """Quick status update from project detail page."""

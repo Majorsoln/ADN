@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 
 from .models import Quotation, QuotationItem, QuotationMaterial, Material
 from .forms import QuotationForm, QuotationItemForm, QuotationMaterialForm
+from accounts.decorators import login_required, editor_required, admin_required
 
 
 def _auto_expire():
@@ -29,6 +30,7 @@ DEFAULT_MATERIALS = [
 ]
 
 
+@login_required
 def list_view(request):
     _auto_expire()
     qs = Quotation.objects.select_related('accepted_material', 'project')
@@ -50,6 +52,7 @@ def list_view(request):
     return render(request, 'quotations/list.html', context)
 
 
+@editor_required
 def create_view(request):
     if request.method == 'POST':
         form = QuotationForm(request.POST)
@@ -115,6 +118,7 @@ def create_view(request):
     return render(request, 'quotations/form.html', context)
 
 
+@login_required
 def detail_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
     # Auto-expire this quote if its valid_until date has passed
@@ -130,6 +134,7 @@ def detail_view(request, pk):
     return render(request, 'quotations/detail.html', context)
 
 
+@editor_required
 def edit_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
     if request.method == 'POST':
@@ -190,6 +195,7 @@ def edit_view(request, pk):
     return render(request, 'quotations/form.html', context)
 
 
+@admin_required
 def delete_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
     if request.method == 'POST':
@@ -200,6 +206,7 @@ def delete_view(request, pk):
     return render(request, 'quotations/confirm_delete.html', {'quotation': quotation})
 
 
+@login_required
 def pdf_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
     options = quotation.material_options
@@ -231,6 +238,7 @@ def pdf_view(request, pk):
     return render(request, 'quotations/pdf.html', context)
 
 
+@editor_required
 @require_POST
 def accept_option(request, pk):
     """Mark a specific material option as accepted and set status to accepted."""
@@ -244,6 +252,7 @@ def accept_option(request, pk):
     return redirect('quotations:detail', pk=pk)
 
 
+@editor_required
 @require_POST
 def update_status(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)

@@ -9,6 +9,8 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.views.decorators.http import require_POST
 
+from accounts.decorators import login_required, editor_required, admin_required
+
 from .engine import (
     compute_snapshot, compute_report,
     compute_ar_report, compute_ap_report,
@@ -21,6 +23,7 @@ from .models import Expense, ExpenseCategory, ReportSnapshot, Debt, DebtPayment
 
 # ── Level-1 Owner Snapshot ────────────────────────────────────────────────────
 
+@login_required
 def snapshot_view(request):
     """Daily money-in / money-out / balance view for the owner."""
     raw_date = request.GET.get('date')
@@ -41,30 +44,35 @@ def snapshot_view(request):
 
 # ── Focused Reports ───────────────────────────────────────────────────────────
 
+@login_required
 def ar_report_view(request):
     """Accounts Receivable — Fedha Tunazodai."""
     data = compute_ar_report()
     return render(request, 'finance/ar_report.html', {'data': data})
 
 
+@login_required
 def ap_report_view(request):
     """Accounts Payable — Madeni Yetu."""
     data = compute_ap_report()
     return render(request, 'finance/ap_report.html', {'data': data})
 
 
+@login_required
 def office_report_view(request):
     """Office Services Report — all records with cash/bank breakdown."""
     data = compute_office_report()
     return render(request, 'finance/office_report.html', {'data': data})
 
 
+@login_required
 def projects_report_view(request):
     """Projects Report — individual + accumulative with cash/bank breakdown."""
     data = compute_projects_report()
     return render(request, 'finance/projects_report.html', {'data': data})
 
 
+@login_required
 def full_report_view(request):
     """Full combined report for a selected period."""
     form = ReportFilterForm(request.GET or None)
@@ -91,6 +99,7 @@ def full_report_view(request):
 
 # ── Level-2/3 Business / Accounting Report ────────────────────────────────────
 
+@login_required
 def report_view(request):
     """Full period report: income breakdown, expenses, receivables, project stats."""
     form = ReportFilterForm(request.GET or None)
@@ -116,6 +125,7 @@ def report_view(request):
     })
 
 
+@login_required
 def report_pdf_view(request):
     """Render the current report as a print-ready PDF page."""
     form = ReportFilterForm(request.GET or None)
@@ -138,6 +148,7 @@ def report_pdf_view(request):
     })
 
 
+@editor_required
 def save_report_view(request):
     """Save computed report figures as a ReportSnapshot for future reference."""
     if request.method == 'POST':
@@ -164,6 +175,7 @@ def save_report_view(request):
 
 # ── Archive ───────────────────────────────────────────────────────────────────
 
+@login_required
 def archive_view(request):
     """List of saved report snapshots."""
     snapshots = ReportSnapshot.objects.all()
@@ -178,6 +190,7 @@ def archive_view(request):
     })
 
 
+@login_required
 def archive_detail_view(request, pk):
     """View a saved report snapshot."""
     snapshot = get_object_or_404(ReportSnapshot, pk=pk)
@@ -187,6 +200,7 @@ def archive_detail_view(request, pk):
     })
 
 
+@admin_required
 def archive_delete_view(request, pk):
     snapshot = get_object_or_404(ReportSnapshot, pk=pk)
     if request.method == 'POST':
@@ -199,6 +213,7 @@ def archive_delete_view(request, pk):
 
 # ── Expenses CRUD ─────────────────────────────────────────────────────────────
 
+@login_required
 def expense_list_view(request):
     expenses = Expense.objects.select_related('category', 'project').all()
 
@@ -227,6 +242,7 @@ def expense_list_view(request):
     })
 
 
+@editor_required
 def expense_add_view(request):
     from projects.models import Project, ProjectEvent
 
@@ -296,6 +312,7 @@ def expense_add_view(request):
     })
 
 
+@editor_required
 def expense_edit_view(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
     from projects.models import Project, ProjectEvent
@@ -365,6 +382,7 @@ def expense_edit_view(request, pk):
     })
 
 
+@admin_required
 def expense_delete_view(request, pk):
     expense = get_object_or_404(Expense, pk=pk)
     if request.method == 'POST':
@@ -376,11 +394,13 @@ def expense_delete_view(request, pk):
 
 # ── Category management ───────────────────────────────────────────────────────
 
+@login_required
 def category_list_view(request):
     categories = ExpenseCategory.objects.all()
     return render(request, 'finance/category_list.html', {'categories': categories})
 
 
+@editor_required
 def category_toggle_view(request, pk):
     """Toggle active/inactive on a category."""
     cat = get_object_or_404(ExpenseCategory, pk=pk)
@@ -396,6 +416,7 @@ def category_toggle_view(request, pk):
 # DEBTS / LIABILITIES
 # ══════════════════════════════════════════════════════════════════════════════
 
+@login_required
 def debt_list_view(request):
     """All debts with summary stats."""
     debts = Debt.objects.select_related('project', 'material_order').prefetch_related('payments')
@@ -431,6 +452,7 @@ def debt_list_view(request):
     })
 
 
+@editor_required
 def debt_add_view(request):
     if request.method == 'POST':
         form = DebtForm(request.POST)
@@ -443,6 +465,7 @@ def debt_add_view(request):
     return render(request, 'finance/debt_form.html', {'form': form, 'action': 'Add'})
 
 
+@editor_required
 def debt_edit_view(request, pk):
     debt = get_object_or_404(Debt, pk=pk)
     if request.method == 'POST':
@@ -456,6 +479,7 @@ def debt_edit_view(request, pk):
     return render(request, 'finance/debt_form.html', {'form': form, 'debt': debt, 'action': 'Edit'})
 
 
+@login_required
 def debt_detail_view(request, pk):
     debt = get_object_or_404(Debt, pk=pk)
     payments = debt.payments.all()
@@ -467,6 +491,7 @@ def debt_detail_view(request, pk):
     })
 
 
+@editor_required
 @require_POST
 def debt_add_payment_view(request, pk):
     debt = get_object_or_404(Debt, pk=pk)
@@ -489,6 +514,7 @@ def debt_add_payment_view(request, pk):
     return redirect('finance:debt_detail', pk=pk)
 
 
+@admin_required
 def debt_delete_view(request, pk):
     debt = get_object_or_404(Debt, pk=pk)
     if request.method == 'POST':

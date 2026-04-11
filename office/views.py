@@ -6,10 +6,12 @@ from django.views.decorators.http import require_POST
 
 from .models import OfficeServiceRecord, OfficeServicePayment, OfficeServiceRate, OfficeIncome
 from .forms import OfficeServiceRecordForm, OfficeServicePaymentForm, OfficeServiceRateForm, OfficeIncomeForm
+from accounts.decorators import login_required, editor_required, admin_required
 
 
 # ── Office Service Records ──────────────────────────────────────────────────
 
+@login_required
 def service_list(request):
     qs = OfficeServiceRecord.objects.all()
     status_filter = request.GET.get('status', '')
@@ -37,6 +39,7 @@ def service_list(request):
     })
 
 
+@editor_required
 def service_create(request):
     if request.method == 'POST':
         form = OfficeServiceRecordForm(request.POST)
@@ -49,6 +52,7 @@ def service_create(request):
     return render(request, 'office/service_form.html', {'form': form, 'action': 'Create'})
 
 
+@login_required
 def service_detail(request, pk):
     record = get_object_or_404(OfficeServiceRecord, pk=pk)
     payment_form = OfficeServicePaymentForm()
@@ -59,6 +63,7 @@ def service_detail(request, pk):
     })
 
 
+@editor_required
 def service_edit(request, pk):
     record = get_object_or_404(OfficeServiceRecord, pk=pk)
     if request.method == 'POST':
@@ -72,6 +77,7 @@ def service_edit(request, pk):
     return render(request, 'office/service_form.html', {'form': form, 'record': record, 'action': 'Edit'})
 
 
+@admin_required
 def service_delete(request, pk):
     record = get_object_or_404(OfficeServiceRecord, pk=pk)
     if request.method == 'POST':
@@ -81,6 +87,7 @@ def service_delete(request, pk):
     return render(request, 'office/service_confirm_delete.html', {'record': record})
 
 
+@editor_required
 @require_POST
 def service_add_payment(request, pk):
     record = get_object_or_404(OfficeServiceRecord, pk=pk)
@@ -120,10 +127,15 @@ def service_add_payment(request, pk):
 
 # ── Rates ───────────────────────────────────────────────────────────────────
 
+@login_required
 def rate_list(request):
     all_rates = OfficeServiceRate.objects.order_by('-effective_from')
     active_rate = OfficeServiceRate.get_active()
     if request.method == 'POST':
+        from accounts.decorators import _get_role
+        if _get_role(request.user) not in ('editor', 'admin'):
+            messages.error(request, 'Huna ruhusa ya kubadilisha bei. Unahitaji nafasi ya Editor au Admin.')
+            return redirect('office:rates')
         form = OfficeServiceRateForm(request.POST)
         if form.is_valid():
             OfficeServiceRate.objects.filter(is_active=True).update(is_active=False)
@@ -143,6 +155,7 @@ def rate_list(request):
 
 # ── Income Overview ─────────────────────────────────────────────────────────
 
+@login_required
 def income_overview(request):
     all_incomes = OfficeIncome.objects.select_related('project', 'office_record').order_by('-date')
 
@@ -171,6 +184,7 @@ def income_overview(request):
     })
 
 
+@editor_required
 @require_POST
 def income_add(request):
     description    = request.POST.get('description', '').strip()
@@ -194,6 +208,7 @@ def income_add(request):
     return redirect('office:income')
 
 
+@admin_required
 @require_POST
 def income_delete(request, pk):
     entry = get_object_or_404(OfficeIncome, pk=pk, source='other')

@@ -208,25 +208,31 @@
     <a href="{% url 'quotations:list' %}" class="nav-link {% if 'quotations' in request.path %}active{% endif %}">
       <i class="bi bi-file-earmark-text"></i> All Quotations
     </a>
+    {% if can_edit %}
     <a href="{% url 'quotations:create' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> New Quotation
     </a>
+    {% endif %}
 
     <div class="nav-section mt-2">Invoices</div>
     <a href="{% url 'invoices:list' %}" class="nav-link {% if 'invoices' in request.path %}active{% endif %}">
       <i class="bi bi-receipt"></i> All Invoices
     </a>
+    {% if can_edit %}
     <a href="{% url 'invoices:create' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> New Invoice
     </a>
+    {% endif %}
 
     <div class="nav-section mt-2">Projects</div>
     <a href="{% url 'projects:list' %}" class="nav-link {% if 'projects' in request.path %}active{% endif %}">
       <i class="bi bi-kanban"></i> All Projects
     </a>
+    {% if can_edit %}
     <a href="{% url 'projects:create' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> New Project
     </a>
+    {% endif %}
     <a href="{% url 'orders:list' %}" class="nav-link {% if 'orders' in request.path and 'project' not in request.path %}active{% endif %}">
       <i class="bi bi-cart3"></i> Material Orders
     </a>
@@ -235,9 +241,11 @@
     <a href="{% url 'office:service_list' %}" class="nav-link {% if 'office/service' in request.path %}active{% endif %}">
       <i class="bi bi-people"></i> Office Service
     </a>
+    {% if can_edit %}
     <a href="{% url 'office:service_create' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> New Service Record
     </a>
+    {% endif %}
     <a href="{% url 'office:income' %}" class="nav-link {% if 'income' in request.path %}active{% endif %}">
       <i class="bi bi-graph-up-arrow"></i> Income Overview
     </a>
@@ -265,6 +273,7 @@
       <i class="bi bi-bar-chart-line"></i> Full Report
     </a>
 
+    {% if can_edit %}
     <div class="nav-section mt-2">Finance — Expenses</div>
     <a href="{% url 'finance:expense_list' %}" class="nav-link {% if 'finance/expense' in request.path %}active{% endif %}">
       <i class="bi bi-receipt-cutoff"></i> All Expenses
@@ -275,15 +284,55 @@
     <a href="{% url 'finance:debt_add' %}" class="nav-link {% if request.resolver_match.url_name == 'debt_add' %}active{% endif %}">
       <i class="bi bi-plus-circle"></i> Add Debt (Manual)
     </a>
+    {% else %}
+    <div class="nav-section mt-2">Finance — Expenses</div>
+    <a href="{% url 'finance:expense_list' %}" class="nav-link {% if 'finance/expense' in request.path %}active{% endif %}">
+      <i class="bi bi-receipt-cutoff"></i> All Expenses
+    </a>
+    {% endif %}
   </div>
 
+  {# ── User info + logout ─────────────────────────────────────── #}
   <div class="mt-auto p-3" style="border-top:1px solid rgba(255,255,255,.08);">
+    {% if user.is_authenticated %}
+    <div class="d-flex align-items-center gap-2 mb-2 px-1">
+      <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-person-fill" style="color:rgba(255,255,255,.8);font-size:.9rem;"></i>
+      </div>
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:.8rem;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {{ user.username }}
+        </div>
+        <div style="font-size:.68rem;margin-top:.05rem;">
+          {% if user_role == 'admin' %}
+            <span style="color:#f59e0b;">&#9679; Admin</span>
+          {% elif user_role == 'editor' %}
+            <span style="color:#34d399;">&#9679; Editor</span>
+          {% else %}
+            <span style="color:#94a3b8;">&#9679; Viewer</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <a href="{% url 'manual' %}" class="nav-link {% if request.resolver_match.url_name == 'manual' %}active{% endif %}" style="font-size:.8rem;">
       <i class="bi bi-book"></i> User Manual
     </a>
+    {% if can_delete %}
     <a href="/admin/" class="nav-link" style="font-size:.8rem;">
       <i class="bi bi-gear"></i> Admin Panel
     </a>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+      {% csrf_token %}
+      <button type="submit" class="nav-link w-100 border-0 bg-transparent text-start" style="font-size:.8rem;cursor:pointer;">
+        <i class="bi bi-box-arrow-left"></i> Toka (Logout)
+      </button>
+    </form>
+    {% endif %}
   </div>
 </nav>
 

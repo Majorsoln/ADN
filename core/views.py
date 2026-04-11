@@ -5,12 +5,15 @@ from quotations.models import Quotation
 from invoices.models import Invoice
 from projects.models import Project
 from office.models import OfficeServiceRecord, OfficeIncome
+from accounts.decorators import login_required
 
 
+@login_required
 def manual(request):
     return render(request, 'manual.html', {'today': timezone.now().date()})
 
 
+@login_required
 def dashboard(request):
     today = timezone.now().date()
 

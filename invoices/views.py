@@ -5,8 +5,10 @@ from django.utils import timezone
 
 from .models import Invoice, InvoicePayment
 from .forms import InvoiceForm, PaymentForm
+from accounts.decorators import login_required, editor_required, admin_required
 
 
+@login_required
 def list_view(request):
     qs = Invoice.objects.all()
     status_filter = request.GET.get('status', '')
@@ -28,6 +30,7 @@ def list_view(request):
     return render(request, 'invoices/list.html', context)
 
 
+@editor_required
 def create_view(request):
     # Pre-fill from quotation / project if passed in GET or POST
     quote_pk   = request.GET.get('from_quote') or request.POST.get('from_quote')
@@ -101,6 +104,7 @@ def create_view(request):
     })
 
 
+@login_required
 def detail_view(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     payment_form = PaymentForm()
@@ -112,6 +116,7 @@ def detail_view(request, pk):
     return render(request, 'invoices/detail.html', context)
 
 
+@editor_required
 def edit_view(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     if request.method == 'POST':
@@ -125,6 +130,7 @@ def edit_view(request, pk):
     return render(request, 'invoices/form.html', {'form': form, 'invoice': invoice, 'action': 'Edit'})
 
 
+@admin_required
 def delete_view(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     if request.method == 'POST':
@@ -135,11 +141,13 @@ def delete_view(request, pk):
     return render(request, 'invoices/confirm_delete.html', {'invoice': invoice})
 
 
+@login_required
 def pdf_view(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     return render(request, 'invoices/pdf.html', {'invoice': invoice, 'for_pdf': True})
 
 
+@editor_required
 @require_POST
 def add_payment(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
@@ -187,6 +195,7 @@ def add_payment(request, pk):
     return redirect('invoices:detail', pk=pk)
 
 
+@editor_required
 @require_POST
 def update_status(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)

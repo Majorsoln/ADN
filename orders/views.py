@@ -8,12 +8,14 @@ from django.views.decorators.http import require_POST
 from projects.models import Project, ProjectEvent
 from .models import MaterialOrder, MaterialOrderItem
 from .forms import MaterialOrderForm
+from accounts.decorators import login_required, editor_required, admin_required
 
 
 def _log(project, event_type, description):
     ProjectEvent.objects.create(project=project, event_type=event_type, description=description)
 
 
+@login_required
 def list_view(request):
     """All material orders across all projects."""
     qs = MaterialOrder.objects.select_related('project').prefetch_related('items')
@@ -59,6 +61,7 @@ def _save_items(order, items_json):
         pass
 
 
+@editor_required
 def create_view(request, project_pk):
     project = get_object_or_404(Project, pk=project_pk)
     if request.method == 'POST':
@@ -109,11 +112,13 @@ def create_view(request, project_pk):
     return render(request, 'orders/form.html', {'form': form, 'project': project, 'action': 'Create'})
 
 
+@login_required
 def detail_view(request, pk):
     order = get_object_or_404(MaterialOrder, pk=pk)
     return render(request, 'orders/detail.html', {'order': order})
 
 
+@editor_required
 def edit_view(request, pk):
     order = get_object_or_404(MaterialOrder, pk=pk)
     old_status = order.status
@@ -192,6 +197,7 @@ def edit_view(request, pk):
     })
 
 
+@admin_required
 def delete_view(request, pk):
     order = get_object_or_404(MaterialOrder, pk=pk)
     project_pk = order.project.pk
@@ -205,6 +211,7 @@ def delete_view(request, pk):
     return render(request, 'orders/confirm_delete.html', {'order': order})
 
 
+@editor_required
 @require_POST
 def update_status(request, pk):
     order = get_object_or_404(MaterialOrder, pk=pk)
