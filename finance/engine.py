@@ -551,9 +551,13 @@ def _funds_position():
     for p in OfficeServicePayment.objects.all().only('amount', 'payment_method'):
         accounts[_norm_in(p.payment_method)]['in'] += p.amount
 
+    # 4. Other income (OfficeIncome with source='other')
+    for inc in OfficeIncome.objects.filter(source='other').only('amount', 'payment_method'):
+        accounts[_norm_in(inc.payment_method)]['in'] += inc.amount
+
     # ── OUTFLOWS (real money paid, not credit) ─────────────────────────────
 
-    # 4. General expenses paid immediately (exclude credit — those move no cash)
+    # 5. General expenses paid immediately (exclude credit — those move no cash)
     for exp in Expense.objects.exclude(
         payment_method='credit',
     ).only('amount', 'payment_method'):
@@ -845,7 +849,7 @@ def compute_ar_report():
             'recv_cash':      r['recv_cash'],
             'recv_bank':      r['recv_bank'],
             'recv_mpesa':     r['recv_mpesa'],
-            'recv_other':     r['recv_other'],
+            'recv_other':     r['recv_cheque'] + r['recv_other'],  # collapse cheque → other (matches grand total)
         })
     for r in svc_rows:
         all_rows.append({
@@ -1425,7 +1429,16 @@ def compute_snapshot(for_date=None):
     exp_total, by_category, exp_rows, proj_exp_total, office_exp_total, credit_exp_total = _expenses_in(today, today)
     cash_exp_total = exp_total - credit_exp_total  # only expenses paid in cash/bank
     debt_pmt_total, debt_pmt_rows, debt_pmt_by_source = _debt_payments_in(today, today)
-    total_out = cash_exp_total + debt_pmt_total    # real cash leaving accounts
+    # Material orders paid today (cash/bank/mpesa/cheque — not credit)
+    mat_orders_today = Decimal(str(sum(
+        o.total_cost
+        for o in MaterialOrder.objects.filter(
+            order_date=today,
+            payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
+            status__in=['ordered', 'partially_received', 'received'],
+        ).prefetch_related('items')
+    )))
+    total_out = cash_exp_total + debt_pmt_total + mat_orders_today    # real cash leaving accounts
     funds = _funds_position()
 
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
@@ -1444,6 +1457,7 @@ def compute_snapshot(for_date=None):
         'total_in':  total_in,
         'total_out': total_out,          # cash-only: excludes credit expenses
         'exp_total': cash_exp_total,     # cash expenses only (for "money out" display)
+        'mat_orders_today': mat_orders_today,  # material orders paid today (cash/bank)
         'credit_exp_total': credit_exp_total,  # new debts recorded today (no cash)
         'net_today': total_in - total_out,
         # Breakdown of inflows
@@ -1500,11 +1514,21 @@ def compute_report(date_from, date_to):
     # ── Debt repayments in period ─────────────────────────────────────────────
     debt_pmt_total, debt_pmt_rows, debt_pmt_by_source = _debt_payments_in(date_from, date_to)
 
+    # ── Material orders paid in period (cash/bank — not credit) ───────────────
+    mat_orders_total = Decimal(str(sum(
+        o.total_cost
+        for o in MaterialOrder.objects.filter(
+            order_date__gte=date_from, order_date__lte=date_to,
+            payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
+            status__in=['ordered', 'partially_received', 'received'],
+        ).prefetch_related('items')
+    )))
+
     # ── Net ───────────────────────────────────────────────────────────────────
     # net_profit = cash income minus cash expenses (consistent cash-basis)
     net_profit = total_income - cash_expenses
-    # net_cash_flow = income minus all cash outflows including debt repayments
-    net_cash_flow = total_income - cash_expenses - debt_pmt_total
+    # net_cash_flow = income minus all cash outflows (expenses + mat orders + debt repayments)
+    net_cash_flow = total_income - cash_expenses - mat_orders_total - debt_pmt_total
 
     # ── Receivables ───────────────────────────────────────────────────────────
     inv_recv, inv_ov_c, inv_ov_a, inv_recv_rows = _invoice_receivables()
