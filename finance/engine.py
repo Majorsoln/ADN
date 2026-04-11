@@ -165,7 +165,7 @@ def _debt_payments_in(date_from, date_to):
 
 def _invoice_receivables():
     """Outstanding invoice balances (unpaid / partially paid)."""
-    qs = Invoice.objects.filter(status__in=['draft', 'sent', 'overdue'])
+    qs = Invoice.objects.exclude(status='cancelled')
     total = Decimal('0')
     overdue_count = 0
     overdue_amount = Decimal('0')
@@ -558,8 +558,8 @@ def _funds_position():
     # ── CREDIT CLIENTS OWE US (Receivables) ────────────────────────────────
     inv_receivable = sum(
         inv.balance_due
-        for inv in Invoice.objects.filter(
-            status__in=['draft', 'sent', 'overdue']
+        for inv in Invoice.objects.exclude(
+            status='cancelled'
         ).prefetch_related('payments')
         if inv.balance_due > 0
     )
@@ -696,8 +696,10 @@ def compute_ar_report():
     D = Decimal
 
     # ── Invoice AR ─────────────────────────────────────────────────────────
-    invoices = Invoice.objects.filter(
-        status__in=['draft', 'sent', 'overdue'],
+    # Exclude only cancelled — rely on balance_due > 0 check in Python
+    # to catch partial payments regardless of whatever status is set.
+    invoices = Invoice.objects.exclude(
+        status='cancelled',
     ).prefetch_related('payments', 'projects')
 
     inv_rows = []
