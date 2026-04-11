@@ -272,6 +272,9 @@
     <a href="{% url 'finance:full_report' %}" class="nav-link {% if 'finance/full' in request.path %}active{% endif %}">
       <i class="bi bi-bar-chart-line"></i> Full Report
     </a>
+    <a href="{% url 'finance:cashbook' %}" class="nav-link {% if 'finance/cashbook' in request.path %}active{% endif %}">
+      <i class="bi bi-journal-bookmark"></i> Cash Book
+    </a>
 
     {% if can_edit %}
     <div class="nav-section mt-2">Finance — Expenses</div>

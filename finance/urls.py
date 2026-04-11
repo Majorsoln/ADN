@@ -39,4 +39,7 @@ urlpatterns = [
     path('archive/',                   views.archive_view,        name='archive'),
     path('archive/<int:pk>/',          views.archive_detail_view, name='archive_detail'),
     path('archive/<int:pk>/delete/',   views.archive_delete_view, name='archive_delete'),
+
+    # ── CashBook ─────────────────────────────────────────────────────────────
+    path('cashbook/', views.cashbook_view, name='cashbook'),
 ]

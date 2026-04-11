@@ -15,7 +15,7 @@ from .engine import (
     compute_snapshot, compute_report,
     compute_ar_report, compute_ap_report,
     compute_office_report, compute_projects_report,
-    compute_full_report,
+    compute_full_report, compute_cashbook,
 )
 from .forms import ExpenseForm, ReportFilterForm, SaveReportForm, DebtForm, DebtPaymentForm
 from .models import Expense, ExpenseCategory, ReportSnapshot, Debt, DebtPayment
@@ -522,3 +522,38 @@ def debt_delete_view(request, pk):
         messages.success(request, 'Debt record deleted.')
         return redirect('finance:debt_list')
     return render(request, 'finance/debt_confirm_delete.html', {'debt': debt})
+
+
+# ── CashBook ──────────────────────────────────────────────────────────────────
+
+@login_required
+def cashbook_view(request):
+    """Flat ledger of all real cash movements, filterable by date range & account."""
+    today = timezone.now().date()
+    first_of_month = today.replace(day=1)
+
+    raw_from    = request.GET.get('from', '')
+    raw_to      = request.GET.get('to', '')
+    account     = request.GET.get('account', 'all')
+
+    try:
+        date_from = date.fromisoformat(raw_from) if raw_from else first_of_month
+    except ValueError:
+        date_from = first_of_month
+    try:
+        date_to = date.fromisoformat(raw_to) if raw_to else today
+    except ValueError:
+        date_to = today
+
+    valid_accounts = ('all', 'cash', 'bank', 'mpesa', 'cheque')
+    if account not in valid_accounts:
+        account = 'all'
+
+    data = compute_cashbook(date_from, date_to, account)
+
+    return render(request, 'finance/cashbook.html', {
+        'date_from':  date_from,
+        'date_to':    date_to,
+        'account':    account,
+        **data,
+    })

@@ -1824,3 +1824,196 @@ def compute_report(date_from, date_to):
         # Alerts
         'alerts': alerts,
     }
+
+
+# ── CashBook ──────────────────────────────────────────────────────────────────
+
+def compute_cashbook(date_from, date_to, account='all'):
+    """
+    Flat ledger of every real money movement in the period, sorted by date.
+
+    Each entry:  {date, description, account, type_label, in, out, balance}
+
+    account = 'all' | 'cash' | 'bank' | 'mpesa' | 'cheque'
+    Transactions with unknown/credit/unspecified method are excluded from
+    the account ledger (they don't represent an identified cash account).
+    """
+    D = Decimal
+
+    def _ni(m):
+        """Normalise income payment method → canonical key or None."""
+        m = (m or '').lower()
+        if m == 'cash':                     return 'cash'
+        if m in ('bank_transfer', 'bank'):  return 'bank'
+        if m in ('mobile_money', 'mpesa'):  return 'mpesa'
+        if m == 'cheque':                   return 'cheque'
+        return None   # skip unspecified / other
+
+    def _no(m):
+        """Normalise outflow payment method → canonical key or None."""
+        m = (m or '').lower()
+        if m == 'cash':                     return 'cash'
+        if m in ('bank_transfer', 'bank'):  return 'bank'
+        if m in ('mobile_money', 'mpesa'):  return 'mpesa'
+        if m == 'cheque':                   return 'cheque'
+        return None   # skip credit / unspecified
+
+    ACCT_LABEL = {
+        'cash': 'Cash', 'bank': 'Bank',
+        'mpesa': 'M-Pesa', 'cheque': 'Cheque',
+    }
+    TYPE_LABEL = {
+        'invoice_payment': 'Invoice Payment',
+        'advance':         'Invoice Advance',
+        'service_payment': 'Office Service',
+        'other_income':    'Other Income',
+        'material_order':  'Material Order',
+        'expense':         'Expense',
+        'debt_payment':    'Debt Repayment',
+    }
+
+    entries = []
+
+    # ── INFLOWS ──────────────────────────────────────────────────────────────
+
+    # 1. Invoice instalment payments
+    for p in (InvoicePayment.objects
+              .filter(payment_date__gte=date_from, payment_date__lte=date_to)
+              .select_related('invoice')):
+        acct = _ni(p.payment_method)
+        if acct:
+            entries.append({
+                'date':        p.payment_date,
+                'description': f"{p.invoice.client_name} — {p.invoice.invoice_no}",
+                'account':     acct,
+                'type':        'invoice_payment',
+                'in':          p.amount,
+                'out':         D('0'),
+            })
+
+    # 2. Invoice advance payments
+    for inv in (Invoice.objects
+                .filter(invoice_date__gte=date_from, invoice_date__lte=date_to,
+                        advance_paid__gt=0)
+                .only('invoice_no', 'client_name', 'advance_paid',
+                      'advance_payment_method', 'invoice_date')):
+        acct = _ni(inv.advance_payment_method)
+        if acct:
+            entries.append({
+                'date':        inv.invoice_date,
+                'description': f"{inv.client_name} — {inv.invoice_no} (advance)",
+                'account':     acct,
+                'type':        'advance',
+                'in':          inv.advance_paid,
+                'out':         D('0'),
+            })
+
+    # 3. Office service payments
+    for p in (OfficeServicePayment.objects
+              .filter(payment_date__gte=date_from, payment_date__lte=date_to)
+              .select_related('record')):
+        acct = _ni(p.payment_method)
+        if acct:
+            entries.append({
+                'date':        p.payment_date,
+                'description': f"{p.record.client_name} (office service)",
+                'account':     acct,
+                'type':        'service_payment',
+                'in':          p.amount,
+                'out':         D('0'),
+            })
+
+    # 4. Other income (OfficeIncome source='other')
+    for inc in (OfficeIncome.objects
+                .filter(source='other', date__gte=date_from, date__lte=date_to)):
+        acct = _ni(inc.payment_method)
+        if acct:
+            entries.append({
+                'date':        inc.date,
+                'description': inc.description or 'Other income',
+                'account':     acct,
+                'type':        'other_income',
+                'in':          inc.amount,
+                'out':         D('0'),
+            })
+
+    # ── OUTFLOWS ─────────────────────────────────────────────────────────────
+
+    # 5. Material orders (cash/bank/mpesa/cheque only — credit excluded)
+    for order in (MaterialOrder.objects
+                  .filter(order_date__gte=date_from, order_date__lte=date_to,
+                          payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
+                          status__in=('ordered', 'partially_received', 'received'))
+                  .select_related('project')
+                  .prefetch_related('items')):
+        acct = _no(order.payment_source)
+        if acct:
+            entries.append({
+                'date':        order.order_date,
+                'description': f"{order.supplier_name} — {order.project.name}",
+                'account':     acct,
+                'type':        'material_order',
+                'in':          D('0'),
+                'out':         order.total_cost,
+            })
+
+    # 6. Expenses (credit excluded — those created a Debt record instead)
+    for exp in (Expense.objects
+                .filter(date__gte=date_from, date__lte=date_to)
+                .exclude(payment_method='credit')
+                .select_related('category', 'project')):
+        acct = _no(exp.payment_method)
+        if acct:
+            parts = [exp.category.name]
+            if exp.project_id:
+                parts.append(exp.project.name)
+            if exp.description:
+                parts.append(exp.description)
+            entries.append({
+                'date':        exp.date,
+                'description': ' — '.join(parts),
+                'account':     acct,
+                'type':        'expense',
+                'in':          D('0'),
+                'out':         exp.amount,
+            })
+
+    # 7. Debt repayments
+    for dp in (DebtPayment.objects
+               .filter(payment_date__gte=date_from, payment_date__lte=date_to)
+               .select_related('debt')):
+        acct = _no(dp.payment_source)
+        if acct:
+            entries.append({
+                'date':        dp.payment_date,
+                'description': f"Repayment to {dp.debt.creditor_name}",
+                'account':     acct,
+                'type':        'debt_payment',
+                'in':          D('0'),
+                'out':         dp.amount,
+            })
+
+    # ── Filter by account ────────────────────────────────────────────────────
+    if account and account != 'all':
+        entries = [e for e in entries if e['account'] == account]
+
+    # ── Sort by date (oldest first) ──────────────────────────────────────────
+    entries.sort(key=lambda e: e['date'])
+
+    # ── Running balance + labels ─────────────────────────────────────────────
+    running = D('0')
+    for e in entries:
+        running += e['in'] - e['out']
+        e['balance']     = running
+        e['acct_label']  = ACCT_LABEL.get(e['account'], e['account'])
+        e['type_label']  = TYPE_LABEL.get(e['type'], e['type'])
+
+    total_in  = sum(e['in']  for e in entries)
+    total_out = sum(e['out'] for e in entries)
+
+    return {
+        'entries':    entries,
+        'total_in':   total_in,
+        'total_out':  total_out,
+        'net':        total_in - total_out,
+    }
