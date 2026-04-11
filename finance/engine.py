@@ -1304,108 +1304,165 @@ def _income_ledger(date_from, date_to):
 
 def compute_full_report(date_from, date_to):
     """
-    Full combined report for a period:
-      - Cash/Bank account balance (all-time)
-      - AR summary
-      - AP summary
-      - Period income + expenses broken down by cash/bank
-    """
-    # Period income & expenses by method
-    inc_by  = _income_by_method(date_from, date_to)
-    out_by  = _outflows_by_method(date_from, date_to)
+    Cash Flow & Bank Flow report for a period.
 
-    METHOD_LABELS = {
-        'cash':   ('Cash (Fedha Taslimu)', 'bi-cash-coin',  '#16a34a'),
-        'bank':   ('Bank Transfer',        'bi-bank',       '#2563eb'),
-        'mpesa':  ('M-Pesa / Mobile',      'bi-phone',      '#059669'),
-        'cheque': ('Cheque',               'bi-file-text',  '#7c3aed'),
-        'other':  ('Nyingine',             'bi-three-dots', '#94a3b8'),
+    Per account (Cash / Bank / M-Pesa / Cheque) shows:
+      IN  → Invoice payments + Office service payments + Other income
+      OUT → Material orders + Direct expenses + Debt repayments
+      NET → IN - OUT
+    """
+    D = Decimal
+
+    ACCOUNTS = ['cash', 'bank', 'mpesa', 'cheque']
+    ACCOUNT_META = {
+        'cash':   {'label': 'Cash',         'icon': 'bi-cash-coin', 'color': '#16a34a'},
+        'bank':   {'label': 'Bank Transfer', 'icon': 'bi-bank',      'color': '#2563eb'},
+        'mpesa':  {'label': 'M-Pesa',        'icon': 'bi-phone',     'color': '#059669'},
+        'cheque': {'label': 'Cheque',        'icon': 'bi-file-text', 'color': '#7c3aed'},
     }
-    cashflow_by_method = []
-    for key in ['cash', 'bank', 'mpesa', 'cheque', 'other']:
-        i = inc_by.get(key, 0)
-        o = out_by.get(key, 0)
-        if i == 0 and o == 0:
+
+    def _ni(method):
+        """Normalise an income payment_method → account key or None."""
+        m = (method or '').lower()
+        if m == 'cash':                    return 'cash'
+        if m in ('bank', 'bank_transfer'): return 'bank'
+        if m in ('mpesa', 'mobile_money'): return 'mpesa'
+        if m == 'cheque':                  return 'cheque'
+        return None
+
+    def _no(source):
+        """Normalise an outflow payment_source → account key or None."""
+        s = (source or '').lower()
+        if s == 'cash':   return 'cash'
+        if s == 'bank':   return 'bank'
+        if s == 'mpesa':  return 'mpesa'
+        if s == 'cheque': return 'cheque'
+        return None
+
+    # Per-account buckets
+    inv_in  = {k: D('0') for k in ACCOUNTS}   # Invoice instalment + advance
+    svc_in  = {k: D('0') for k in ACCOUNTS}   # Office service payments
+    oth_in  = {k: D('0') for k in ACCOUNTS}   # Other income
+    mat_out = {k: D('0') for k in ACCOUNTS}   # Material orders paid
+    exp_out = {k: D('0') for k in ACCOUNTS}   # Direct expenses paid
+    dbt_out = {k: D('0') for k in ACCOUNTS}   # Debt repayments
+
+    # ── INFLOWS ───────────────────────────────────────────────────────────────
+
+    # 1a. Invoice instalment payments
+    for p in InvoicePayment.objects.filter(
+        payment_date__gte=date_from, payment_date__lte=date_to,
+    ).only('amount', 'payment_method'):
+        k = _ni(p.payment_method)
+        if k:
+            inv_in[k] += p.amount
+
+    # 1b. Invoice advance payments (keyed on invoice_date so they land in the right period)
+    for inv in Invoice.objects.filter(
+        invoice_date__gte=date_from, invoice_date__lte=date_to,
+        advance_paid__gt=0,
+    ).only('advance_paid', 'advance_payment_method'):
+        k = _ni(inv.advance_payment_method)
+        if k:
+            inv_in[k] += inv.advance_paid
+
+    # 2. Office service payments
+    for p in OfficeServicePayment.objects.filter(
+        payment_date__gte=date_from, payment_date__lte=date_to,
+    ).only('amount', 'payment_method'):
+        k = _ni(p.payment_method)
+        if k:
+            svc_in[k] += p.amount
+
+    # 3. Other income (OfficeIncome source='other')
+    for inc in OfficeIncome.objects.filter(
+        source='other', date__gte=date_from, date__lte=date_to,
+    ).only('amount', 'payment_method'):
+        k = _ni(inc.payment_method)
+        if k:
+            oth_in[k] += inc.amount
+
+    # ── OUTFLOWS ──────────────────────────────────────────────────────────────
+
+    # 4. Material orders (cash/bank — not credit / unspecified)
+    for order in MaterialOrder.objects.filter(
+        order_date__gte=date_from, order_date__lte=date_to,
+        payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
+        status__in=['ordered', 'partially_received', 'received'],
+    ).prefetch_related('items'):
+        k = _no(order.payment_source)
+        if k:
+            mat_out[k] += order.total_cost
+
+    # 5. Direct expenses (exclude credit — those don't move real money)
+    for exp in Expense.objects.filter(
+        date__gte=date_from, date__lte=date_to,
+    ).exclude(payment_method='credit').only('amount', 'payment_method'):
+        k = _no(exp.payment_method)
+        if k:
+            exp_out[k] += exp.amount
+
+    # 6. Debt repayments
+    for dp in DebtPayment.objects.filter(
+        payment_date__gte=date_from, payment_date__lte=date_to,
+    ).only('amount', 'payment_source'):
+        k = _no(dp.payment_source)
+        if k:
+            dbt_out[k] += dp.amount
+
+    # ── Assemble per-account rows ──────────────────────────────────────────────
+    account_rows = []
+    g_inv = g_svc = g_oth = g_mat = g_exp = g_dbt = D('0')
+
+    for key in ACCOUNTS:
+        t_in  = inv_in[key] + svc_in[key] + oth_in[key]
+        t_out = mat_out[key] + exp_out[key] + dbt_out[key]
+        if t_in == 0 and t_out == 0:
             continue
-        lbl, icon, color = METHOD_LABELS[key]
-        cashflow_by_method.append({
-            'key': key, 'label': lbl, 'icon': icon, 'color': color,
-            'in': i, 'out': o, 'net': i - o,
+
+        g_inv += inv_in[key];  g_svc += svc_in[key];  g_oth += oth_in[key]
+        g_mat += mat_out[key]; g_exp += exp_out[key];  g_dbt += dbt_out[key]
+
+        meta = ACCOUNT_META[key]
+        account_rows.append({
+            'key':       key,
+            'label':     meta['label'],
+            'icon':      meta['icon'],
+            'color':     meta['color'],
+            # inflows
+            'inv_in':    float(inv_in[key]),
+            'svc_in':    float(svc_in[key]),
+            'oth_in':    float(oth_in[key]),
+            'total_in':  float(t_in),
+            # outflows
+            'mat_out':   float(mat_out[key]),
+            'exp_out':   float(exp_out[key]),
+            'dbt_out':   float(dbt_out[key]),
+            'total_out': float(t_out),
+            # net
+            'net':       float(t_in - t_out),
         })
 
-    # ── Totals from cash-flow view (real money moved) ─────────────────────
-    total_cash_in  = sum(inc_by.values())   # actual cash/bank received (float)
-    total_cash_out = sum(out_by.values())   # actual cash/bank paid out (float)
-    net_cash_flow  = total_cash_in - total_cash_out
-
-    # ── Expenses breakdown ────────────────────────────────────────────────
-    exp_total, by_category, _, proj_exp_total, office_exp_total, credit_exp_total = _expenses_in(date_from, date_to)
-    cash_exp_total = exp_total - credit_exp_total  # Decimal (cash-only, no credit)
-    # Keep a float version to avoid Decimal/float mixing in arithmetic below
-    cash_exp_total_f = float(cash_exp_total)
-
-    # ── AR & AP summaries (all-time outstanding) ───────────────────────────
-    ar = compute_ar_report()
-    ap = compute_ap_report()
-
-    # ── All-time funds position ────────────────────────────────────────────
-    funds = _funds_position()
-
-    # ── Period income sources (for breakdown cards) ────────────────────────
-    inv_income, _ = _invoice_payments_in(date_from, date_to)
-    off_income, _ = _office_payments_in(date_from, date_to)
-    oth_income, _ = _other_income_in(date_from, date_to)
-    adv_income, _, _ = _advance_payments_in(date_from, date_to)
-
-    debt_pmt_total, _, _ = _debt_payments_in(date_from, date_to)
-
-    # ── Material orders paid in period (cash/bank — not credit) ───────────
-    mat_orders_total = float(sum(
-        o.total_cost
-        for o in MaterialOrder.objects.filter(
-            order_date__gte=date_from, order_date__lte=date_to,
-            payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
-            status__in=['ordered', 'partially_received', 'received'],
-        ).prefetch_related('items')
-    ))
-
-    # ── Income ledger — every transaction line in the period ───────────────
-    ledger = _income_ledger(date_from, date_to)
+    grand_in  = g_inv + g_svc + g_oth
+    grand_out = g_mat + g_exp + g_dbt
 
     return {
-        'date_from':          str(date_from),
-        'date_to':            str(date_to),
-        # ── Cash Flow view (real money moved this period) ─────────────────
-        'total_income':       total_cash_in,       # cash/bank actually received
-        'total_cash_out':     total_cash_out,       # cash/bank actually paid out
-        'net_cash_flow':      net_cash_flow,        # cash in - cash out
-        # ── P&L view (expenses when incurred, not when paid) ─────────────
-        'total_pl_expenses':  float(exp_total),     # all expenses incl. credit
-        'cash_expenses':      cash_exp_total_f,       # cash-only expenses (no credit)
-        'net_profit':         total_cash_in - cash_exp_total_f,  # float - float
-        # ── Income breakdown ──────────────────────────────────────────────
-        'invoice_income':     float(inv_income),
-        'advance_income':     float(adv_income),
-        'office_income':      float(off_income),
-        'other_income':       float(oth_income),
-        # ── Expense breakdown ─────────────────────────────────────────────
-        'project_expenses_total': float(proj_exp_total),
-        'office_expenses_total':  float(office_exp_total),
-        'mat_orders_total':       mat_orders_total,          # material orders paid
-        'debt_payments_total':    float(debt_pmt_total),
-        'credit_exp_total':       float(credit_exp_total),  # new debts (no cash)
-        'by_category':            by_category,
-        # ── Cash flow by account for the period ───────────────────────────
-        'cashflow_by_method': cashflow_by_method,
-        # ── AR & AP (all-time outstanding) ────────────────────────────────
-        'ar_total':           ar['total_ar'],
-        'ar_inv_outstanding': ar['inv_total_outstanding'],
-        'ar_svc_outstanding': ar['svc_total_outstanding'],
-        'ap_total':           ap['total_outstanding'],
-        # ── Funds position (all-time balance sheet) ───────────────────────
-        'funds':              funds,
-        # ── Income ledger (every payment received in period) ──────────────
-        'income_ledger':      ledger,
+        'date_from':        str(date_from),
+        'date_to':          str(date_to),
+        # Per-account rows (only accounts with activity)
+        'account_rows':     account_rows,
+        # Grand totals — inflows
+        'grand_inv_in':     float(g_inv),
+        'grand_svc_in':     float(g_svc),
+        'grand_oth_in':     float(g_oth),
+        'grand_total_in':   float(grand_in),
+        # Grand totals — outflows
+        'grand_mat_out':    float(g_mat),
+        'grand_exp_out':    float(g_exp),
+        'grand_dbt_out':    float(g_dbt),
+        'grand_total_out':  float(grand_out),
+        # Net
+        'grand_net':        float(grand_in - grand_out),
     }
 
 
