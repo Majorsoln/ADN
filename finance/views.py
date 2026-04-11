@@ -545,7 +545,7 @@ def cashbook_view(request):
     except ValueError:
         date_to = today
 
-    valid_accounts = ('all', 'cash', 'bank', 'mpesa', 'cheque')
+    valid_accounts = ('all', 'cash', 'bank', 'mpesa', 'cheque', 'other')
     if account not in valid_accounts:
         account = 'all'
 

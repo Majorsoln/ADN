@@ -1841,26 +1841,33 @@ def compute_cashbook(date_from, date_to, account='all'):
     D = Decimal
 
     def _ni(m):
-        """Normalise income payment method → canonical key or None."""
+        """Normalise income payment method → canonical key or None.
+        Returns None only for 'unspecified'/'credit' (no real account identified).
+        Returns 'other' for any other unrecognised value (still a real inflow)."""
         m = (m or '').lower()
-        if m == 'cash':                     return 'cash'
-        if m in ('bank_transfer', 'bank'):  return 'bank'
-        if m in ('mobile_money', 'mpesa'):  return 'mpesa'
-        if m == 'cheque':                   return 'cheque'
-        return None   # skip unspecified / other
+        if m == 'cash':                        return 'cash'
+        if m in ('bank_transfer', 'bank'):     return 'bank'
+        if m in ('mobile_money', 'mpesa'):     return 'mpesa'
+        if m == 'cheque':                      return 'cheque'
+        if m in ('unspecified', 'credit', ''): return None   # truly unknown / credit
+        return 'other'   # e.g. 'other' — real money, unclassified account
 
     def _no(m):
-        """Normalise outflow payment method → canonical key or None."""
+        """Normalise outflow payment method → canonical key or None.
+        Returns None only for 'credit'/'unspecified' (credit → Debt record, not cash).
+        Returns 'other' for anything else (real cash, unclassified account)."""
         m = (m or '').lower()
-        if m == 'cash':                     return 'cash'
-        if m in ('bank_transfer', 'bank'):  return 'bank'
-        if m in ('mobile_money', 'mpesa'):  return 'mpesa'
-        if m == 'cheque':                   return 'cheque'
-        return None   # skip credit / unspecified
+        if m == 'cash':                        return 'cash'
+        if m in ('bank_transfer', 'bank'):     return 'bank'
+        if m in ('mobile_money', 'mpesa'):     return 'mpesa'
+        if m == 'cheque':                      return 'cheque'
+        if m in ('credit', 'unspecified', ''): return None   # credit → Debt, skip
+        return 'other'   # e.g. 'other' — real cash out, unclassified account
 
     ACCT_LABEL = {
         'cash': 'Cash', 'bank': 'Bank',
         'mpesa': 'M-Pesa', 'cheque': 'Cheque',
+        'other': 'Unclassified',
     }
     TYPE_LABEL = {
         'invoice_payment': 'Invoice Payment',

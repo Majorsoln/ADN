@@ -15,6 +15,7 @@
     <option value="bank"  {% if account == 'bank'  %}selected{% endif %}>Bank</option>
     <option value="mpesa" {% if account == 'mpesa' %}selected{% endif %}>M-Pesa</option>
     <option value="cheque"{% if account == 'cheque'%}selected{% endif %}>Cheque</option>
+    <option value="other" {% if account == 'other' %}selected{% endif %}>Unclassified</option>
   </select>
   <button type="submit" class="btn btn-sm btn-adn">
     <i class="bi bi-funnel me-1"></i>Filter
@@ -33,6 +34,7 @@
   .acct-bank   { background:#dbeafe; color:#1d4ed8; }
   .acct-mpesa  { background:#f0fdf4; color:#166534; }
   .acct-cheque { background:#fef3c7; color:#92400e; }
+  .acct-other  { background:#f1f5f9; color:#64748b; }
   .type-in   { color:#16a34a; font-weight:600; }
   .type-out  { color:#dc2626; font-weight:600; }
   .bal-pos   { color:#16a34a; }
