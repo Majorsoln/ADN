@@ -111,6 +111,13 @@ def _expenses_in(date_from, date_to):
     credit_total = Decimal('0')
     project_total = Decimal('0')
     office_total  = Decimal('0')
+    # Map expense payment_method → 6-bucket key (keeps 'credit' explicit)
+    _EXP_M = {
+        'cash': 'cash', 'bank': 'bank', 'bank_transfer': 'bank',
+        'mpesa': 'mpesa', 'mobile_money': 'mpesa',
+        'cheque': 'cheque', 'credit': 'credit',
+    }
+
     cat_map = {}
     rows = list(qs.order_by('-date'))
     for exp in rows:
@@ -124,6 +131,8 @@ def _expenses_in(date_from, date_to):
         else:
             office_total  += exp.amount
 
+        method_key = _EXP_M.get((exp.payment_method or '').lower(), 'other')
+
         cid = exp.category_id
         if cid not in cat_map:
             cat_map[cid] = {
@@ -135,9 +144,12 @@ def _expenses_in(date_from, date_to):
                 'project_total': Decimal('0'),
                 'office_total':  Decimal('0'),
                 'count':         0,
+                # Per-method breakdown (cash/bank/mpesa/cheque/credit/other)
+                'by_method': {k: Decimal('0') for k in ['cash', 'bank', 'mpesa', 'cheque', 'credit', 'other']},
             }
         cat_map[cid]['total']  += exp.amount
         cat_map[cid]['count']  += 1
+        cat_map[cid]['by_method'][method_key] += exp.amount
         if is_credit:
             cat_map[cid]['credit_total'] += exp.amount
         if is_project:
@@ -1343,6 +1355,16 @@ def compute_full_report(date_from, date_to):
 
     debt_pmt_total, _, _ = _debt_payments_in(date_from, date_to)
 
+    # ── Material orders paid in period (cash/bank — not credit) ───────────
+    mat_orders_total = float(sum(
+        o.total_cost
+        for o in MaterialOrder.objects.filter(
+            order_date__gte=date_from, order_date__lte=date_to,
+            payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
+            status__in=['ordered', 'partially_received', 'received'],
+        ).prefetch_related('items')
+    ))
+
     # ── Income ledger — every transaction line in the period ───────────────
     ledger = _income_ledger(date_from, date_to)
 
@@ -1365,6 +1387,7 @@ def compute_full_report(date_from, date_to):
         # ── Expense breakdown ─────────────────────────────────────────────
         'project_expenses_total': float(proj_exp_total),
         'office_expenses_total':  float(office_exp_total),
+        'mat_orders_total':       mat_orders_total,          # material orders paid
         'debt_payments_total':    float(debt_pmt_total),
         'credit_exp_total':       float(credit_exp_total),  # new debts (no cash)
         'by_category':            by_category,

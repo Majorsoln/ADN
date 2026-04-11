@@ -3,37 +3,112 @@
 
 {% block extra_css %}
 <style>
-/* ── Print ─────────────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   PRINT / PDF
+   ════════════════════════════════════════════════════════════ */
 @media print {
   #sidebar, #topbar, .no-print { display: none !important; }
-  #main { margin-left: 0 !important; }
-  .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+  #main { margin-left: 0 !important; padding: 0 !important; }
+  .content-area { padding: .25rem !important; }
+  body { font-size: 10px; color: #000 !important; }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
   .table-responsive { overflow: visible !important; }
-  body { font-size: 11px; }
-  .content-area { padding: .4rem !important; }
   .print-header { display: block !important; }
+  .page-section { break-inside: avoid; }
+  .page-break-before { break-before: page; }
+  .kpi-card { border: 1px solid #ccc !important; break-inside: avoid; }
+  .text-success { color: #16a34a !important; }
+  .text-danger  { color: #dc2626 !important; }
+  .text-primary { color: #2563eb !important; }
+  .text-warning { color: #d97706 !important; }
+  [style*="background:linear-gradient"] { background: #f9f9f9 !important; }
+  [style*="background:#1a2e5a"]         { background: #eee !important; color: #000 !important; }
+  .amount-positive { color: #16a34a !important; }
+  .amount-negative { color: #dc2626 !important; }
 }
 .print-header { display: none; }
 
-/* ── Method pills ──────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════
+   KPI CARDS
+   ════════════════════════════════════════════════════════════ */
+.kpi-card {
+  border-radius: .5rem;
+  padding: 1rem 1.1rem .9rem;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  border-top: 4px solid transparent;
+}
+.kpi-label {
+  font-size: .63rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: #64748b; margin-bottom: .15rem;
+}
+.kpi-value {
+  font-size: 1.45rem; font-weight: 800; line-height: 1.1;
+  letter-spacing: -.02em;
+}
+.kpi-sub   { font-size: .7rem; color: #94a3b8; margin-top: .1rem; }
+.kpi-detail{ font-size: .68rem; color: #64748b; margin-top: .3rem;
+             padding-top: .3rem; border-top: 1px solid #f1f5f9; }
+
+/* ════════════════════════════════════════════════════════════
+   SECTION HEADINGS
+   ════════════════════════════════════════════════════════════ */
+.rpt-heading {
+  font-size: .67rem; font-weight: 700; letter-spacing: .13em;
+  text-transform: uppercase; color: #64748b;
+  margin: 1.75rem 0 .65rem;
+  padding-bottom: .35rem;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex; align-items: center; gap: .4rem;
+}
+.rpt-heading i { font-size: .85rem; }
+
+/* ════════════════════════════════════════════════════════════
+   TABLES
+   ════════════════════════════════════════════════════════════ */
+.rpt-table thead th {
+  font-size: .67rem; letter-spacing: .05em; text-transform: uppercase;
+  font-weight: 700; color: #475569;
+  background: #f8fafc !important;
+  border-bottom: 2px solid #e2e8f0;
+  padding: .5rem .65rem;
+}
+.rpt-table td { vertical-align: middle; padding: .45rem .65rem; }
+.rpt-table tfoot td {
+  font-weight: 700; background: #f0f4ff !important;
+  border-top: 2px solid #c7d2fe;
+  padding: .5rem .65rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PILLS
+   ════════════════════════════════════════════════════════════ */
 .pill {
-  display: inline-block; padding: .15rem .5rem;
-  border-radius: 20px; font-size: .7rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .04em;
+  display: inline-flex; align-items: center; gap: .2rem;
+  padding: .1rem .48rem; border-radius: 999px;
+  font-size: .64rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
 }
 .pill-cash   { background:#dcfce7; color:#15803d; }
 .pill-bank   { background:#dbeafe; color:#1d4ed8; }
 .pill-mpesa  { background:#d1fae5; color:#065f46; }
 .pill-cheque { background:#ede9fe; color:#6d28d9; }
+.pill-credit { background:#fef3c7; color:#b45309; }
 .pill-other  { background:#f1f5f9; color:#64748b; }
+.method-bar  { display:flex; flex-wrap:wrap; gap:.3rem; align-items:center; }
 
-/* ── Section header ────────────────────────────────────────────────────── */
-.rpt-heading {
-  font-size: .7rem; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; color: #64748b;
-  margin: 1.5rem 0 .5rem;
-  padding-bottom: .35rem;
-  border-bottom: 2px solid #e2e8f0;
+/* ════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════ */
+.amount-positive { color:#16a34a; font-weight:700; }
+.amount-negative { color:#dc2626; font-weight:700; }
+.info-box {
+  background:#fef9c3; border:1px solid #fde68a; border-radius:.4rem;
+  padding:.55rem .85rem;
 }
 </style>
 {% endblock %}
@@ -50,20 +125,28 @@
 
 {% block content %}
 
-{# ── Print-only header ───────────────────────────────────────────────────── #}
-<div class="print-header mb-3">
-  <h4 class="mb-0">ADN uPVC &amp; Aluminum Solutions — Full Financial Report</h4>
-  {% if data %}<div class="small text-muted">Period: {{ date_from }} → {{ date_to }}</div>{% endif %}
+{# ── Print-only header ─────────────────────────────────────────────── #}
+<div class="print-header mb-3 pb-2 border-bottom">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <div class="fw-bold" style="font-size:1.1rem;">ADN uPVC &amp; Aluminum Solutions</div>
+      <div class="text-muted small">Full Financial Report</div>
+    </div>
+    {% if data %}
+    <div class="text-end small">
+      <div class="fw-semibold">Period: {{ date_from }} → {{ date_to }}</div>
+      <div class="text-muted">Printed: {% now "d M Y, H:i" %}</div>
+    </div>
+    {% endif %}
+  </div>
 </div>
 
-{# ════════════════════════════════════════════════════════════════════════
-   FILTER BAR
-   ════════════════════════════════════════════════════════════════════════ #}
+{# ── Filter bar (no print) ─────────────────────────────────────────── #}
 <div class="card border-0 shadow-sm mb-4 no-print">
-  <div class="card-body py-2">
+  <div class="card-body py-2 px-3">
     <form method="get" class="row g-2 align-items-end">
       <div class="col-sm-3">
-        <label class="form-label small mb-1">Period</label>
+        <label class="form-label small mb-1 fw-semibold">Period</label>
         {{ form.period }}
       </div>
       <div class="col-sm-3" id="date-from-wrap">
@@ -76,7 +159,7 @@
       </div>
       <div class="col-sm-3">
         <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-arrow-clockwise me-1"></i>Show
+          <i class="bi bi-bar-chart-line me-1"></i>Generate
         </button>
       </div>
     </form>
@@ -85,69 +168,89 @@
 
 {% if data %}
 
-{# ════════════════════════════════════════════════════════════════════════
-   SECTION 1 — CASH FLOW SUMMARY (4 big stat cards)
-   ════════════════════════════════════════════════════════════════════════ #}
-<div class="rpt-heading"><i class="bi bi-arrow-left-right me-1"></i>Cash Flow — {{ date_from }} to {{ date_to }}</div>
-<div class="row g-3 mb-2">
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 1 — KPI SUMMARY CARDS
+   ══════════════════════════════════════════════════════════════════ #}
+<div class="rpt-heading">
+  <i class="bi bi-speedometer2"></i>Summary — {{ date_from }} to {{ date_to }}
+</div>
+<div class="row g-3 mb-4 page-section">
 
-  <div class="col-sm-6 col-lg-3">
-    <div class="stat-card h-100 text-center" style="border-top:4px solid #16a34a;">
-      <div class="small text-muted mb-1">Cash Received (Fedha Iliyoingia)</div>
-      <div class="fs-2 fw-bold text-success">TZS {{ data.total_income|floatformat:0 }}</div>
-      <div class="small text-muted mt-1">All payments received</div>
-    </div>
-  </div>
-
-  <div class="col-sm-6 col-lg-3">
-    <div class="stat-card h-100 text-center" style="border-top:4px solid #dc2626;">
-      <div class="small text-muted mb-1">Cash Paid Out (Fedha Iliyotoka)</div>
-      <div class="fs-2 fw-bold text-danger">TZS {{ data.total_cash_out|floatformat:0 }}</div>
-      <div class="small text-muted mt-1">Expenses + debt repayments</div>
-    </div>
-  </div>
-
-  <div class="col-sm-6 col-lg-3">
-    <div class="stat-card h-100 text-center"
-         style="border-top:4px solid {% if data.net_cash_flow >= 0 %}#2563eb{% else %}#f59e0b{% endif %};">
-      <div class="small text-muted mb-1">Net Cash Flow (Mapato Halisi)</div>
-      <div class="fs-2 fw-bold {% if data.net_cash_flow >= 0 %}text-primary{% else %}text-warning{% endif %}">
-        TZS {{ data.net_cash_flow|floatformat:0 }}
+  <div class="col-6 col-md-4 col-xl">
+    <div class="kpi-card" style="border-top-color:#16a34a;">
+      <div class="kpi-label">Cash Received</div>
+      <div class="kpi-value text-success">{{ data.total_income|floatformat:0 }}</div>
+      <div class="kpi-sub">Fedha Iliyoingia</div>
+      {% if data.invoice_income or data.advance_income %}
+      <div class="kpi-detail">
+        {% if data.advance_income %}Adv: {{ data.advance_income|floatformat:0 }}{% endif %}
+        {% if data.invoice_income %} · Inv: {{ data.invoice_income|floatformat:0 }}{% endif %}
       </div>
-      <div class="small text-muted mt-1">Received minus paid out</div>
+      {% endif %}
     </div>
   </div>
 
-  <div class="col-sm-6 col-lg-3">
-    <div class="stat-card h-100 text-center" style="border-top:4px solid #1a2e5a;">
-      <div class="small text-muted mb-1">Liquid Cash (Salio — All Time)</div>
-      <div class="fs-2 fw-bold {% if data.funds.total_liquid >= 0 %}text-success{% else %}text-danger{% endif %}">
-        TZS {{ data.funds.total_liquid|floatformat:0 }}
+  <div class="col-6 col-md-4 col-xl">
+    <div class="kpi-card" style="border-top-color:#dc2626;">
+      <div class="kpi-label">Cash Paid Out</div>
+      <div class="kpi-value text-danger">{{ data.total_cash_out|floatformat:0 }}</div>
+      <div class="kpi-sub">Fedha Iliyotoka</div>
+      {% if data.debt_payments_total %}
+      <div class="kpi-detail">Debt pmts: {{ data.debt_payments_total|floatformat:0 }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-6 col-md-4 col-xl">
+    <div class="kpi-card"
+         style="border-top-color:{% if data.net_cash_flow >= 0 %}#2563eb{% else %}#d97706{% endif %};">
+      <div class="kpi-label">Net Cash Flow</div>
+      <div class="kpi-value {% if data.net_cash_flow >= 0 %}text-primary{% else %}text-warning{% endif %}">
+        {% if data.net_cash_flow >= 0 %}+{% endif %}{{ data.net_cash_flow|floatformat:0 }}
       </div>
-      <div class="small text-muted mt-1">Cash + Bank + M-Pesa balance</div>
+      <div class="kpi-sub">Mapato Halisi</div>
+    </div>
+  </div>
+
+  {% if data.credit_exp_total %}
+  <div class="col-6 col-md-4 col-xl">
+    <div class="kpi-card" style="border-top-color:#d97706;">
+      <div class="kpi-label">New Credit (No Cash)</div>
+      <div class="kpi-value text-warning">{{ data.credit_exp_total|floatformat:0 }}</div>
+      <div class="kpi-sub">Madeni Mapya</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-6 col-md-4 col-xl">
+    <div class="kpi-card" style="border-top-color:#1a2e5a;">
+      <div class="kpi-label">All-Time Liquid</div>
+      <div class="kpi-value {% if data.funds.total_liquid >= 0 %}text-success{% else %}text-danger{% endif %}">
+        {{ data.funds.total_liquid|floatformat:0 }}
+      </div>
+      <div class="kpi-sub">Salio — Akaunti Zote</div>
     </div>
   </div>
 
 </div>
 
-{# ════════════════════════════════════════════════════════════════════════
-   SECTION 2 — CASH FLOW BY ACCOUNT (table)
-   ════════════════════════════════════════════════════════════════════════ #}
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f8fafc;">
-    <span><i class="bi bi-credit-card-2-front me-2"></i>Cash Flow by Account</span>
-    <span class="small text-muted">{{ date_from }} → {{ date_to }}</span>
-  </div>
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 2 — CASH FLOW BY PAYMENT ACCOUNT
+   ══════════════════════════════════════════════════════════════════ #}
+<div class="rpt-heading page-break-before">
+  <i class="bi bi-credit-card-2-front"></i>Cash Flow by Payment Account — {{ date_from }} → {{ date_to }}
+</div>
+<div class="card border-0 shadow-sm mb-4 page-section">
   <div class="card-body p-0">
     {% if data.cashflow_by_method %}
     <div class="table-responsive">
-      <table class="table table-sm mb-0">
-        <thead class="table-light">
+      <table class="table table-sm rpt-table mb-0">
+        <thead>
           <tr>
-            <th>Account</th>
-            <th class="text-end text-success">In (+)</th>
-            <th class="text-end text-danger">Out (−)</th>
-            <th class="text-end fw-bold">Net</th>
+            <th style="width:42%">Account (Akaunti)</th>
+            <th class="text-end" style="color:#16a34a;">Money In (+)</th>
+            <th class="text-end" style="color:#dc2626;">Money Out (−)</th>
+            <th class="text-end">Net</th>
           </tr>
         </thead>
         <tbody>
@@ -157,76 +260,92 @@
               <i class="bi {{ row.icon }} me-2" style="color:{{ row.color }};"></i>
               <span class="fw-semibold" style="color:{{ row.color }};">{{ row.label }}</span>
             </td>
-            <td class="text-end text-success fw-semibold">+TZS {{ row.in|floatformat:0 }}</td>
-            <td class="text-end text-danger fw-semibold">−TZS {{ row.out|floatformat:0 }}</td>
-            <td class="text-end fw-bold {% if row.net >= 0 %}text-success{% else %}text-danger{% endif %}">
-              TZS {{ row.net|floatformat:0 }}
+            <td class="text-end">
+              <span class="pill pill-{{ row.key }}">+{{ row.in|floatformat:0 }}</span>
+            </td>
+            <td class="text-end amount-negative">−{{ row.out|floatformat:0 }}</td>
+            <td class="text-end fw-bold {% if row.net >= 0 %}text-primary{% else %}text-danger{% endif %}">
+              {% if row.net >= 0 %}+{% endif %}{{ row.net|floatformat:0 }}
             </td>
           </tr>
           {% endfor %}
         </tbody>
-        <tfoot class="fw-bold" style="background:#f0f4ff;">
+        <tfoot>
           <tr>
-            <td>TOTAL PERIOD</td>
-            <td class="text-end text-success">+TZS {{ data.total_income|floatformat:0 }}</td>
-            <td class="text-end text-danger">−TZS {{ data.total_cash_out|floatformat:0 }}</td>
-            <td class="text-end {% if data.net_cash_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
-              TZS {{ data.net_cash_flow|floatformat:0 }}
+            <td><i class="bi bi-sigma me-1"></i>PERIOD TOTAL</td>
+            <td class="text-end amount-positive">+{{ data.total_income|floatformat:0 }}</td>
+            <td class="text-end amount-negative">−{{ data.total_cash_out|floatformat:0 }}</td>
+            <td class="text-end {% if data.net_cash_flow >= 0 %}text-primary{% else %}text-danger{% endif %} fw-bold">
+              {% if data.net_cash_flow >= 0 %}+{% endif %}{{ data.net_cash_flow|floatformat:0 }}
             </td>
           </tr>
         </tfoot>
       </table>
     </div>
     {% else %}
-    <div class="text-center text-muted py-3 small">No cash transactions in this period.</div>
+    <div class="text-center text-muted py-5 small">
+      <i class="bi bi-inbox d-block fs-2 mb-2 opacity-25"></i>
+      No cash transactions in this period.
+    </div>
     {% endif %}
   </div>
 </div>
 
-{# ════════════════════════════════════════════════════════════════════════
-   SECTION 3 — INCOME & EXPENSE BREAKDOWN (2-column)
-   ════════════════════════════════════════════════════════════════════════ #}
-<div class="rpt-heading"><i class="bi bi-list-ul me-1"></i>Income &amp; Expense Sources — {{ date_from }} to {{ date_to }}</div>
-<div class="row g-3 mb-4">
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 3 — INCOME & OUTFLOW BREAKDOWN (2-col)
+   ══════════════════════════════════════════════════════════════════ #}
+<div class="rpt-heading">
+  <i class="bi bi-list-ul"></i>Income &amp; Cash Outflow — Sources Breakdown
+</div>
+<div class="row g-3 mb-4 page-section">
 
-  {# ── Income sources ── #}
+  {# ── Income side ── #}
   <div class="col-md-6">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-header fw-semibold bg-success bg-opacity-10 text-success border-0">
-        <i class="bi bi-arrow-down-circle-fill me-2"></i>Money In (Vyanzo vya Mapato)
+      <div class="card-header border-0 py-2 px-3"
+           style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-bold text-success small">
+            <i class="bi bi-arrow-down-circle-fill me-1"></i>MONEY IN
+          </span>
+          <span class="fw-bold text-success">TZS {{ data.total_income|floatformat:0 }}</span>
+        </div>
       </div>
       <div class="card-body p-0">
-        <table class="table table-sm mb-0">
+        <table class="table table-sm rpt-table mb-0">
           <tbody>
             {% if data.advance_income %}
             <tr>
               <td><i class="bi bi-cash me-2 text-success opacity-75"></i>Advance Payments</td>
-              <td class="text-end fw-semibold">TZS {{ data.advance_income|floatformat:0 }}</td>
+              <td class="text-end amount-positive">{{ data.advance_income|floatformat:0 }}</td>
             </tr>
             {% endif %}
             {% if data.invoice_income %}
             <tr>
               <td><i class="bi bi-receipt-cutoff me-2 text-primary opacity-75"></i>Invoice Instalments</td>
-              <td class="text-end fw-semibold">TZS {{ data.invoice_income|floatformat:0 }}</td>
+              <td class="text-end amount-positive">{{ data.invoice_income|floatformat:0 }}</td>
             </tr>
             {% endif %}
             {% if data.office_income %}
             <tr>
               <td><i class="bi bi-building me-2 text-info opacity-75"></i>Office Services</td>
-              <td class="text-end fw-semibold">TZS {{ data.office_income|floatformat:0 }}</td>
+              <td class="text-end amount-positive">{{ data.office_income|floatformat:0 }}</td>
             </tr>
             {% endif %}
             {% if data.other_income %}
             <tr>
               <td><i class="bi bi-three-dots me-2 text-muted"></i>Other Income</td>
-              <td class="text-end fw-semibold">TZS {{ data.other_income|floatformat:0 }}</td>
+              <td class="text-end amount-positive">{{ data.other_income|floatformat:0 }}</td>
             </tr>
+            {% endif %}
+            {% if not data.advance_income and not data.invoice_income and not data.office_income and not data.other_income %}
+            <tr><td colspan="2" class="text-muted text-center small py-3">No income this period.</td></tr>
             {% endif %}
           </tbody>
           <tfoot>
-            <tr class="table-success fw-bold">
-              <td>TOTAL IN</td>
-              <td class="text-end">TZS {{ data.total_income|floatformat:0 }}</td>
+            <tr>
+              <td><i class="bi bi-sigma me-1"></i>TOTAL IN</td>
+              <td class="text-end amount-positive">{{ data.total_income|floatformat:0 }}</td>
             </tr>
           </tfoot>
         </table>
@@ -234,319 +353,448 @@
     </div>
   </div>
 
-  {# ── Outflow sources ── #}
+  {# ── Outflow side ── #}
   <div class="col-md-6">
     <div class="card border-0 shadow-sm h-100">
-      <div class="card-header fw-semibold bg-danger bg-opacity-10 text-danger border-0">
-        <i class="bi bi-arrow-up-circle-fill me-2"></i>Money Out — Cash Payments (Gharama za Fedha)
+      <div class="card-header border-0 py-2 px-3"
+           style="background:linear-gradient(135deg,#fff1f2,#fecaca);">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-bold text-danger small">
+            <i class="bi bi-arrow-up-circle-fill me-1"></i>MONEY OUT (CASH)
+          </span>
+          <span class="fw-bold text-danger">TZS {{ data.total_cash_out|floatformat:0 }}</span>
+        </div>
       </div>
       <div class="card-body p-0">
-        <table class="table table-sm mb-0">
+        <table class="table table-sm rpt-table mb-0">
           <tbody>
-            {% if data.project_expenses_total %}
+            {% if data.cash_expenses %}
             <tr>
-              <td><i class="bi bi-tools me-2 text-primary opacity-75"></i>Project Expenses (cash/bank)</td>
-              <td class="text-end fw-semibold">TZS {{ data.project_expenses_total|floatformat:0 }}</td>
+              <td>
+                <i class="bi bi-receipt me-2 text-danger opacity-75"></i>
+                Direct Expenses (Cash/Bank)
+                <div class="text-muted" style="font-size:.68rem;padding-left:1.5rem;">
+                  Cash &amp; bank payments — excludes credit
+                </div>
+              </td>
+              <td class="text-end amount-negative">{{ data.cash_expenses|floatformat:0 }}</td>
             </tr>
             {% endif %}
-            {% if data.office_expenses_total %}
+            {% if data.mat_orders_total %}
             <tr>
-              <td><i class="bi bi-building me-2 text-info opacity-75"></i>Office Expenses (cash/bank)</td>
-              <td class="text-end fw-semibold">TZS {{ data.office_expenses_total|floatformat:0 }}</td>
+              <td>
+                <i class="bi bi-box-seam me-2 text-primary opacity-75"></i>
+                Material Orders Paid
+                <div class="text-muted" style="font-size:.68rem;padding-left:1.5rem;">
+                  Orders paid via cash/bank/mpesa
+                </div>
+              </td>
+              <td class="text-end amount-negative">{{ data.mat_orders_total|floatformat:0 }}</td>
             </tr>
             {% endif %}
             {% if data.debt_payments_total %}
             <tr>
-              <td><i class="bi bi-arrow-return-right me-2 text-warning opacity-75"></i>Debt Repayments</td>
-              <td class="text-end fw-semibold">TZS {{ data.debt_payments_total|floatformat:0 }}</td>
-            </tr>
-            {% endif %}
-            {% if data.credit_exp_total %}
-            <tr>
-              <td colspan="2" class="pt-2 pb-1">
-                <div class="px-2 py-2 rounded d-flex justify-content-between align-items-center" style="background:#fef9c3;border:1px solid #fde68a;">
-                  <span class="small">
-                    <i class="bi bi-exclamation-circle me-1 text-warning"></i>
-                    <strong>New credit expenses</strong>
-                    <span class="text-muted"> — no cash paid (madeni mapya)</span>
-                  </span>
-                  <span class="small fw-bold text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
-                </div>
+              <td>
+                <i class="bi bi-arrow-return-right me-2 text-secondary opacity-75"></i>
+                Debt Repayments (Malipo ya Deni)
               </td>
-            </tr>
-            {% endif %}
-            {% if data.by_category %}
-            <tr>
-              <td colspan="2" class="pb-0 pt-2">
-                <div class="small text-muted fw-semibold mb-1 text-uppercase" style="letter-spacing:.05em;">By Category (incl. credit)</div>
-                {% for cat in data.by_category %}
-                <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-                  <span class="small">
-                    <i class="bi {{ cat.icon }} me-1" style="color:{{ cat.color }};"></i>
-                    {{ cat.name }}
-                    <span class="text-muted">({{ cat.count }}×)</span>
-                    {% if cat.credit_total %}<span class="badge bg-warning text-dark ms-1" style="font-size:.6rem;">{{ cat.credit_total|floatformat:0 }} credit</span>{% endif %}
-                  </span>
-                  <span class="small fw-semibold text-danger">TZS {{ cat.total|floatformat:0 }}</span>
-                </div>
-                {% endfor %}
-              </td>
+              <td class="text-end amount-negative">{{ data.debt_payments_total|floatformat:0 }}</td>
             </tr>
             {% endif %}
           </tbody>
           <tfoot>
-            <tr class="table-danger fw-bold">
-              <td>TOTAL OUT</td>
-              <td class="text-end">TZS {{ data.total_cash_out|floatformat:0 }}</td>
+            <tr>
+              <td><i class="bi bi-sigma me-1"></i>TOTAL CASH OUT</td>
+              <td class="text-end amount-negative">{{ data.total_cash_out|floatformat:0 }}</td>
             </tr>
           </tfoot>
         </table>
+        {% if data.credit_exp_total %}
+        <div class="info-box mx-3 mb-3 mt-1 d-flex justify-content-between align-items-center">
+          <span class="small">
+            <i class="bi bi-exclamation-circle me-1 text-warning"></i>
+            <strong>New credit obligations</strong>
+            <span class="text-muted"> — no cash paid (madeni mapya)</span>
+          </span>
+          <span class="fw-bold text-warning small">{{ data.credit_exp_total|floatformat:0 }}</span>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
 
 </div>
 
-{# ════════════════════════════════════════════════════════════════════════
-   SECTION 4 — INCOME LEDGER (every payment received)
-   ════════════════════════════════════════════════════════════════════════ #}
-<div class="rpt-heading"><i class="bi bi-list-check me-1"></i>Income Ledger — Every Payment Received (Orodha ya Malipo Yaliyopokelewa)</div>
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f0fdf4;">
-    <span>
-      <i class="bi bi-cash-stack me-2 text-success"></i>
-      All payments sorted by date ({{ date_from }} → {{ date_to }})
-    </span>
-    <span>
-      <span class="text-success fw-bold">TZS {{ data.income_ledger.total|floatformat:0 }}</span>
-      <span class="text-muted small ms-2">{{ data.income_ledger.count }} entry(s)</span>
-    </span>
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 4 — EXPENSE CATEGORIES BY PAYMENT METHOD
+   ══════════════════════════════════════════════════════════════════ #}
+{% if data.by_category %}
+<div class="rpt-heading page-break-before">
+  <i class="bi bi-tags"></i>Expense Categories by Payment Method
+</div>
+<div class="card border-0 shadow-sm mb-4 page-section">
+  <div class="card-header border-0 py-2 px-3" style="background:#f8fafc;">
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="small text-muted">
+        How each expense category was paid — cash vs credit split
+      </span>
+      <span class="small fw-bold text-danger">
+        P&amp;L Total: TZS {{ data.total_pl_expenses|floatformat:0 }}
+        {% if data.credit_exp_total %}
+        <span class="text-warning ms-2">({{ data.credit_exp_total|floatformat:0 }} on credit)</span>
+        {% endif %}
+      </span>
+    </div>
   </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm rpt-table table-hover mb-0">
+        <thead>
+          <tr>
+            <th style="min-width:155px;">Category (Aina ya Gharama)</th>
+            <th>Njia ya Malipo — Payment Method Breakdown</th>
+            <th class="text-center" style="width:55px;">#</th>
+            <th class="text-end" style="width:120px;">Total (TZS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in data.by_category %}
+          <tr>
+            <td>
+              <i class="bi {{ cat.icon }} me-1" style="color:{{ cat.color }};"></i>
+              <span class="fw-semibold" style="font-size:.82rem;">{{ cat.name }}</span>
+            </td>
+            <td>
+              <div class="method-bar">
+                {% if cat.by_method.cash %}
+                <span class="pill pill-cash">
+                  <i class="bi bi-cash-coin"></i>{{ cat.by_method.cash|floatformat:0 }}
+                </span>
+                {% endif %}
+                {% if cat.by_method.bank %}
+                <span class="pill pill-bank">
+                  <i class="bi bi-bank"></i>{{ cat.by_method.bank|floatformat:0 }}
+                </span>
+                {% endif %}
+                {% if cat.by_method.mpesa %}
+                <span class="pill pill-mpesa">
+                  <i class="bi bi-phone"></i>{{ cat.by_method.mpesa|floatformat:0 }}
+                </span>
+                {% endif %}
+                {% if cat.by_method.cheque %}
+                <span class="pill pill-cheque">
+                  <i class="bi bi-file-text"></i>{{ cat.by_method.cheque|floatformat:0 }}
+                </span>
+                {% endif %}
+                {% if cat.by_method.credit %}
+                <span class="pill pill-credit">
+                  <i class="bi bi-exclamation-circle"></i>{{ cat.by_method.credit|floatformat:0 }} credit
+                </span>
+                {% endif %}
+                {% if cat.by_method.other %}
+                <span class="pill pill-other">
+                  <i class="bi bi-three-dots"></i>{{ cat.by_method.other|floatformat:0 }}
+                </span>
+                {% endif %}
+              </div>
+            </td>
+            <td class="text-center text-muted small">{{ cat.count }}</td>
+            <td class="text-end fw-bold amount-negative">{{ cat.total|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">
+              <i class="bi bi-sigma me-1"></i>TOTAL (P&amp;L — incl. credit)
+            </td>
+            <td class="text-end amount-negative">{{ data.total_pl_expenses|floatformat:0 }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
 
-  {# ── Method totals ── #}
-  {% if data.income_ledger.by_method %}
-  <div class="px-3 pt-2 pb-2 border-bottom d-flex flex-wrap gap-2 align-items-center">
-    <span class="small text-muted fw-semibold me-1">Received via:</span>
-    {% if data.income_ledger.by_method.cash %}
-    <span class="pill pill-cash"><i class="bi bi-cash-coin me-1"></i>Cash: TZS {{ data.income_ledger.by_method.cash|floatformat:0 }}</span>
-    {% endif %}
-    {% if data.income_ledger.by_method.bank %}
-    <span class="pill pill-bank"><i class="bi bi-bank me-1"></i>Bank: TZS {{ data.income_ledger.by_method.bank|floatformat:0 }}</span>
-    {% endif %}
-    {% if data.income_ledger.by_method.mpesa %}
-    <span class="pill pill-mpesa"><i class="bi bi-phone me-1"></i>M-Pesa: TZS {{ data.income_ledger.by_method.mpesa|floatformat:0 }}</span>
-    {% endif %}
-    {% if data.income_ledger.by_method.cheque %}
-    <span class="pill pill-cheque"><i class="bi bi-file-text me-1"></i>Cheque: TZS {{ data.income_ledger.by_method.cheque|floatformat:0 }}</span>
-    {% endif %}
-    {% if data.income_ledger.by_method.other %}
-    <span class="pill pill-other"><i class="bi bi-three-dots me-1"></i>Other: TZS {{ data.income_ledger.by_method.other|floatformat:0 }}</span>
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 5 — INCOME LEDGER
+   ══════════════════════════════════════════════════════════════════ #}
+<div class="rpt-heading page-break-before">
+  <i class="bi bi-list-check"></i>Income Ledger — Every Payment Received
+</div>
+<div class="card border-0 shadow-sm mb-4 page-section">
+  <div class="card-header border-0 py-2 px-3"
+       style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <span class="fw-bold text-success">
+          <i class="bi bi-cash-stack me-1"></i>{{ date_from }} → {{ date_to }}
+        </span>
+        <span class="badge bg-success bg-opacity-15 text-success ms-1" style="font-size:.68rem;">
+          {{ data.income_ledger.count }} record(s)
+        </span>
+      </div>
+      <span class="fw-bold text-success">TZS {{ data.income_ledger.total|floatformat:0 }}</span>
+    </div>
+    {% if data.income_ledger.by_method %}
+    <div class="method-bar mt-2">
+      <span class="text-muted small me-1">Via:</span>
+      {% if data.income_ledger.by_method.cash %}
+      <span class="pill pill-cash"><i class="bi bi-cash-coin"></i>Cash: {{ data.income_ledger.by_method.cash|floatformat:0 }}</span>
+      {% endif %}
+      {% if data.income_ledger.by_method.bank %}
+      <span class="pill pill-bank"><i class="bi bi-bank"></i>Bank: {{ data.income_ledger.by_method.bank|floatformat:0 }}</span>
+      {% endif %}
+      {% if data.income_ledger.by_method.mpesa %}
+      <span class="pill pill-mpesa"><i class="bi bi-phone"></i>M-Pesa: {{ data.income_ledger.by_method.mpesa|floatformat:0 }}</span>
+      {% endif %}
+      {% if data.income_ledger.by_method.cheque %}
+      <span class="pill pill-cheque"><i class="bi bi-file-text"></i>Cheque: {{ data.income_ledger.by_method.cheque|floatformat:0 }}</span>
+      {% endif %}
+      {% if data.income_ledger.by_method.other %}
+      <span class="pill pill-other"><i class="bi bi-three-dots"></i>Other: {{ data.income_ledger.by_method.other|floatformat:0 }}</span>
+      {% endif %}
+    </div>
     {% endif %}
   </div>
-  {% endif %}
-
   <div class="card-body p-0">
     {% if data.income_ledger.rows %}
     <div class="table-responsive">
-      <table class="table table-sm table-hover mb-0">
-        <thead class="table-light">
+      <table class="table table-sm rpt-table table-hover mb-0">
+        <thead>
           <tr>
-            <th>Date (Tarehe)</th>
-            <th>Type</th>
+            <th style="width:90px;">Date</th>
+            <th style="width:85px;">Type</th>
             <th>Client / Source</th>
-            <th>Description</th>
-            <th>Method</th>
-            <th class="text-end text-success">Amount (TZS)</th>
+            <th>Description / Ref</th>
+            <th style="width:75px;">Method</th>
+            <th class="text-end" style="width:110px;color:#16a34a;">Amount (TZS)</th>
           </tr>
         </thead>
         <tbody>
           {% for r in data.income_ledger.rows %}
           <tr>
-            <td class="small text-muted text-nowrap">{{ r.date }}</td>
+            <td class="text-muted text-nowrap" style="font-size:.75rem;">{{ r.date }}</td>
             <td>
-              <span class="badge {{ r.badge_class }}" style="font-size:.65rem;">
+              <span class="badge {{ r.badge_class }}" style="font-size:.6rem;">
                 <i class="bi {{ r.icon }} me-1"></i>{{ r.label }}
               </span>
             </td>
-            <td class="small fw-semibold">{{ r.client_name }}</td>
-            <td class="small text-muted">
-              {{ r.description|truncatechars:40 }}
+            <td class="fw-semibold" style="font-size:.8rem;">{{ r.client_name }}</td>
+            <td style="font-size:.78rem;">
+              <span class="text-muted">{{ r.description|truncatechars:38 }}</span>
               {% if r.ref and r.ref != '—' %}
-              <span class="badge bg-light text-dark ms-1" style="font-size:.6rem;">{{ r.ref }}</span>
+              <span class="badge bg-light text-dark border ms-1" style="font-size:.6rem;">
+                {{ r.ref }}
+              </span>
               {% endif %}
             </td>
             <td><span class="pill pill-{{ r.method }}">{{ r.method }}</span></td>
-            <td class="text-end fw-bold text-success">{{ r.amount|floatformat:0 }}</td>
+            <td class="text-end fw-bold amount-positive" style="font-size:.83rem;">
+              {{ r.amount|floatformat:0 }}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
-        <tfoot class="table-light fw-bold">
+        <tfoot>
           <tr>
-            <td colspan="5">TOTAL — {{ data.income_ledger.count }} transaction(s)</td>
-            <td class="text-end text-success">TZS {{ data.income_ledger.total|floatformat:0 }}</td>
+            <td colspan="5">
+              <i class="bi bi-sigma me-1"></i>TOTAL — {{ data.income_ledger.count }} transaction(s)
+            </td>
+            <td class="text-end amount-positive">{{ data.income_ledger.total|floatformat:0 }}</td>
           </tr>
         </tfoot>
       </table>
     </div>
     {% else %}
-    <div class="text-center text-muted py-4">
-      <i class="bi bi-inbox display-5 d-block mb-2 opacity-50"></i>
-      No income received in this period.
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-inbox d-block fs-2 mb-2 opacity-25"></i>
+      <p class="small mb-0">No income received in this period.</p>
     </div>
     {% endif %}
   </div>
 </div>
 
-{# ════════════════════════════════════════════════════════════════════════
-   SECTION 5 — WHERE IS THE MONEY? (All-Time Balance Sheet)
-   ════════════════════════════════════════════════════════════════════════ #}
-<div class="rpt-heading"><i class="bi bi-wallet2 me-1"></i>Where Is the Money? — All-Time Funds Position (Pesa Ziko Wapi)</div>
-<div class="card border-0 shadow-sm mb-4" style="border-left:4px solid #1a2e5a!important;">
-  <div class="card-body">
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 6 — ALL-TIME FUNDS POSITION
+   ══════════════════════════════════════════════════════════════════ #}
+<div class="rpt-heading page-break-before">
+  <i class="bi bi-wallet2"></i>All-Time Funds Position — Pesa Ziko Wapi?
+</div>
 
-    {# Per-account balances #}
-    <div class="row g-3 mb-3">
-      {% for acc in data.funds.accounts %}
-      <div class="col-sm-6 col-lg-3">
-        <div class="rounded p-3 border" style="border-color:{{ acc.color }}40!important;">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <i class="bi {{ acc.icon }} fs-5" style="color:{{ acc.color }};"></i>
-            <span class="fw-semibold small" style="color:{{ acc.color }};">{{ acc.label }}</span>
-          </div>
-          <div class="d-flex justify-content-between small mb-1">
-            <span class="text-muted">Total In</span>
-            <span class="text-success">+TZS {{ acc.in|floatformat:0 }}</span>
-          </div>
-          <div class="d-flex justify-content-between small mb-2">
-            <span class="text-muted">Total Out</span>
-            <span class="text-danger">−TZS {{ acc.out|floatformat:0 }}</span>
-          </div>
-          <div class="border-top pt-2 d-flex justify-content-between fw-bold">
-            <span class="small">Balance</span>
-            <span class="{% if acc.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-              TZS {{ acc.balance|floatformat:0 }}
-            </span>
-          </div>
+{# Account balance cards #}
+<div class="row g-3 mb-3 page-section">
+  {% for acc in data.funds.accounts %}
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100"
+         style="border-left:4px solid {{ acc.color }} !important;">
+      <div class="card-body py-3 px-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi {{ acc.icon }}" style="color:{{ acc.color }};font-size:1.1rem;"></i>
+          <span class="fw-bold small" style="color:{{ acc.color }};">{{ acc.label }}</span>
         </div>
-      </div>
-      {% endfor %}
-
-      {# Total liquid #}
-      <div class="col-sm-6 col-lg-3">
-        <div class="rounded p-3 h-100" style="background:#f8fafc;border:1px solid #e2e8f0;">
-          <div class="small text-muted fw-bold text-uppercase mb-1" style="letter-spacing:.06em;">Total Liquid</div>
-          <div class="fs-4 fw-bold {% if data.funds.total_liquid >= 0 %}text-success{% else %}text-danger{% endif %}">
-            TZS {{ data.funds.total_liquid|floatformat:0 }}
-          </div>
-          <div class="small text-muted mt-1">Cash + Bank + M-Pesa</div>
+        <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
+          <span class="text-muted">All-time In</span>
+          <span class="amount-positive">+{{ acc.in|floatformat:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2" style="font-size:.78rem;">
+          <span class="text-muted">All-time Out</span>
+          <span class="amount-negative">−{{ acc.out|floatformat:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between fw-bold border-top pt-2">
+          <span class="small">Balance</span>
+          <span class="{% if acc.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+            TZS {{ acc.balance|floatformat:0 }}
+          </span>
         </div>
       </div>
     </div>
+  </div>
+  {% endfor %}
 
-    <hr class="my-3">
-
-    {# AR & AP boxes #}
-    <div class="row g-3">
-      <div class="col-md-6">
-        <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-          <div class="fw-semibold mb-2 text-success">
-            <i class="bi bi-arrow-down-circle-fill me-2"></i>AR — Clients Owe Us (Fedha Tunazodai)
-          </div>
-          <div class="d-flex justify-content-between small mb-1">
-            <span class="text-muted">Unpaid invoices</span>
-            <span class="fw-semibold">TZS {{ data.ar_inv_outstanding|floatformat:0 }}</span>
-          </div>
-          <div class="d-flex justify-content-between small mb-2">
-            <span class="text-muted">Office services</span>
-            <span class="fw-semibold">TZS {{ data.ar_svc_outstanding|floatformat:0 }}</span>
-          </div>
-          <div class="d-flex justify-content-between border-top pt-2 fw-bold">
-            <span>Total AR</span>
-            <span class="text-success">TZS {{ data.ar_total|floatformat:0 }}</span>
-          </div>
-          <a href="{% url 'finance:ar_report' %}" class="btn btn-sm btn-outline-success w-100 mt-2 no-print">
-            <i class="bi bi-arrow-right me-1"></i>View AR Report
-          </a>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100" style="background:#1a2e5a;">
+      <div class="card-body py-3 px-3 d-flex flex-column justify-content-center">
+        <div class="mb-1"
+             style="font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;">
+          Total Liquid
         </div>
-      </div>
-      <div class="col-md-6">
-        <div class="p-3 rounded" style="background:#fff1f2;border:1px solid #fecaca;">
-          <div class="fw-semibold mb-2 text-danger">
-            <i class="bi bi-arrow-up-circle-fill me-2"></i>AP — We Owe Others (Madeni Yetu)
-          </div>
-          <div class="d-flex justify-content-between small mb-2">
-            <span class="text-muted">Outstanding liabilities</span>
-            <span class="fw-semibold">TZS {{ data.ap_total|floatformat:0 }}</span>
-          </div>
-          <div class="d-flex justify-content-between border-top pt-2 fw-bold">
-            <span>Total AP</span>
-            <span class="text-danger">TZS {{ data.ap_total|floatformat:0 }}</span>
-          </div>
-          <a href="{% url 'finance:debt_list' %}" class="btn btn-sm btn-outline-danger w-100 mt-2 no-print">
-            <i class="bi bi-arrow-right me-1"></i>View Debts &amp; Liabilities
-          </a>
+        <div class="fw-bold"
+             style="font-size:1.45rem;{% if data.funds.total_liquid >= 0 %}color:#4ade80;{% else %}color:#f87171;{% endif %}">
+          {{ data.funds.total_liquid|floatformat:0 }}
         </div>
+        <div style="font-size:.7rem;color:#475569;margin-top:.15rem;">All accounts combined</div>
       </div>
     </div>
-
-    <hr class="my-3">
-
-    {# Net position formula #}
-    <div class="p-3 rounded text-center" style="background:#1a2e5a;color:#fff;">
-      <div class="small mb-2 opacity-75">NET POSITION = Liquid Cash + AR − AP</div>
-      <div class="fs-3 fw-bold flex-wrap d-flex justify-content-center align-items-center gap-2">
-        <span class="opacity-75">TZS {{ data.funds.total_liquid|floatformat:0 }}</span>
-        <span class="opacity-40 fw-light">+</span>
-        <span class="text-success">{{ data.ar_total|floatformat:0 }}</span>
-        <span class="opacity-40 fw-light">−</span>
-        <span style="color:#fca5a5;">{{ data.ap_total|floatformat:0 }}</span>
-        <span class="opacity-40 fw-light">=</span>
-        <span class="{% if data.funds.net_position >= 0 %}text-success{% else %}text-warning{% endif %} fw-bold">
-          TZS {{ data.funds.net_position|floatformat:0 }}
-        </span>
-      </div>
-    </div>
-
   </div>
 </div>
 
-{# ════════════════════════════════════════════════════════════════════════
-   SECTION 6 — QUICK LINKS
-   ════════════════════════════════════════════════════════════════════════ #}
+{# AR + AP + Net Position #}
+<div class="row g-3 mb-4 page-section">
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100" style="border-top:3px solid #16a34a;">
+      <div class="card-body py-3 px-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-arrow-down-circle-fill text-success"></i>
+          <span class="fw-bold text-success small text-uppercase" style="letter-spacing:.06em;">
+            AR — Clients Owe Us
+          </span>
+        </div>
+        <div class="d-flex justify-content-between small mb-1">
+          <span class="text-muted">Invoice balances</span>
+          <span class="fw-semibold">{{ data.ar_inv_outstanding|floatformat:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between small mb-2">
+          <span class="text-muted">Office services</span>
+          <span class="fw-semibold">{{ data.ar_svc_outstanding|floatformat:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between fw-bold border-top pt-2">
+          <span>Total AR</span>
+          <span class="text-success">TZS {{ data.ar_total|floatformat:0 }}</span>
+        </div>
+        <a href="{% url 'finance:ar_report' %}"
+           class="btn btn-sm btn-outline-success w-100 mt-2 no-print">
+          <i class="bi bi-arrow-right me-1"></i>View AR Report
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100" style="border-top:3px solid #dc2626;">
+      <div class="card-body py-3 px-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-arrow-up-circle-fill text-danger"></i>
+          <span class="fw-bold text-danger small text-uppercase" style="letter-spacing:.06em;">
+            AP — We Owe Others
+          </span>
+        </div>
+        <div class="d-flex justify-content-between small mb-2">
+          <span class="text-muted">Outstanding liabilities</span>
+          <span class="fw-semibold">{{ data.ap_total|floatformat:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between fw-bold border-top pt-2">
+          <span>Total AP</span>
+          <span class="text-danger">TZS {{ data.ap_total|floatformat:0 }}</span>
+        </div>
+        <a href="{% url 'finance:debt_list' %}"
+           class="btn btn-sm btn-outline-danger w-100 mt-2 no-print">
+          <i class="bi bi-arrow-right me-1"></i>Manage Debts &amp; AP
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100 text-center" style="background:#1a2e5a;">
+      <div class="card-body py-3 px-3 d-flex flex-column justify-content-center">
+        <div style="font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#64748b;">
+          Net Business Position
+        </div>
+        <div class="small mt-1 mb-2" style="color:#475569;">Liquid + AR − AP</div>
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-1 mb-2"
+             style="font-size:.75rem;">
+          <span style="color:#94a3b8;">{{ data.funds.total_liquid|floatformat:0 }}</span>
+          <span style="color:#475569;">+</span>
+          <span class="text-success">{{ data.ar_total|floatformat:0 }}</span>
+          <span style="color:#475569;">−</span>
+          <span style="color:#fca5a5;">{{ data.ap_total|floatformat:0 }}</span>
+          <span style="color:#475569;">=</span>
+        </div>
+        <div class="fw-bold"
+             style="font-size:1.45rem;{% if data.funds.net_position >= 0 %}color:#4ade80;{% else %}color:#fbbf24;{% endif %}">
+          TZS {{ data.funds.net_position|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ══════════════════════════════════════════════════════════════════
+   SECTION 7 — QUICK LINKS (no print)
+   ══════════════════════════════════════════════════════════════════ #}
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:1.5rem 0;" class="no-print">
 <div class="row g-3 mb-4 no-print">
-  <div class="col-sm-6 col-lg-3">
-    <a href="{% url 'finance:ar_report' %}" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+  <div class="col-6 col-sm-3">
+    <a href="{% url 'finance:ar_report' %}"
+       class="card border-0 shadow-sm text-decoration-none text-dark h-100">
       <div class="card-body text-center py-3">
-        <i class="bi bi-arrow-down-circle text-success fs-2 d-block mb-1"></i>
+        <i class="bi bi-arrow-down-circle text-success fs-3 d-block mb-1"></i>
         <div class="fw-semibold small">AR Report</div>
-        <div class="text-muted" style="font-size:.75rem;">What clients owe us</div>
+        <div class="text-muted" style="font-size:.7rem;">Clients owe us</div>
       </div>
     </a>
   </div>
-  <div class="col-sm-6 col-lg-3">
-    <a href="{% url 'finance:debt_list' %}" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+  <div class="col-6 col-sm-3">
+    <a href="{% url 'finance:debt_list' %}"
+       class="card border-0 shadow-sm text-decoration-none text-dark h-100">
       <div class="card-body text-center py-3">
-        <i class="bi bi-arrow-up-circle text-danger fs-2 d-block mb-1"></i>
-        <div class="fw-semibold small">AP — Debts &amp; Liabilities</div>
-        <div class="text-muted" style="font-size:.75rem;">What we owe others</div>
+        <i class="bi bi-arrow-up-circle text-danger fs-3 d-block mb-1"></i>
+        <div class="fw-semibold small">Debts &amp; AP</div>
+        <div class="text-muted" style="font-size:.7rem;">We owe others</div>
       </div>
     </a>
   </div>
-  <div class="col-sm-6 col-lg-3">
-    <a href="{% url 'finance:office_report' %}" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+  <div class="col-6 col-sm-3">
+    <a href="{% url 'finance:office_report' %}"
+       class="card border-0 shadow-sm text-decoration-none text-dark h-100">
       <div class="card-body text-center py-3">
-        <i class="bi bi-building text-info fs-2 d-block mb-1"></i>
+        <i class="bi bi-building text-info fs-3 d-block mb-1"></i>
         <div class="fw-semibold small">Office Services</div>
-        <div class="text-muted" style="font-size:.75rem;">All service records</div>
+        <div class="text-muted" style="font-size:.7rem;">Service records</div>
       </div>
     </a>
   </div>
-  <div class="col-sm-6 col-lg-3">
-    <a href="{% url 'finance:projects_report' %}" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+  <div class="col-6 col-sm-3">
+    <a href="{% url 'finance:projects_report' %}"
+       class="card border-0 shadow-sm text-decoration-none text-dark h-100">
       <div class="card-body text-center py-3">
-        <i class="bi bi-clipboard-check text-primary fs-2 d-block mb-1"></i>
-        <div class="fw-semibold small">Projects Report</div>
-        <div class="text-muted" style="font-size:.75rem;">Revenue &amp; profit per project</div>
+        <i class="bi bi-clipboard-check text-primary fs-3 d-block mb-1"></i>
+        <div class="fw-semibold small">Projects</div>
+        <div class="text-muted" style="font-size:.7rem;">Revenue &amp; profit</div>
       </div>
     </a>
   </div>
@@ -554,17 +802,21 @@
 
 {% else %}
 <div class="text-center text-muted py-5">
-  <i class="bi bi-bar-chart display-3 d-block mb-3 opacity-25"></i>
-  <p class="lead">Select a period above and click <strong>Show</strong></p>
+  <i class="bi bi-bar-chart d-block" style="font-size:3.5rem;opacity:.18;"></i>
+  <p class="lead mt-3 mb-1">Select a period and click <strong>Generate</strong></p>
+  <p class="small opacity-75">
+    Shows cash flow, expense categories, income ledger, AR/AP, and funds position.
+  </p>
 </div>
 {% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var sel = document.querySelector('[name="period"]');
+  if (!sel) return;
   var wraps = document.querySelectorAll('#date-from-wrap, #date-to-wrap');
   function toggle() {
-    wraps.forEach(function(el) {
+    wraps.forEach(function (el) {
       el.style.display = sel.value === 'custom' ? '' : 'none';
     });
   }
