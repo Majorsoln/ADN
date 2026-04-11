@@ -272,6 +272,9 @@
     <a href="{% url 'finance:expense_add' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> Add Expense
     </a>
+    <a href="{% url 'finance:debt_list' %}" class="nav-link {% if 'finance/debt' in request.path and request.resolver_match.url_name != 'debt_add' %}active{% endif %}">
+      <i class="bi bi-exclamation-triangle"></i> Debts &amp; Liabilities
+    </a>
     <a href="{% url 'finance:debt_add' %}" class="nav-link {% if request.resolver_match.url_name == 'debt_add' %}active{% endif %}">
       <i class="bi bi-plus-circle"></i> Add Debt (Manual)
     </a>

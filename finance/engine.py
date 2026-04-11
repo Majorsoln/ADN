@@ -627,6 +627,64 @@ def _safe_key(key):
     return key if key in ('cash', 'bank', 'mpesa', 'cheque') else 'other'
 
 
+def _sync_credit_debts():
+    """
+    Ensure every credit MaterialOrder and every credit Expense has a
+    corresponding Debt record.  Called at the start of compute_ap_report()
+    so the AP view is always up-to-date without relying solely on the
+    signal-less auto-create in order/expense save paths.
+
+    Uses get_or_create so it is safe to call repeatedly.
+    """
+    # ── Material orders on credit ──────────────────────────────────────────
+    credit_orders = (
+        MaterialOrder.objects
+        .filter(
+            payment_source='credit',
+            status__in=['ordered', 'partially_received', 'received'],
+        )
+        .select_related('project')
+        .prefetch_related('items')
+    )
+    for order in credit_orders:
+        Debt.objects.get_or_create(
+            material_order=order,
+            defaults={
+                'creditor_name': order.supplier_name,
+                'debt_type':     'supplier_credit',
+                'amount':        order.total_cost,
+                'date_incurred': order.order_date,
+                'description': (
+                    f"Materials on credit from {order.supplier_name}"
+                    + (f" for project: {order.project.name}" if order.project_id else "")
+                ),
+                'project': order.project if order.project_id else None,
+            },
+        )
+
+    # ── Expenses on credit ─────────────────────────────────────────────────
+    credit_expenses = (
+        Expense.objects
+        .filter(payment_method='credit')
+        .select_related('category', 'project')
+    )
+    for exp in credit_expenses:
+        Debt.objects.get_or_create(
+            expense=exp,
+            defaults={
+                'creditor_name': exp.paid_to or 'Unknown Creditor',
+                'debt_type':     'other',
+                'amount':        exp.amount,
+                'date_incurred': exp.date,
+                'description': (
+                    f"{exp.category.name} on credit"
+                    + (f" — {exp.description}" if exp.description else "")
+                ),
+                'project': exp.project if exp.project_id else None,
+            },
+        )
+
+
 def compute_ar_report():
     """
     Accounts Receivable — Fedha Tunazodai.
@@ -770,6 +828,9 @@ def compute_ap_report():
     Each row shows how much has been repaid by cash vs bank.
     Includes context from linked material orders and credit expenses.
     """
+    # Ensure all credit orders/expenses have a Debt record before querying
+    _sync_credit_debts()
+
     debts = Debt.objects.exclude(status='settled').select_related(
         'project', 'material_order', 'expense', 'expense__category',
     ).prefetch_related('payments', 'material_order__items').order_by('due_date', '-date_incurred')
