@@ -252,8 +252,8 @@
     <a href="{% url 'finance:ar_report' %}" class="nav-link {% if 'finance/ar' in request.path %}active{% endif %}">
       <i class="bi bi-arrow-down-circle"></i> AR — Receivables
     </a>
-    <a href="{% url 'finance:ap_report' %}" class="nav-link {% if 'finance/ap' in request.path %}active{% endif %}">
-      <i class="bi bi-arrow-up-circle"></i> AP — Payables
+    <a href="{% url 'finance:debt_list' %}" class="nav-link {% if 'finance/debt' in request.path and request.resolver_match.url_name not in 'debt_add,debt_detail,debt_edit,debt_delete' %}active{% endif %}">
+      <i class="bi bi-arrow-up-circle"></i> AP — Debts &amp; Liabilities
     </a>
     <a href="{% url 'finance:office_report' %}" class="nav-link {% if 'finance/office' in request.path %}active{% endif %}">
       <i class="bi bi-building"></i> Office Services
@@ -271,9 +271,6 @@
     </a>
     <a href="{% url 'finance:expense_add' %}" class="nav-link">
       <i class="bi bi-plus-circle"></i> Add Expense
-    </a>
-    <a href="{% url 'finance:debt_list' %}" class="nav-link {% if 'finance/debt' in request.path and request.resolver_match.url_name != 'debt_add' %}active{% endif %}">
-      <i class="bi bi-exclamation-triangle"></i> Debts &amp; Liabilities
     </a>
     <a href="{% url 'finance:debt_add' %}" class="nav-link {% if request.resolver_match.url_name == 'debt_add' %}active{% endif %}">
       <i class="bi bi-plus-circle"></i> Add Debt (Manual)

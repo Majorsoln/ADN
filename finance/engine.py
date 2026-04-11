@@ -796,6 +796,50 @@ def compute_ar_report():
 
     svc_rows.sort(key=lambda r: (not r['is_overdue'], r['due_date'] or date.max))
 
+    # ── Combined list (invoices + services, overdue first) ──────────────────
+    all_rows = []
+    for r in inv_rows:
+        all_rows.append({
+            'type':           'invoice',
+            'pk':             r['pk'],
+            'client_name':    r['client_name'],
+            'client_phone':   r['client_phone'],
+            'ref':            r['invoice_no'],
+            'sub_ref':        r['project_name'] if r['project_name'] != '—' else None,
+            'sub_ref_pk':     r['project_pk'],
+            'date':           r['invoice_date'],
+            'due_date':       r['due_date'],
+            'total_charged':  r['contract_amount'],
+            'total_received': r['total_received'],
+            'balance':        r['balance'],
+            'is_overdue':     r['is_overdue'],
+            'recv_cash':      r['recv_cash'],
+            'recv_bank':      r['recv_bank'],
+            'recv_mpesa':     r['recv_mpesa'],
+            'recv_other':     r['recv_other'],
+        })
+    for r in svc_rows:
+        all_rows.append({
+            'type':           'service',
+            'pk':             r['pk'],
+            'client_name':    r['client_name'],
+            'client_phone':   r['client_phone'],
+            'ref':            r['work_description'],
+            'sub_ref':        f"{r['num_windows']}W/{r['num_doors']}D" if (r['num_windows'] or r['num_doors']) else None,
+            'sub_ref_pk':     None,
+            'date':           r['date_recorded'],
+            'due_date':       r['due_date'],
+            'total_charged':  r['total_charge'],
+            'total_received': r['total_received'],
+            'balance':        r['balance'],
+            'is_overdue':     r['is_overdue'],
+            'recv_cash':      r['recv_cash'],
+            'recv_bank':      r['recv_bank'],
+            'recv_mpesa':     r['recv_mpesa'],
+            'recv_other':     r['recv_other'],
+        })
+    all_rows.sort(key=lambda r: (not r['is_overdue'], r['due_date'] or date.max))
+
     return {
         # Invoice receivables
         'inv_rows':              inv_rows,
@@ -817,6 +861,11 @@ def compute_ar_report():
         'svc_recv_other':        float(svc_grand_by_method['cheque'] + svc_grand_by_method['other']),
         # Grand total
         'total_ar': float(inv_grand_outstanding + svc_grand_outstanding),
+        # Combined single list
+        'all_rows': all_rows,
+        'total_recv_cash':  float(inv_grand_by_method['cash']  + svc_grand_by_method['cash']),
+        'total_recv_bank':  float(inv_grand_by_method['bank']  + svc_grand_by_method['bank']),
+        'total_recv_mpesa': float(inv_grand_by_method['mpesa'] + svc_grand_by_method['mpesa']),
     }
 
 
