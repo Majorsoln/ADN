@@ -351,16 +351,20 @@ def _income_by_method(date_from, date_to):
 
 def _outflows_by_method(date_from, date_to):
     """
-    All cash/bank outflows in the period, grouped by payment method.
-    Sources: Expense + MaterialOrder (non-credit) + DebtPayment
+    All REAL cash/bank outflows in the period, grouped by payment method.
+    Sources:
+      - Expenses paid via cash/bank/mpesa/cheque (EXCLUDES credit — those create Debt)
+      - MaterialOrders paid via cash/bank/mpesa/cheque (credit orders are in AP)
+      - DebtPayment — cash actually leaving accounts to settle outstanding debts
     Returns dict keyed by canonical method.
     """
     D = Decimal
     totals = {k: D('0') for k in ['cash', 'bank', 'mpesa', 'cheque', 'other']}
 
+    # Expenses paid immediately (not on credit)
     for exp in Expense.objects.filter(
             date__gte=date_from, date__lte=date_to,
-    ).only('amount', 'payment_method'):
+    ).exclude(payment_method='credit').only('amount', 'payment_method'):
         totals[_norm_method(exp.payment_method)] += exp.amount
 
     for order in MaterialOrder.objects.filter(
@@ -528,8 +532,10 @@ def _funds_position():
 
     # ── OUTFLOWS (real money paid, not credit) ─────────────────────────────
 
-    # 4. General expenses
-    for exp in Expense.objects.all().only('amount', 'payment_method'):
+    # 4. General expenses paid immediately (exclude credit — those move no cash)
+    for exp in Expense.objects.exclude(
+        payment_method='credit',
+    ).only('amount', 'payment_method'):
         accounts[_norm_out(exp.payment_method)]['out'] += exp.amount
 
     # 5. Material orders paid via cash/bank/mpesa/cheque (not credit/unspecified)
@@ -1302,54 +1308,70 @@ def compute_full_report(date_from, date_to):
             'in': i, 'out': o, 'net': i - o,
         })
 
-    total_income   = sum(inc_by.values())
-    total_expenses = sum(out_by.values())
+    # ── Totals from cash-flow view (real money moved) ─────────────────────
+    total_cash_in  = sum(inc_by.values())   # actual cash/bank received
+    total_cash_out = sum(out_by.values())   # actual cash/bank paid out
+    net_cash_flow  = total_cash_in - total_cash_out
 
-    # AR & AP summaries (all-time outstanding)
+    # ── P&L view — expenses when incurred (includes credit, excludes debt pmts)
+    exp_total, by_category, _, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
+    # For P&L: exclude credit expenses since they don't reflect cash; they're
+    # tracked separately as Debt. Net profit = cash received - cash expenses only.
+    cash_exp_total = exp_total - sum(
+        e.amount for e in Expense.objects.filter(
+            date__gte=date_from, date__lte=date_to, payment_method='credit',
+        )
+    )
+
+    # ── AR & AP summaries (all-time outstanding) ───────────────────────────
     ar = compute_ar_report()
     ap = compute_ap_report()
 
-    # All-time funds position (cash/bank balances)
+    # ── All-time funds position ────────────────────────────────────────────
     funds = _funds_position()
 
-    # Period income sources
+    # ── Period income sources (for breakdown cards) ────────────────────────
     inv_income, _ = _invoice_payments_in(date_from, date_to)
     off_income, _ = _office_payments_in(date_from, date_to)
     oth_income, _ = _other_income_in(date_from, date_to)
     adv_income, _, _ = _advance_payments_in(date_from, date_to)
 
-    exp_total, by_category, _, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
     debt_pmt_total, _, _ = _debt_payments_in(date_from, date_to)
 
-    # Income ledger — every transaction line in the period
+    # ── Income ledger — every transaction line in the period ───────────────
     ledger = _income_ledger(date_from, date_to)
 
     return {
         'date_from':          str(date_from),
         'date_to':            str(date_to),
-        # Period summary
-        'total_income':       total_income,
-        'total_expenses':     exp_total,
-        'debt_payments_total': float(debt_pmt_total),
-        'net_profit':         float(Decimal(str(total_income)) - exp_total),
-        # Income sources in period
+        # ── Cash Flow view (real money moved this period) ─────────────────
+        'total_income':       total_cash_in,       # cash/bank actually received
+        'total_cash_out':     total_cash_out,       # cash/bank actually paid out
+        'net_cash_flow':      net_cash_flow,        # cash in - cash out
+        # ── P&L view (expenses when incurred, not when paid) ─────────────
+        'total_pl_expenses':  float(exp_total),     # all expenses incl. credit
+        'cash_expenses':      float(cash_exp_total),# cash-only expenses (no credit)
+        'net_profit':         float(total_cash_in - cash_exp_total),
+        # ── Income breakdown ──────────────────────────────────────────────
         'invoice_income':     float(inv_income),
         'advance_income':     float(adv_income),
         'office_income':      float(off_income),
         'other_income':       float(oth_income),
+        # ── Expense breakdown ─────────────────────────────────────────────
         'project_expenses_total': float(proj_exp_total),
         'office_expenses_total':  float(office_exp_total),
-        'by_category':        by_category,
-        # Cash flow by account for the period
+        'debt_payments_total':    float(debt_pmt_total),
+        'by_category':            by_category,
+        # ── Cash flow by account for the period ───────────────────────────
         'cashflow_by_method': cashflow_by_method,
-        # AR & AP (all-time outstanding)
+        # ── AR & AP (all-time outstanding) ────────────────────────────────
         'ar_total':           ar['total_ar'],
         'ar_inv_outstanding': ar['inv_total_outstanding'],
         'ar_svc_outstanding': ar['svc_total_outstanding'],
         'ap_total':           ap['total_outstanding'],
-        # Funds position
+        # ── Funds position (all-time balance sheet) ───────────────────────
         'funds':              funds,
-        # Income ledger (every transaction in period)
+        # ── Income ledger (every payment received in period) ──────────────
         'income_ledger':      ledger,
     }
 
