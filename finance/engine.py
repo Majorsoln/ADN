@@ -1318,13 +1318,15 @@ def compute_full_report(date_from, date_to):
         })
 
     # ── Totals from cash-flow view (real money moved) ─────────────────────
-    total_cash_in  = sum(inc_by.values())   # actual cash/bank received
-    total_cash_out = sum(out_by.values())   # actual cash/bank paid out
+    total_cash_in  = sum(inc_by.values())   # actual cash/bank received (float)
+    total_cash_out = sum(out_by.values())   # actual cash/bank paid out (float)
     net_cash_flow  = total_cash_in - total_cash_out
 
     # ── Expenses breakdown ────────────────────────────────────────────────
     exp_total, by_category, _, proj_exp_total, office_exp_total, credit_exp_total = _expenses_in(date_from, date_to)
-    cash_exp_total = exp_total - credit_exp_total  # cash-only (no credit)
+    cash_exp_total = exp_total - credit_exp_total  # Decimal (cash-only, no credit)
+    # Keep a float version to avoid Decimal/float mixing in arithmetic below
+    cash_exp_total_f = float(cash_exp_total)
 
     # ── AR & AP summaries (all-time outstanding) ───────────────────────────
     ar = compute_ar_report()
@@ -1353,8 +1355,8 @@ def compute_full_report(date_from, date_to):
         'net_cash_flow':      net_cash_flow,        # cash in - cash out
         # ── P&L view (expenses when incurred, not when paid) ─────────────
         'total_pl_expenses':  float(exp_total),     # all expenses incl. credit
-        'cash_expenses':      float(cash_exp_total),# cash-only expenses (no credit)
-        'net_profit':         float(total_cash_in - cash_exp_total),
+        'cash_expenses':      cash_exp_total_f,       # cash-only expenses (no credit)
+        'net_profit':         total_cash_in - cash_exp_total_f,  # float - float
         # ── Income breakdown ──────────────────────────────────────────────
         'invoice_income':     float(inv_income),
         'advance_income':     float(adv_income),
