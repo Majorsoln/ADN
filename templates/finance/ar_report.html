@@ -1,13 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Accounts Receivable (AR){% endblock %}
 
+{% block extra_css %}
+<style>
+@media print {
+  #sidebar, #topbar, .no-print { display: none !important; }
+  #main { margin-left: 0 !important; }
+  .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+  .table-responsive { overflow: visible !important; }
+  body { font-size: 12px; }
+  .content-area { padding: .5rem !important; }
+  .print-header { display: block !important; }
+}
+.print-header { display: none; }
+</style>
+{% endblock %}
+
+{% block page_title %}AR — Accounts Receivable{% endblock %}
+
+{% block topbar_actions %}
+<button onclick="window.print()" class="btn btn-sm btn-outline-secondary no-print">
+  <i class="bi bi-printer me-1"></i>Print / PDF
+</button>
+{% endblock %}
+
 {% block content %}
+<div class="print-header mb-3">
+  <h4 class="mb-0">ADN uPVC & Aluminum Solutions — Accounts Receivable (AR)</h4>
+</div>
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div>
     <h2 class="mb-0"><i class="bi bi-arrow-down-circle text-success me-2"></i>Accounts Receivable (AR)</h2>
     <small class="text-muted">All outstanding balances owed to us — invoices &amp; office services (Fedha tunazodai)</small>
   </div>
-  <a href="{% url 'finance:full_report' %}" class="btn btn-outline-secondary btn-sm">
+  <a href="{% url 'finance:full_report' %}" class="btn btn-outline-secondary btn-sm no-print">
     <i class="bi bi-bar-chart-line me-1"></i>Full Report
   </a>
 </div>

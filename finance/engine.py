@@ -1169,6 +1169,108 @@ def compute_projects_report():
     }
 
 
+def _income_ledger(date_from, date_to):
+    """
+    Every individual income transaction in the period, sorted by date descending.
+    Sources: InvoicePayment, Invoice advance payments, OfficeServicePayment, OfficeIncome.
+    Returns {'rows': [...], 'total': float, 'by_method': {method: float}}.
+    """
+    rows = []
+
+    # 1. Invoice instalment payments
+    for p in InvoicePayment.objects.filter(
+        payment_date__gte=date_from,
+        payment_date__lte=date_to,
+    ).select_related('invoice').order_by('-payment_date'):
+        rows.append({
+            'date':        p.payment_date,
+            'source_type': 'invoice_payment',
+            'icon':        'bi-receipt-cutoff',
+            'badge_class': 'bg-primary',
+            'label':       'Invoice',
+            'client_name': p.invoice.client_name if p.invoice else '—',
+            'ref':         p.invoice.invoice_no if p.invoice else '—',
+            'description': f"Invoice payment — {p.invoice.invoice_no}" if p.invoice else 'Invoice payment',
+            'amount':      p.amount,
+            'method':      _norm_method(p.payment_method),
+            'pk':          p.invoice.pk if p.invoice else None,
+        })
+
+    # 2. Advance payments on invoices
+    for inv in Invoice.objects.filter(
+        invoice_date__gte=date_from,
+        invoice_date__lte=date_to,
+        advance_paid__gt=0,
+    ).only('invoice_no', 'client_name', 'advance_paid', 'advance_payment_method', 'invoice_date', 'id'):
+        rows.append({
+            'date':        inv.invoice_date,
+            'source_type': 'advance',
+            'icon':        'bi-cash',
+            'badge_class': 'bg-success',
+            'label':       'Advance',
+            'client_name': inv.client_name,
+            'ref':         inv.invoice_no,
+            'description': f"Advance payment — {inv.invoice_no}",
+            'amount':      inv.advance_paid,
+            'method':      _norm_method(inv.advance_payment_method),
+            'pk':          inv.pk,
+        })
+
+    # 3. Office service payments
+    for p in OfficeServicePayment.objects.filter(
+        payment_date__gte=date_from,
+        payment_date__lte=date_to,
+    ).select_related('record').order_by('-payment_date'):
+        rows.append({
+            'date':        p.payment_date,
+            'source_type': 'office_payment',
+            'icon':        'bi-building',
+            'badge_class': 'bg-info text-dark',
+            'label':       'Office Svc',
+            'client_name': p.record.client_name if p.record else '—',
+            'ref':         '—',
+            'description': (p.record.work_description[:40] if p.record and p.record.work_description else 'Office service'),
+            'amount':      p.amount,
+            'method':      _norm_method(p.payment_method),
+            'pk':          p.record.pk if p.record else None,
+        })
+
+    # 4. Other income (OfficeIncome with source='other')
+    for inc in OfficeIncome.objects.filter(
+        source='other',
+        date__gte=date_from,
+        date__lte=date_to,
+    ):
+        rows.append({
+            'date':        inc.date,
+            'source_type': 'other_income',
+            'icon':        'bi-three-dots',
+            'badge_class': 'bg-secondary',
+            'label':       'Other',
+            'client_name': '—',
+            'ref':         '—',
+            'description': inc.description or 'Other income',
+            'amount':      inc.amount,
+            'method':      _norm_method(inc.payment_method),
+            'pk':          None,
+        })
+
+    rows.sort(key=lambda r: r['date'], reverse=True)
+
+    total = sum(r['amount'] for r in rows)
+    by_method = {}
+    for r in rows:
+        m = r['method']
+        by_method[m] = by_method.get(m, Decimal('0')) + r['amount']
+
+    return {
+        'rows':      rows,
+        'total':     float(total),
+        'by_method': {k: float(v) for k, v in by_method.items()},
+        'count':     len(rows),
+    }
+
+
 def compute_full_report(date_from, date_to):
     """
     Full combined report for a period:
@@ -1219,6 +1321,9 @@ def compute_full_report(date_from, date_to):
     exp_total, by_category, _, proj_exp_total, office_exp_total = _expenses_in(date_from, date_to)
     debt_pmt_total, _, _ = _debt_payments_in(date_from, date_to)
 
+    # Income ledger — every transaction line in the period
+    ledger = _income_ledger(date_from, date_to)
+
     return {
         'date_from':          str(date_from),
         'date_to':            str(date_to),
@@ -1244,6 +1349,8 @@ def compute_full_report(date_from, date_to):
         'ap_total':           ap['total_outstanding'],
         # Funds position
         'funds':              funds,
+        # Income ledger (every transaction in period)
+        'income_ledger':      ledger,
     }
 
 
