@@ -1413,6 +1413,10 @@ def compute_full_report(date_from, date_to):
     # ── Assemble per-account rows ──────────────────────────────────────────────
     account_rows = []
     g_inv = g_svc = g_oth = g_mat = g_exp = g_dbt = D('0')
+    # Unaccounted = real transactions where method is 'other'/'unspecified'
+    # (cannot be attributed to a specific account)
+    unacc_in  = D('0')
+    unacc_out = D('0')
 
     for key in ACCOUNTS:
         t_in  = inv_in[key] + svc_in[key] + oth_in[key]
@@ -1443,6 +1447,31 @@ def compute_full_report(date_from, date_to):
             'net':       float(t_in - t_out),
         })
 
+    # ── Unaccounted: inflows with 'unspecified' payment method ────────────────
+    for inv in Invoice.objects.filter(
+        invoice_date__gte=date_from, invoice_date__lte=date_to,
+        advance_paid__gt=0, advance_payment_method='unspecified',
+    ).only('advance_paid'):
+        unacc_in += inv.advance_paid
+
+    for inc in OfficeIncome.objects.filter(
+        source='other', date__gte=date_from, date__lte=date_to,
+        payment_method='unspecified',
+    ).only('amount'):
+        unacc_in += inc.amount
+
+    # ── Unaccounted: outflows with 'other' payment method ─────────────────────
+    for exp in Expense.objects.filter(
+        date__gte=date_from, date__lte=date_to, payment_method='other',
+    ).only('amount'):
+        unacc_out += exp.amount
+
+    for dp in DebtPayment.objects.filter(
+        payment_date__gte=date_from, payment_date__lte=date_to,
+        payment_source='other',
+    ).only('amount'):
+        unacc_out += dp.amount
+
     grand_in  = g_inv + g_svc + g_oth
     grand_out = g_mat + g_exp + g_dbt
 
@@ -1463,6 +1492,10 @@ def compute_full_report(date_from, date_to):
         'grand_total_out':  float(grand_out),
         # Net
         'grand_net':        float(grand_in - grand_out),
+        # Unaccounted: real transactions with 'other'/'unspecified' method
+        # These exist in the DB but cannot be attributed to any account
+        'unacc_in':         float(unacc_in),
+        'unacc_out':        float(unacc_out),
     }
 
 

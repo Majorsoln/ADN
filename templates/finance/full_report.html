@@ -362,6 +362,32 @@
 {% endfor %}
 </div>
 
+{# ── Unaccounted warning ──────────────────────────────────────────────────── #}
+{% if data.unacc_in or data.unacc_out %}
+<div class="alert alert-warning d-flex gap-3 align-items-start mb-4">
+  <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-shrink-0"></i>
+  <div>
+    <strong>Miamala Isiyo na Akaunti Wazi</strong> — baadhi ya rekodi zina njia ya malipo
+    "<em>Haijabainishwa</em>" au "<em>Nyingine</em>" na hazijaweza kuorodheshwa kwenye akaunti yoyote hapo juu.
+    <div class="mt-1 d-flex flex-wrap gap-3">
+      {% if data.unacc_in %}
+        <span class="badge bg-success bg-opacity-75 fs-6 fw-normal px-3 py-2">
+          <i class="bi bi-arrow-down me-1"></i>Inayoingia: TZS {{ data.unacc_in|floatformat:0 }}
+        </span>
+      {% endif %}
+      {% if data.unacc_out %}
+        <span class="badge bg-danger bg-opacity-75 fs-6 fw-normal px-3 py-2">
+          <i class="bi bi-arrow-up me-1"></i>Inayotoka: TZS {{ data.unacc_out|floatformat:0 }}
+        </span>
+      {% endif %}
+    </div>
+    <small class="text-muted mt-1 d-block">
+      Rekebisha rekodi hizi — bainisha akaunti (Cash / Bank / M-Pesa / Cheque) ili zipate kuhesabiwa.
+    </small>
+  </div>
+</div>
+{% endif %}
+
 {% else %}
 {# No transactions in period #}
 <div class="alert alert-info">
