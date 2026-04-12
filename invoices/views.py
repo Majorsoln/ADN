@@ -10,7 +10,7 @@ from accounts.decorators import login_required, editor_required, admin_required
 
 @login_required
 def list_view(request):
-    qs = Invoice.objects.all()
+    qs = Invoice.objects.order_by('-invoice_date')
     status_filter = request.GET.get('status', '')
     search = request.GET.get('q', '')
     if status_filter:
