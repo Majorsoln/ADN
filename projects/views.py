@@ -209,7 +209,7 @@ def _funding_analysis(project, orders):
 
 @login_required
 def list_view(request):
-    qs = Project.objects.all()
+    qs = Project.objects.order_by('-start_date')
     status_filter = request.GET.get('status', '')
     search = request.GET.get('q', '')
     if status_filter:

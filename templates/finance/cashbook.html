@@ -144,6 +144,18 @@
           </tr>
         </thead>
         <tbody>
+          <!-- Opening balance row -->
+          <tr class="table-secondary">
+            <td class="text-muted small">{{ date_from|date:"d M Y" }}</td>
+            <td colspan="3" style="font-size:.85rem;font-style:italic;color:#64748b;">
+              Opening Balance
+            </td>
+            <td class="text-end"><span class="text-muted">—</span></td>
+            <td class="text-end"><span class="text-muted">—</span></td>
+            <td class="text-end fw-semibold {% if opening_balance >= 0 %}bal-pos{% else %}bal-neg{% endif %}">
+              {{ opening_balance|floatformat:0 }}
+            </td>
+          </tr>
           {% for e in entries %}
           <tr>
             <td class="text-muted small">{{ e.date|date:"d M Y" }}</td>
@@ -174,11 +186,17 @@
         </tbody>
         <tfoot class="table-light fw-bold">
           <tr>
-            <td colspan="4" class="text-end">Totals</td>
+            <td colspan="4" class="text-end text-muted" style="font-size:.85rem;">Period Movement</td>
             <td class="text-end text-success">{{ total_in|floatformat:0 }}</td>
             <td class="text-end text-danger">{{ total_out|floatformat:0 }}</td>
             <td class="text-end {% if net >= 0 %}text-success{% else %}text-danger{% endif %}">
               {{ net|floatformat:0 }}
+            </td>
+          </tr>
+          <tr style="border-top:2px solid #1a2e5a;">
+            <td colspan="6" class="text-end">Closing Balance</td>
+            <td class="text-end {% if closing_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+              {{ closing_balance|floatformat:0 }}
             </td>
           </tr>
         </tfoot>

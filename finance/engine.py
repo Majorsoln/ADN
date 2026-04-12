@@ -1864,6 +1864,42 @@ def compute_cashbook(date_from, date_to, account='all'):
         if m in ('credit', 'unspecified', ''): return None   # credit → Debt, skip
         return 'other'   # e.g. 'other' — real cash out, unclassified account
 
+    def _opening_balance():
+        """Net of all tracked cash flows strictly before date_from (opening balance)."""
+        def _ok(acct): return acct and (account == 'all' or acct == account)
+        net = D('0')
+        for p in InvoicePayment.objects.filter(payment_date__lt=date_from):
+            a = _ni(p.payment_method)
+            if _ok(a): net += p.amount
+        for inv in (Invoice.objects
+                    .filter(invoice_date__lt=date_from, advance_paid__gt=0)
+                    .only('advance_paid', 'advance_payment_method')):
+            a = _ni(inv.advance_payment_method)
+            if _ok(a): net += inv.advance_paid
+        for p in OfficeServicePayment.objects.filter(payment_date__lt=date_from):
+            a = _ni(p.payment_method)
+            if _ok(a): net += p.amount
+        for inc in OfficeIncome.objects.filter(source='other', date__lt=date_from):
+            a = _ni(inc.payment_method)
+            if _ok(a): net += inc.amount
+        for order in (MaterialOrder.objects
+                      .filter(order_date__lt=date_from,
+                              payment_source__in=('cash', 'bank', 'mpesa', 'cheque'),
+                              status__in=('ordered', 'partially_received', 'received'))):
+            a = _no(order.payment_source)
+            if _ok(a): net -= order.total_cost
+        for exp in (Expense.objects
+                    .filter(date__lt=date_from)
+                    .exclude(payment_method='credit')):
+            a = _no(exp.payment_method)
+            if _ok(a): net -= exp.amount
+        for dp in DebtPayment.objects.filter(payment_date__lt=date_from):
+            a = _no(dp.payment_source)
+            if _ok(a): net -= dp.amount
+        return net
+
+    opening_balance = _opening_balance()
+
     ACCT_LABEL = {
         'cash': 'Cash', 'bank': 'Bank',
         'mpesa': 'M-Pesa', 'cheque': 'Cheque',
@@ -2008,7 +2044,7 @@ def compute_cashbook(date_from, date_to, account='all'):
     entries.sort(key=lambda e: e['date'])
 
     # ── Running balance + labels ─────────────────────────────────────────────
-    running = D('0')
+    running = opening_balance
     for e in entries:
         running += e['in'] - e['out']
         e['balance']     = running
@@ -2019,8 +2055,10 @@ def compute_cashbook(date_from, date_to, account='all'):
     total_out = sum(e['out'] for e in entries)
 
     return {
-        'entries':    entries,
-        'total_in':   total_in,
-        'total_out':  total_out,
-        'net':        total_in - total_out,
+        'entries':         entries,
+        'total_in':        total_in,
+        'total_out':       total_out,
+        'net':             total_in - total_out,
+        'opening_balance': opening_balance,
+        'closing_balance': opening_balance + total_in - total_out,
     }
