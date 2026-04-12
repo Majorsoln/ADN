@@ -157,29 +157,100 @@ def rate_list(request):
 
 @login_required
 def income_overview(request):
-    all_incomes = OfficeIncome.objects.select_related('project', 'office_record').order_by('-date')
+    from decimal import Decimal
+    from datetime import date as _date
+    from projects.models import Project as Proj
 
-    def _sum(qs): return qs.aggregate(t=Sum('amount'))['t'] or 0
+    D = Decimal
+    METHOD_MAP = {
+        'cash': 'cash', 'bank_transfer': 'bank',
+        'mobile_money': 'mpesa', 'mpesa': 'mpesa',
+        'bank': 'bank', 'cheque': 'cheque',
+    }
 
-    project_total = _sum(all_incomes.filter(source='project_profit'))
-    service_total = _sum(all_incomes.filter(source='office_service'))
-    other_total   = _sum(all_incomes.filter(source='other'))
-    grand_total   = project_total + service_total + other_total
+    entries = []
 
-    # Cash / Bank breakdown
-    cash_total  = _sum(all_incomes.filter(payment_method='cash'))
-    bank_total  = _sum(all_incomes.filter(payment_method='bank'))
-    mpesa_total = _sum(all_incomes.filter(payment_method='mpesa'))
+    # ── 1. Project profits — always live from completed projects ─────────────
+    project_total = D('0')
+    for p in (Proj.objects.filter(status='completed')
+                          .select_related('invoice')
+                          .order_by('-completion_date')):
+        profit = p.gross_profit
+        entries.append({
+            'date':           p.completion_date or p.start_date,
+            'source':         'project_profit',
+            'source_display': 'Project Profit',
+            'project':        p,
+            'office_record':  None,
+            'description':    p.name,
+            'payment_method': 'unspecified',
+            'amount':         profit,
+            'pk':             None,
+        })
+        project_total += profit
+
+    # ── 2. Office service — total actually received per record ───────────────
+    service_total = D('0')
+    for rec in (OfficeServiceRecord.objects
+                .filter(status__in=('paid', 'partial'))
+                .prefetch_related('payments')
+                .order_by('-created_at')):
+        payments = list(rec.payments.all())
+        if not payments:
+            continue
+        total_paid = sum(p.amount for p in payments)
+        last_pay   = max(payments, key=lambda p: p.payment_date)
+        pm = METHOD_MAP.get(last_pay.payment_method, 'unspecified')
+        entries.append({
+            'date':           last_pay.payment_date,
+            'source':         'office_service',
+            'source_display': 'Office Service',
+            'project':        None,
+            'office_record':  rec,
+            'description':    f'{rec.client_name} ({rec.num_windows}W/{rec.num_doors}D)',
+            'payment_method': pm,
+            'amount':         total_paid,
+            'pk':             None,
+        })
+        service_total += total_paid
+
+    # ── 3. Other income — manual entries (always correct) ────────────────────
+    other_total = D('0')
+    for inc in OfficeIncome.objects.filter(source='other').order_by('-date'):
+        entries.append({
+            'date':           inc.date,
+            'source':         'other',
+            'source_display': 'Other Income',
+            'project':        None,
+            'office_record':  None,
+            'description':    inc.description,
+            'payment_method': inc.payment_method,
+            'amount':         inc.amount,
+            'pk':             inc.pk,
+        })
+        other_total += inc.amount
+
+    grand_total = project_total + service_total + other_total
+
+    # ── 4. Sort combined ledger newest-first ─────────────────────────────────
+    entries.sort(key=lambda e: e['date'] or _date.min, reverse=True)
+
+    # ── 5. Payment-method totals across all sources ───────────────────────────
+    totals = {'cash': D('0'), 'bank': D('0'), 'mpesa': D('0')}
+    for e in entries:
+        key = METHOD_MAP.get(e['payment_method'])
+        if key in totals:
+            totals[key] += e['amount']
 
     return render(request, 'office/income.html', {
-        'income_entries': all_incomes[:100],
-        'project_total':  project_total,
-        'service_total':  service_total,
-        'other_total':    other_total,
-        'grand_total':    grand_total,
-        'cash_total':     cash_total,
-        'bank_total':     bank_total,
-        'mpesa_total':    mpesa_total,
+        'income_entries':  entries[:200],
+        'project_total':   project_total,
+        'service_total':   service_total,
+        'other_total':     other_total,
+        'grand_total':     grand_total,
+        'cash_total':      totals['cash'],
+        'bank_total':      totals['bank'],
+        'mpesa_total':     totals['mpesa'],
         'account_choices': OfficeIncome.ACCOUNT_CHOICES,
     })
 
