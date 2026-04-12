@@ -12,6 +12,15 @@
   .table-responsive { overflow: visible !important; }
 }
 .print-header { display: none; }
+@media print {
+  .print-header { display: block !important; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 3px solid #1a2e5a; }
+  .print-header .ph-name { font-size: 15pt; font-weight: 700; color: #1a2e5a; }
+  .print-header .ph-meta { font-size: 8pt; color: #64748b; margin-top: 2px; }
+  .print-header .ph-title { font-size: 13pt; font-weight: 700; color: #3aacdc; text-align: right; }
+  .print-header .ph-period { font-size: 8.5pt; color: #94a3b8; text-align: right; }
+  @page { size: A4 portrait; margin: 12mm 16mm; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 
 /* ── Cards ──────────────────────────────────────────────────── */
 .kpi { border-radius: 10px; border: none; }
@@ -92,10 +101,18 @@
 
 {% if data %}
 
-{# Print header (hidden on screen) #}
+{# Print header (hidden on screen, shown when printing) #}
 <div class="print-header mb-3">
-  <h5 class="fw-bold mb-0">Cash &amp; Bank Flow Report</h5>
-  <small class="text-muted">{{ date_from }} – {{ date_to }}</small>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div>
+      <div class="ph-name">{{ company.name }}</div>
+      <div class="ph-meta">{{ company.address }} · {{ company.phone }} · {{ company.email }}</div>
+    </div>
+    <div>
+      <div class="ph-title">CASH &amp; BANK FLOW REPORT</div>
+      <div class="ph-period">{{ date_from }} – {{ date_to }}</div>
+    </div>
+  </div>
 </div>
 
 {# ── KPI strip ──────────────────────────────────────────────────────────── #}

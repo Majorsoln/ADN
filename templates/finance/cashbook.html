@@ -39,16 +39,37 @@
   .type-out  { color:#dc2626; font-weight:600; }
   .bal-pos   { color:#16a34a; }
   .bal-neg   { color:#dc2626; }
+  .print-header { display: none; }
   @media print {
     #sidebar, #topbar { display:none !important; }
-    #main { margin-left:0 !important; }
+    #main { margin-left:0 !important; padding:0 !important; }
     .no-print { display:none !important; }
     .table { font-size:.75rem; }
+    .print-header { display: block !important; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 3px solid #1a2e5a; }
+    .print-header h1 { font-size: 16pt; color: #1a2e5a; font-weight: 700; }
+    .print-header .sub { font-size: 8.5pt; color: #64748b; margin-top: 3px; }
+    .print-header .rpt-title { font-size: 13pt; font-weight: 700; color: #3aacdc; }
+    @page { size: A4 landscape; margin: 12mm 14mm; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Print-only company header -->
+<div class="print-header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div>
+      <h1>{{ company.name }}</h1>
+      <div class="sub">{{ company.address }} · {{ company.phone }} · {{ company.email }}</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="rpt-title">CASH BOOK</div>
+      <div class="sub">{{ date_from|date:"d M Y" }} — {{ date_to|date:"d M Y" }}{% if account != 'all' %} · {{ account|title }}{% endif %}</div>
+    </div>
+  </div>
+</div>
+
 <!-- KPI strip -->
 <div class="row g-3 mb-4">
   <div class="col-sm-4">

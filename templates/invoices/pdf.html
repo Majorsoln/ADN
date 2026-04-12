@@ -136,9 +136,12 @@
     .sig-block { flex: 1; }
     .sig-line { border-top: 1px solid #94a3b8; margin-top: 36px; padding-top: 4px; font-size: 8.5pt; color: #64748b; }
 
+    @page { size: A4 portrait; margin: 14mm 18mm 12mm 18mm; }
     @media print {
       .no-print { display: none !important; }
-      .page { padding: 20px; max-width: 100%; }
+      .page { padding: 0; max-width: 100%; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .footer-grid, .signature-row, .balance-due-block { page-break-inside: avoid; }
     }
 
     .print-bar {
@@ -169,7 +172,7 @@
 
 <div class="print-bar no-print">
   <div>
-    <span style="font-family:'DM Serif Display',serif;font-size:14pt;">ADN uPVC &amp; Aluminum Solutions</span>
+    <span style="font-family:'DM Serif Display',serif;font-size:14pt;">{{ company.name }}</span>
     <span style="margin-left:12px;font-size:9pt;opacity:.6;">– Invoice {{ invoice.invoice_no }}</span>
   </div>
   <div style="display:flex;gap:12px;align-items:center;">
@@ -183,11 +186,11 @@
   <!-- Header -->
   <div class="doc-header">
     <div class="company-block">
-      <h1>ADN <span>uPVC</span> &amp; Aluminum<br>Solutions</h1>
+      <h1>{{ company.name }}</h1>
       <div class="meta">
-        Arusha, Tanzania<br>
-        +255 XXX XXX XXX · info@adnarusha.com<br>
-        TIN: XXX-XXX-XXX
+        {{ company.address }}<br>
+        {{ company.phone }} · {{ company.email }}<br>
+        TIN: {{ company.tin }}
       </div>
     </div>
     <div class="doc-title-block">
@@ -222,11 +225,11 @@
     </div>
     <div class="meta-box">
       <div class="box-label">From</div>
-      <div class="box-name">ADN uPVC &amp; Aluminum Solutions</div>
+      <div class="box-name">{{ company.name }}</div>
       <div class="box-detail">
-        📍 Arusha, Tanzania<br>
-        📞 +255 XXX XXX XXX<br>
-        ✉ info@adnarusha.com
+        📍 {{ company.address }}<br>
+        📞 {{ company.phone }}<br>
+        ✉ {{ company.email }}
       </div>
     </div>
   </div>
@@ -289,10 +292,10 @@
     <div class="footer-col">
       <div class="sec-heading">Payment Details – Bank Transfer</div>
       <div class="bank-box">
-        <strong>ADN uPVC &amp; Aluminum Solutions</strong><br>
-        Bank: CRDB Bank<br>
-        Account No: XXXXXXXXXXXXXXX<br>
-        Branch: Arusha Branch<br>
+        <strong>{{ company.account_name }}</strong><br>
+        Bank: {{ company.bank_name }}<br>
+        Account No: {{ company.bank_account }}<br>
+        Branch: {{ company.bank_branch }}<br>
         <em style="font-size:8pt;color:#94a3b8;">Please use {{ invoice.invoice_no }} as payment reference.</em>
       </div>
     </div>
@@ -304,7 +307,7 @@
       <div style="font-size:9pt;color:#94a3b8;line-height:1.6;">
         Thank you for your business.<br>
         Payment is due by {{ invoice.due_date|date:"d F Y"|default:"the agreed date" }}.<br>
-        For queries, contact us at +255 XXX XXX XXX.
+        For queries, contact us at {{ company.phone }}.
       </div>
       {% endif %}
     </div>
@@ -313,7 +316,7 @@
   <!-- Signatures -->
   <div class="signature-row">
     <div class="sig-block">
-      <div class="sig-line">Authorized Signatory – ADN Solutions</div>
+      <div class="sig-line">Authorized Signatory – {{ company.name }}</div>
     </div>
     <div class="sig-block">
       <div class="sig-line">Client Acknowledgment – {{ invoice.client_name }}</div>
@@ -322,7 +325,7 @@
 
   <!-- Footer strip -->
   <div style="margin-top:24px;text-align:center;font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;">
-    ADN uPVC &amp; Aluminum Solutions · Arusha, Tanzania · Thank you for your business.
+    {{ company.name }} · {{ company.address }} · {{ company.phone }} · Thank you for your business.
   </div>
 
 </div>

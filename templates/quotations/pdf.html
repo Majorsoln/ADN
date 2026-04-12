@@ -165,11 +165,13 @@
     }
 
     /* ── Print ─────────────────────────────────── */
+    @page { size: A4 portrait; margin: 14mm 18mm 12mm 18mm; }
     @media print {
       .no-print { display: none !important; }
-      body { font-size: 9.5pt; }
-      .page { padding: 18px 22px; max-width: 100%; }
+      body { font-size: 9.5pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { padding: 0; max-width: 100%; }
       table.opts tbody td { padding: 10px 8px; }
+      .order-block, .sig-row, .footer-grid { page-break-inside: avoid; }
     }
   </style>
 </head>
@@ -178,7 +180,7 @@
 <!-- ── Print toolbar ──────────────────────────────────────── -->
 <div class="print-bar no-print">
   <div>
-    <div class="bar-title">ADN uPVC &amp; Aluminum Solutions</div>
+    <div class="bar-title">{{ company.name }}</div>
     <div class="bar-ref">{{ quotation.quote_no }}{% if is_final %} — Final Quotation{% endif %}</div>
   </div>
   <div class="bar-acts">
@@ -197,10 +199,10 @@
   <!-- ── Header ─────────────────────────────────────────────── -->
   <div class="doc-header">
     <div>
-      <div class="company-name">ADN <span>uPVC</span> &amp; Aluminum<br>Solutions</div>
+      <div class="company-name">{{ company.name }}</div>
       <div class="company-sub">
-        Arusha, Tanzania &nbsp;·&nbsp; +255 XXX XXX XXX<br>
-        Reg. No: 162491113 &nbsp;|&nbsp; VAT TIN: 162-491-113
+        {{ company.address }} &nbsp;·&nbsp; {{ company.phone }}<br>
+        {{ company.email }} &nbsp;|&nbsp; TIN: {{ company.tin }}
       </div>
     </div>
     <div class="doc-right">
@@ -403,10 +405,10 @@
     <div class="footer-col">
       <div class="sec-head">Payment – Bank Transfer</div>
       <div class="bank-box">
-        <strong>ADN Hardware Solutions Limited PVC</strong><br>
-        Bank: CRDB Bank<br>
-        Account No: <strong>0150792421302</strong><br>
-        Branch: Dar es Salaam
+        <strong>{{ company.account_name }}</strong><br>
+        Bank: {{ company.bank_name }}<br>
+        Account No: <strong>{{ company.bank_account }}</strong><br>
+        Branch: {{ company.bank_branch }}
       </div>
     </div>
     <div class="footer-col">
@@ -433,7 +435,7 @@
   {% if is_final %}
   <div class="sig-row">
     <div class="sig-block">
-      <div class="sig-line">Authorized Signatory – ADN uPVC &amp; Aluminum Solutions</div>
+      <div class="sig-line">Authorized Signatory – {{ company.name }}</div>
     </div>
     <div class="sig-block">
       <div class="sig-line">Client Acceptance – {{ quotation.client_name }}</div>
@@ -443,11 +445,11 @@
   <div class="next-step">
     <strong>Next Step:</strong> Please indicate your preferred option (circle the row or initial the column) and
     contact our team to confirm. We will prepare your final quotation immediately.
-    &nbsp;📞 +255 XXX XXX XXX
+    &nbsp;📞 {{ company.phone }}
   </div>
   <div class="sig-row">
     <div class="sig-block">
-      <div class="sig-line">Prepared by – ADN uPVC &amp; Aluminum Solutions</div>
+      <div class="sig-line">Prepared by – {{ company.name }}</div>
     </div>
     <div class="sig-block">
       <div class="sig-line">Client Preferred Option &amp; Signature – {{ quotation.client_name }}</div>
@@ -457,7 +459,7 @@
 
   <!-- ── Page footer ──────────────────────────────────────────── -->
   <div style="margin-top:22px;text-align:center;font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px;">
-    ADN uPVC &amp; Aluminum Solutions · Arusha, Tanzania · Reg. 162491113 · VAT TIN: 162-491-113 · Thank you for your business.
+    {{ company.name }} · {{ company.address }} · TIN: {{ company.tin }} · Thank you for your business.
   </div>
 
 </div>

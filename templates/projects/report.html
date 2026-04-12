@@ -94,10 +94,12 @@
     .badge-received { background:#dcfce7; color:#15803d; }
     .badge-cancelled { background:#fee2e2; color:#dc2626; }
 
+    @page { size: A4 portrait; margin: 14mm 18mm 12mm 18mm; }
     @media print {
       .print-bar { display:none; }
-      .page { padding:18px 24px; max-width:100%; }
-      body { font-size:9.5pt; }
+      .page { padding:0; max-width:100%; }
+      body { font-size:9.5pt; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .order-block, .fin-box, .sig-row { page-break-inside:avoid; }
     }
   </style>
 </head>
@@ -125,8 +127,8 @@
   <!-- ── Doc Header ── -->
   <div class="doc-header">
     <div class="company">
-      <h1>ADN <span>uPVC</span> &amp; Aluminum Solutions</h1>
-      <div class="meta">Arusha, Tanzania · +255 XXX XXX XXX<br>info@adnarusha.com · www.adnarusha.com</div>
+      <h1>{{ company.name }}</h1>
+      <div class="meta">{{ company.address }} · {{ company.phone }}<br>{{ company.email }} · {{ company.website }}</div>
     </div>
     <div class="doc-label">
       <div class="type">PROJECT REPORT</div>
@@ -632,18 +634,18 @@
   <!-- ── Signatures ── -->
   <div class="sig-row">
     <div class="sig-block">
-      <div class="sig-line">Project Manager – ADN Solutions</div>
+      <div class="sig-line">Project Manager – {{ company.name }}</div>
     </div>
     <div class="sig-block">
       <div class="sig-line">Client – {{ project.client_name }}</div>
     </div>
     <div class="sig-block">
-      <div class="sig-line">Director – ADN Solutions</div>
+      <div class="sig-line">Director – {{ company.name }}</div>
     </div>
   </div>
 
   <div style="margin-top:24px;text-align:center;font-size:7.5pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px;">
-    ADN uPVC &amp; Aluminum Solutions · Arusha, Tanzania · {{ today|date:"Y" }}
+    {{ company.name }} · {{ company.address }} · {{ today|date:"Y" }}
   </div>
 
 </div>
