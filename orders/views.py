@@ -152,9 +152,14 @@ def edit_view(request, pk):
                 order.project.save(update_fields=['status'])
                 _log(order.project, 'status', 'Status changed: Planning → Materials Ordered')
 
-            # Auto-create or update Debt if now ordered on credit
-            if order.status == 'ordered' and order.payment_source == 'credit':
-                from finance.models import Debt
+            # ── Sync Debt record with payment source ─────────────────────────
+            from finance.models import Debt
+            is_active    = order.status not in ('draft', 'cancelled')
+            now_credit   = order.payment_source == 'credit'
+            was_credit   = old_payment_source == 'credit'
+
+            if is_active and now_credit:
+                # Ensure a Debt record exists and reflects current order values
                 debt, created = Debt.objects.get_or_create(
                     material_order=order,
                     defaults={
@@ -169,13 +174,35 @@ def edit_view(request, pk):
                         'project': order.project,
                     }
                 )
-                if not created and debt.amount != order.total_cost:
-                    debt.amount = order.total_cost
-                    debt.save(update_fields=['amount'])
+                if not created:
+                    updates = {}
+                    if debt.amount != order.total_cost:
+                        updates['amount'] = order.total_cost
+                    if debt.creditor_name != order.supplier_name:
+                        updates['creditor_name'] = order.supplier_name
+                    if updates:
+                        for k, v in updates.items():
+                            setattr(debt, k, v)
+                        debt.save(update_fields=list(updates.keys()))
                 if created:
                     _log(order.project, 'order_edit',
-                         f'Debt auto-created: TZS {order.total_cost:,.0f} owed to '
+                         f'Debt created: TZS {order.total_cost:,.0f} owed to '
                          f'{order.supplier_name} (credit purchase)')
+
+            elif was_credit and not now_credit:
+                # Switched away from credit — remove auto-created debt if no payments yet
+                for debt in Debt.objects.filter(material_order=order):
+                    if not debt.payments.exists():
+                        debt.delete()
+                        _log(order.project, 'order_edit',
+                             f'Debt removed: payment source changed from credit '
+                             f'to {order.get_payment_source_display()}')
+                    else:
+                        messages.warning(
+                            request,
+                            f'Debt to {debt.creditor_name} was kept — it already has '
+                            f'repayment records. Settle or delete it manually.'
+                        )
 
             # Auto-advance project to in_progress if first delivery received
             if order.status == 'received' and old_status != 'received' and order.project.status == 'ordered':
