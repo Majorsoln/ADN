@@ -1556,6 +1556,7 @@ def compute_snapshot(for_date=None):
         'advance_rows':   adv_rows,
         'office_income':  off_income,
         'other_income':   oth_income,
+        'other_income_rows': list(oth_records),
         'inv_payments':   inv_payments,
         'off_payments':   off_payments,
         # Expenses today (ALL including credit — template marks credit rows)

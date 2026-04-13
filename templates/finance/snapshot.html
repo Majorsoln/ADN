@@ -68,13 +68,19 @@
           </div>
           {% if data.credit_exp_total %}
           <div class="d-flex justify-content-between small mt-1">
-            <span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i>Credit (Madeni mapya)</span>
+            <span class="text-warning"><i class="bi bi-exclamation-circle me-1"></i>Credit (New Debts)</span>
             <span class="text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
+          </div>
+          {% endif %}
+          {% if data.mat_orders_today %}
+          <div class="d-flex justify-content-between small mt-1">
+            <span class="text-muted"><i class="bi bi-box-seam me-1"></i>Material Orders (Cash Paid)</span>
+            <span class="text-danger">TZS {{ data.mat_orders_today|floatformat:0 }}</span>
           </div>
           {% endif %}
           {% if data.debt_payments %}
           <div class="d-flex justify-content-between small mt-1">
-            <span class="text-muted"><i class="bi bi-arrow-return-right me-1"></i>Malipo ya Madeni</span>
+            <span class="text-muted"><i class="bi bi-arrow-return-right me-1"></i>Debt Repayments</span>
             <span class="text-danger">TZS {{ data.debt_payments_total|floatformat:0 }}</span>
           </div>
           {% endif %}
@@ -103,11 +109,11 @@
         <i class="bi bi-arrow-down-circle-fill me-2"></i>Payments Received
       </div>
       <div class="card-body p-0">
-        {% if data.inv_payments or data.off_payments or data.advance_rows %}
+        {% if data.inv_payments or data.off_payments or data.advance_rows or data.other_income_rows %}
         <div class="table-responsive">
           <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
-              <tr><th>Aina</th><th>Mteja</th><th>Njia</th><th class="text-end">Kiasi (TZS)</th></tr>
+              <tr><th>Type</th><th>Client</th><th>Method</th><th class="text-end">Amount (TZS)</th></tr>
             </thead>
             <tbody>
               {% for inv in data.advance_rows %}
@@ -128,17 +134,25 @@
               {% endfor %}
               {% for p in data.off_payments %}
               <tr>
-                <td><span class="badge bg-secondary">Office</span></td>
+                <td><span class="badge bg-secondary">Office Service</span></td>
                 <td>{{ p.record.client_name }}</td>
                 <td class="small text-muted">{{ p.get_payment_method_display }}</td>
                 <td class="text-end fw-semibold text-success">{{ p.amount|floatformat:0 }}</td>
+              </tr>
+              {% endfor %}
+              {% for inc in data.other_income_rows %}
+              <tr>
+                <td><span class="badge bg-warning text-dark">Other Income</span></td>
+                <td class="small text-muted">{{ inc.description|default:"—" }}</td>
+                <td class="small text-muted">{{ inc.get_payment_method_display }}</td>
+                <td class="text-end fw-semibold text-success">{{ inc.amount|floatformat:0 }}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
         {% else %}
-        <div class="text-center text-muted py-4">Hakuna malipo yaliyoandikwa leo.</div>
+        <div class="text-center text-muted py-4">No payments recorded today.</div>
         {% endif %}
       </div>
     </div>
@@ -156,7 +170,7 @@
       {% if data.credit_exp_total %}
       <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background:#fef9c3;">
         <span class="small"><i class="bi bi-exclamation-circle me-1 text-warning"></i>
-          Credit expenses — <strong>no cash paid</strong> (madeni mapya yaliyoandikwa)</span>
+          Credit expenses — <strong>no cash paid</strong> (new debts recorded today)</span>
         <span class="small fw-bold text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
       </div>
       {% endif %}
@@ -177,7 +191,7 @@
                 <td class="text-muted small">{{ e.description|truncatechars:35 }}</td>
                 <td>
                   {% if e.payment_method == 'credit' %}
-                  <span class="badge bg-warning text-dark" style="font-size:.65rem;">Credit (Deni)</span>
+                  <span class="badge bg-warning text-dark" style="font-size:.65rem;">Credit (Debt)</span>
                   {% else %}
                   <span class="badge bg-light text-dark" style="font-size:.65rem;">{{ e.payment_method }}</span>
                   {% endif %}
@@ -202,14 +216,14 @@
   <div class="col-12">
     <div class="card border-0 shadow-sm">
       <div class="card-header bg-danger bg-opacity-10 fw-semibold text-danger d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-arrow-return-right me-2"></i>Malipo ya Madeni Leo</span>
+        <span><i class="bi bi-arrow-return-right me-2"></i>Debt Repayments Today</span>
         <span class="fw-bold">TZS {{ data.debt_payments_total|floatformat:0 }}</span>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-sm table-hover mb-0">
             <thead class="table-light">
-              <tr><th>Deni (Creditor)</th><th>Aina</th><th>Chanzo cha Pesa</th><th class="text-end">Kiasi (TZS)</th></tr>
+              <tr><th>Creditor</th><th>Type</th><th>Payment Source</th><th class="text-end">Amount (TZS)</th></tr>
             </thead>
             <tbody>
               {% for dp in data.debt_payments %}
@@ -334,8 +348,8 @@
   <div class="col-12">
     <div class="card border-0 shadow-sm" style="border-left:4px solid #1a2e5a!important;">
       <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f0f4ff;">
-        <span><i class="bi bi-wallet2 me-2" style="color:#1a2e5a;"></i>Pesa Ziko Wapi — Funds Position</span>
-        <a href="{% url 'finance:report' %}" class="btn btn-sm btn-outline-primary">Ripoti Kamili →</a>
+        <span><i class="bi bi-wallet2 me-2" style="color:#1a2e5a;"></i>Funds Position</span>
+        <a href="{% url 'finance:report' %}" class="btn btn-sm btn-outline-primary">Full Report →</a>
       </div>
       <div class="card-body py-3">
         <div class="row g-2 mb-3">
@@ -358,16 +372,16 @@
         <div class="row g-2">
           <div class="col-sm-4">
             <div class="p-2 rounded text-center" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-              <div class="small text-muted mb-1">Wateja Wanaokudai</div>
+              <div class="small text-muted mb-1">Receivables (Owed to Us)</div>
               <div class="fw-bold text-success">TZS {{ data.funds.total_receivable|floatformat:0 }}</div>
             </div>
           </div>
           <div class="col-sm-4">
             <div class="p-2 rounded text-center" style="background:#fff1f2;border:1px solid #fecaca;">
-              <div class="small text-muted mb-1">Tunaodai (Credit)</div>
+              <div class="small text-muted mb-1">Payables (We Owe)</div>
               <div class="fw-bold text-danger">TZS {{ data.funds.total_payable|floatformat:0 }}</div>
-              {% if data.funds.labour_credit > 0 %}<div style="font-size:.65rem;color:#dc2626;">Mafundi: {{ data.funds.labour_credit|floatformat:0 }}</div>{% endif %}
-              {% if data.funds.material_credit > 0 %}<div style="font-size:.65rem;color:#dc2626;">Malighafi: {{ data.funds.material_credit|floatformat:0 }}</div>{% endif %}
+              {% if data.funds.labour_credit > 0 %}<div style="font-size:.65rem;color:#dc2626;">Labour: {{ data.funds.labour_credit|floatformat:0 }}</div>{% endif %}
+              {% if data.funds.material_credit > 0 %}<div style="font-size:.65rem;color:#dc2626;">Materials: {{ data.funds.material_credit|floatformat:0 }}</div>{% endif %}
             </div>
           </div>
           <div class="col-sm-4">
