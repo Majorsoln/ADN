@@ -32,13 +32,36 @@ def snapshot_view(request):
     except ValueError:
         for_date = date.today()
 
+    from quotations.models import Quotation
+    from invoices.models import Invoice
+    from projects.models import Project
+
     data = compute_snapshot(for_date=for_date)
+
+    # Today's business activity
+    quotes_today    = list(Quotation.objects.filter(quote_date=for_date).order_by('-created_at'))
+    invoices_today  = list(Invoice.objects.filter(invoice_date=for_date)
+                           .exclude(status='cancelled').order_by('-created_at'))
+    # Invoices due today or overdue (unpaid)
+    invoices_due    = list(Invoice.objects.filter(due_date=for_date)
+                           .exclude(status__in=['paid', 'cancelled']).order_by('client_name'))
+    invoices_overdue = list(Invoice.objects.filter(due_date__lt=for_date)
+                            .exclude(status__in=['paid', 'cancelled']).order_by('due_date')[:10])
+    # Active projects
+    active_projects = list(Project.objects.filter(status__in=['in_progress', 'ordered'])
+                           .order_by('-start_date')[:8])
+
     return render(request, 'finance/snapshot.html', {
-        'data': data,
-        'for_date': for_date,
-        'prev_date': for_date - timedelta(days=1),
-        'next_date': for_date + timedelta(days=1),
-        'is_today': for_date == date.today(),
+        'data':              data,
+        'for_date':          for_date,
+        'prev_date':         for_date - timedelta(days=1),
+        'next_date':         for_date + timedelta(days=1),
+        'is_today':          for_date == date.today(),
+        'quotes_today':      quotes_today,
+        'invoices_today':    invoices_today,
+        'invoices_due':      invoices_due,
+        'invoices_overdue':  invoices_overdue,
+        'active_projects':   active_projects,
     })
 
 
