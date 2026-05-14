@@ -211,6 +211,15 @@ def pdf_view(request, pk):
     quotation = get_object_or_404(Quotation, pk=pk)
     options = quotation.material_options
 
+    has_tax = any([
+        quotation.vat_enabled,
+        quotation.service_levy_enabled,
+        quotation.skills_levy_enabled,
+        quotation.withholding_enabled,
+        quotation.custom1_enabled,
+        quotation.custom2_enabled,
+    ])
+
     if quotation.accepted_material_id:
         # FINAL document — only the accepted option
         selected = next(
@@ -221,19 +230,21 @@ def pdf_view(request, pk):
             'quotation': quotation,
             'items': quotation.items.all(),
             'selected_option': selected,
-            'all_options': [],          # hide comparison — final doc
+            'all_options': [],
             'accepted_mat_pk': quotation.accepted_material_id,
             'is_final': True,
+            'has_tax': has_tax,
         }
     else:
         # DRAFT/SENT — show every option in full so the client can choose
         context = {
             'quotation': quotation,
             'items': quotation.items.all(),
-            'selected_option': None,    # no single highlight — show all
+            'selected_option': None,
             'all_options': options,
             'accepted_mat_pk': None,
             'is_final': False,
+            'has_tax': has_tax,
         }
     return render(request, 'quotations/pdf.html', context)
 

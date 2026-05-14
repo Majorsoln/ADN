@@ -121,6 +121,7 @@
     .cell-disc    { color: #dc2626; }
     .cell-after   { color: #f59e0b; }
     .cell-final   { color: #16a34a; }
+    .cell-tax     { color: #7c3aed; }
     .cell-label   { font-size: 7.5pt; font-weight: 600; letter-spacing:.03em; display:block; margin-bottom:2px; }
     .cell-amount  { font-size: 11pt; font-weight: 800; display:block; }
     /* final/confirmed row */
@@ -306,6 +307,7 @@
         <th>Subtotal</th>
         {% if quotation.discount_value %}<th>Discount</th>{% endif %}
         <th>After Discount</th>
+        {% if has_tax %}<th>Tax</th>{% endif %}
         <th>Final Investment</th>
       </tr>
     </thead>
@@ -336,20 +338,22 @@
           <span class="cell-label cell-after">TZS</span>
           <span class="cell-amount cell-after">{{ selected_option.after_disc|floatformat:0 }}</span>
         </td>
+        {% if has_tax %}
+        <td>
+          <span class="cell-label cell-tax">TZS</span>
+          <span class="cell-amount cell-tax">{{ selected_option.tax_total|floatformat:0 }}</span>
+          {% if selected_option.taxes %}
+          <span style="font-size:7pt;color:#7c3aed;display:block;margin-top:3px;line-height:1.5;">
+            {% for tax in selected_option.taxes %}{{ tax.name }}: {{ tax.amount|floatformat:0 }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+          </span>
+          {% endif %}
+        </td>
+        {% endif %}
         <td>
           <span class="cell-label cell-final">TZS</span>
           <span class="cell-amount cell-final">{{ selected_option.grand|floatformat:0 }}</span>
         </td>
       </tr>
-      {% if selected_option.taxes %}
-      <tr>
-        <td colspan="2" style="font-size:8.5pt;color:#64748b;text-align:left;background:#f8fafc;">
-          Additional taxes applied:
-          {% for tax in selected_option.taxes %}{{ tax.name }}: TZS {{ tax.amount|floatformat:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}
-        </td>
-        <td colspan="{% if quotation.discount_value %}5{% else %}4{% endif %}" style="background:#f8fafc;"></td>
-      </tr>
-      {% endif %}
       {% else %}
       {% for opt in all_options %}
       <tr>
@@ -376,6 +380,17 @@
           <span class="cell-label cell-after">TZS</span>
           <span class="cell-amount cell-after">{{ opt.after_disc|floatformat:0 }}</span>
         </td>
+        {% if has_tax %}
+        <td>
+          <span class="cell-label cell-tax">TZS</span>
+          <span class="cell-amount cell-tax">{{ opt.tax_total|floatformat:0 }}</span>
+          {% if opt.taxes %}
+          <span style="font-size:7pt;color:#7c3aed;display:block;margin-top:3px;line-height:1.5;">
+            {% for tax in opt.taxes %}{{ tax.name }}: {{ tax.amount|floatformat:0 }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+          </span>
+          {% endif %}
+        </td>
+        {% endif %}
         <td>
           <span class="cell-label cell-final">TZS</span>
           <span class="cell-amount cell-final">{{ opt.grand|floatformat:0 }}</span>
