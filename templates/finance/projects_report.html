@@ -44,7 +44,7 @@
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
         <div class="small text-muted mb-1">Total Revenue (Mapato)</div>
-        <div class="fs-4 fw-bold text-success">TZS {{ data.total_revenue|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-success">TZS {{ data.total_revenue|tzs }}</div>
         <div class="small text-muted mt-1">{{ data.rows|length }} project(s)</div>
       </div>
     </div>
@@ -53,9 +53,9 @@
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
         <div class="small text-muted mb-1">Total Cost (Gharama)</div>
-        <div class="fs-4 fw-bold text-danger">TZS {{ data.total_cost|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-danger">TZS {{ data.total_cost|tzs }}</div>
         <div class="small text-muted mt-1">
-          Materials: {{ data.total_materials|floatformat:0 }} | Expenses: {{ data.total_expenses|floatformat:0 }}
+          Materials: {{ data.total_materials|tzs }} | Expenses: {{ data.total_expenses|tzs }}
         </div>
       </div>
     </div>
@@ -65,7 +65,7 @@
       <div class="card-body">
         <div class="small text-muted mb-1">Total Profit (Faida)</div>
         <div class="fs-4 fw-bold {% if data.total_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
-          TZS {{ data.total_profit|floatformat:0 }}
+          TZS {{ data.total_profit|tzs }}
         </div>
         <div class="small text-muted mt-1">Margin: {{ data.profit_margin|floatformat:1 }}%</div>
       </div>
@@ -75,8 +75,8 @@
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
         <div class="small text-muted mb-1">Outstanding (AR — Bado Hawajalipa)</div>
-        <div class="fs-4 fw-bold text-warning">TZS {{ data.total_outstanding|floatformat:0 }}</div>
-        <div class="small text-muted mt-1">Received: {{ data.total_received|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-warning">TZS {{ data.total_outstanding|tzs }}</div>
+        <div class="small text-muted mt-1">Received: {{ data.total_received|tzs }}</div>
       </div>
     </div>
   </div>
@@ -92,25 +92,25 @@
       <div class="col-sm-3">
         <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
           <div class="small text-muted mb-1"><i class="bi bi-cash-coin me-1"></i>Cash</div>
-          <div class="fs-5 fw-bold text-success">TZS {{ data.rev_cash|floatformat:0 }}</div>
+          <div class="fs-5 fw-bold text-success">TZS {{ data.rev_cash|tzs }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-3 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
           <div class="small text-muted mb-1"><i class="bi bi-bank me-1"></i>Bank Transfer</div>
-          <div class="fs-5 fw-bold text-primary">TZS {{ data.rev_bank|floatformat:0 }}</div>
+          <div class="fs-5 fw-bold text-primary">TZS {{ data.rev_bank|tzs }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #a7f3d0;">
           <div class="small text-muted mb-1"><i class="bi bi-phone me-1"></i>M-Pesa</div>
-          <div class="fs-5 fw-bold" style="color:#059669;">TZS {{ data.rev_mpesa|floatformat:0 }}</div>
+          <div class="fs-5 fw-bold" style="color:#059669;">TZS {{ data.rev_mpesa|tzs }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-3 rounded" style="background:#fef9c3;border:1px solid #fde68a;">
           <div class="small text-muted mb-1"><i class="bi bi-clock me-1"></i>Still Pending (Bado hawajalipa)</div>
-          <div class="fs-5 fw-bold text-warning">TZS {{ data.total_outstanding|floatformat:0 }}</div>
+          <div class="fs-5 fw-bold text-warning">TZS {{ data.total_outstanding|tzs }}</div>
         </div>
       </div>
     </div>
@@ -162,21 +162,21 @@
                 {{ r.status_display }}
               </span>
             </td>
-            <td class="text-end fw-semibold">{{ r.revenue|floatformat:0 }}</td>
-            <td class="text-end text-success">{{ r.rev_cash|floatformat:0 }}</td>
-            <td class="text-end text-primary">{{ r.rev_bank|floatformat:0 }}</td>
+            <td class="text-end fw-semibold">{{ r.revenue|tzs }}</td>
+            <td class="text-end text-success">{{ r.rev_cash|tzs }}</td>
+            <td class="text-end text-primary">{{ r.rev_bank|tzs }}</td>
             <td class="text-end {% if r.rev_outstanding > 0 %}text-warning fw-semibold{% else %}text-muted{% endif %}">
-              {{ r.rev_outstanding|floatformat:0 }}
+              {{ r.rev_outstanding|tzs }}
             </td>
-            <td class="text-end text-muted">{{ r.materials_cost|floatformat:0 }}</td>
-            <td class="text-end text-muted">{{ r.expenses_cost|floatformat:0 }}</td>
+            <td class="text-end text-muted">{{ r.materials_cost|tzs }}</td>
+            <td class="text-end text-muted">{{ r.expenses_cost|tzs }}</td>
             <td class="text-end fw-bold {% if r.gross_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-              {{ r.gross_profit|floatformat:0 }}
+              {{ r.gross_profit|tzs }}
             </td>
             <td>
               <div class="progress" style="height:5px;margin-top:7px;min-width:60px">
                 <div class="progress-bar {% if r.profit_margin >= 0 %}bg-success{% else %}bg-danger{% endif %}"
-                     style="width:{% if r.profit_margin >= 0 %}{{ r.profit_margin|floatformat:0 }}{% else %}100{% endif %}%"></div>
+                     style="width:{% if r.profit_margin >= 0 %}{{ r.profit_margin|tzs }}{% else %}100{% endif %}%"></div>
               </div>
               <small class="{% if r.profit_margin >= 0 %}text-success{% else %}text-danger{% endif %}">
                 {{ r.profit_margin|floatformat:1 }}%
@@ -188,14 +188,14 @@
         <tfoot class="table-light fw-bold">
           <tr>
             <td colspan="2">TOTAL ({{ data.rows|length }} projects)</td>
-            <td class="text-end">TZS {{ data.total_revenue|floatformat:0 }}</td>
-            <td class="text-end text-success">{{ data.rev_cash|floatformat:0 }}</td>
-            <td class="text-end text-primary">{{ data.rev_bank|floatformat:0 }}</td>
-            <td class="text-end text-warning">{{ data.total_outstanding|floatformat:0 }}</td>
-            <td class="text-end text-muted">{{ data.total_materials|floatformat:0 }}</td>
-            <td class="text-end text-muted">{{ data.total_expenses|floatformat:0 }}</td>
+            <td class="text-end">TZS {{ data.total_revenue|tzs }}</td>
+            <td class="text-end text-success">{{ data.rev_cash|tzs }}</td>
+            <td class="text-end text-primary">{{ data.rev_bank|tzs }}</td>
+            <td class="text-end text-warning">{{ data.total_outstanding|tzs }}</td>
+            <td class="text-end text-muted">{{ data.total_materials|tzs }}</td>
+            <td class="text-end text-muted">{{ data.total_expenses|tzs }}</td>
             <td class="text-end {% if data.total_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
-              TZS {{ data.total_profit|floatformat:0 }}
+              TZS {{ data.total_profit|tzs }}
             </td>
             <td><small>{{ data.profit_margin|floatformat:1 }}%</small></td>
           </tr>

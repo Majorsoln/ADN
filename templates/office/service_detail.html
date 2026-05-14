@@ -43,30 +43,30 @@
             <div class="p-3 rounded" style="background:#dbeafe;">
               <div class="fw-bold" style="font-size:2rem;color:#2563eb;">{{ record.num_windows }}</div>
               <div class="small text-muted">Windows</div>
-              <div class="small text-muted">@ TZS {{ record.rate_per_window|floatformat:0 }}</div>
+              <div class="small text-muted">@ TZS {{ record.rate_per_window|tzs }}</div>
             </div>
           </div>
           <div class="col-md-3 text-center">
             <div class="p-3 rounded" style="background:#e0e7ff;">
               <div class="fw-bold" style="font-size:2rem;color:#4338ca;">{{ record.num_doors }}</div>
               <div class="small text-muted">Doors</div>
-              <div class="small text-muted">@ TZS {{ record.rate_per_door|floatformat:0 }}</div>
+              <div class="small text-muted">@ TZS {{ record.rate_per_door|tzs }}</div>
             </div>
           </div>
           <div class="col-md-6">
             <div class="p-3 rounded h-100" style="background:#f8fafc;border:1px solid var(--adn-border);">
               <div class="d-flex justify-content-between small mb-2">
-                <span class="text-muted">Windows ({{ record.num_windows }} × {{ record.rate_per_window|floatformat:0 }})</span>
-                <span class="fw-semibold">{{ record.num_windows|floatformat:0 }} × {{ record.rate_per_window|floatformat:0 }}</span>
+                <span class="text-muted">Windows ({{ record.num_windows }} × {{ record.rate_per_window|tzs }})</span>
+                <span class="fw-semibold">{{ record.num_windows|tzs }} × {{ record.rate_per_window|tzs }}</span>
               </div>
               <div class="d-flex justify-content-between small mb-2">
-                <span class="text-muted">Doors ({{ record.num_doors }} × {{ record.rate_per_door|floatformat:0 }})</span>
-                <span class="fw-semibold">{{ record.num_doors|floatformat:0 }} × {{ record.rate_per_door|floatformat:0 }}</span>
+                <span class="text-muted">Doors ({{ record.num_doors }} × {{ record.rate_per_door|tzs }})</span>
+                <span class="fw-semibold">{{ record.num_doors|tzs }} × {{ record.rate_per_door|tzs }}</span>
               </div>
               <hr class="my-2">
               <div class="d-flex justify-content-between fw-bold">
                 <span>Total Charge</span>
-                <span class="text-primary">TZS {{ record.total_charge|floatformat:0 }}</span>
+                <span class="text-primary">TZS {{ record.total_charge|tzs }}</span>
               </div>
             </div>
           </div>
@@ -107,7 +107,7 @@
               <div class="col-md-3">
                 <label class="form-label">Amount (TZS) *</label>
                 <input type="number" name="amount" class="form-control form-control-sm" required min="1"
-                  max="{{ record.balance }}" placeholder="Max: {{ record.balance|floatformat:0 }}">
+                  max="{{ record.balance }}" placeholder="Max: {{ record.balance|tzs }}">
               </div>
               <div class="col-md-3">
                 <label class="form-label">Date *</label>
@@ -143,7 +143,7 @@
             {% for pay in payments %}
             <tr>
               <td>{{ pay.payment_date|date:"d M Y" }}</td>
-              <td class="fw-semibold text-success">{{ pay.amount|floatformat:0 }}</td>
+              <td class="fw-semibold text-success">{{ pay.amount|tzs }}</td>
               <td>{{ pay.get_payment_method_display }}</td>
               <td class="text-muted">{{ pay.reference|default:"—" }}</td>
             </tr>
@@ -163,17 +163,17 @@
       <div class="card-body">
         <div class="d-flex justify-content-between mb-2 small">
           <span class="text-muted">Total Charge</span>
-          <span class="fw-semibold">TZS {{ record.total_charge|floatformat:0 }}</span>
+          <span class="fw-semibold">TZS {{ record.total_charge|tzs }}</span>
         </div>
         <div class="d-flex justify-content-between mb-2 small">
           <span class="text-muted">Total Paid</span>
-          <span class="fw-semibold text-success">TZS {{ record.total_paid|floatformat:0 }}</span>
+          <span class="fw-semibold text-success">TZS {{ record.total_paid|tzs }}</span>
         </div>
         <hr class="my-2">
         <div class="d-flex justify-content-between fw-bold">
           <span>Balance Due</span>
           <span class="fs-5 {% if record.balance > 0 %}text-danger{% else %}text-success{% endif %}">
-            TZS {{ record.balance|floatformat:0 }}
+            TZS {{ record.balance|tzs }}
           </span>
         </div>
         {% if record.total_charge > 0 %}

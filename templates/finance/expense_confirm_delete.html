@@ -10,7 +10,7 @@
       <div class="card-body">
         <p>Delete this expense?</p>
         <p class="text-muted">
-          <strong>{{ expense.category.name }}</strong> — TZS {{ expense.amount|floatformat:0 }} on {{ expense.date }}<br>
+          <strong>{{ expense.category.name }}</strong> — TZS {{ expense.amount|tzs }} on {{ expense.date }}<br>
           <em>{{ expense.description }}</em>
         </p>
         <p class="text-danger small">This action cannot be undone.</p>

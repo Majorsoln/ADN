@@ -71,9 +71,9 @@
             {{ inv.due_date|date:"d M Y"|default:"—" }}
             {% if inv.is_overdue %}<span class="badge badge-overdue rounded-pill ms-1 small">Overdue</span>{% endif %}
           </td>
-          <td class="fw-semibold">{{ inv.contract_amount|floatformat:0 }}</td>
+          <td class="fw-semibold">{{ inv.contract_amount|tzs }}</td>
           <td class="{% if inv.balance_due > 0 %}text-danger fw-bold{% else %}text-success fw-bold{% endif %}">
-            {{ inv.balance_due|floatformat:0 }}
+            {{ inv.balance_due|tzs }}
           </td>
           <td><span class="badge rounded-pill badge-{{ inv.status }} px-2 py-1">{{ inv.get_status_display }}</span></td>
           <td class="text-end">

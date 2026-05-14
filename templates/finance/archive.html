@@ -41,10 +41,10 @@
           <td><a href="{% url 'finance:archive_detail' s.pk %}">{{ s.title }}</a></td>
           <td><span class="badge bg-secondary">{{ s.get_report_type_display }}</span></td>
           <td class="text-muted small">{{ s.period_from }} – {{ s.period_to }}</td>
-          <td class="text-end text-success">{{ s.total_income|floatformat:0 }}</td>
-          <td class="text-end text-danger">{{ s.total_expenses|floatformat:0 }}</td>
+          <td class="text-end text-success">{{ s.total_income|tzs }}</td>
+          <td class="text-end text-danger">{{ s.total_expenses|tzs }}</td>
           <td class="text-end fw-semibold {% if s.net_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
-            {{ s.net_profit|floatformat:0 }}
+            {{ s.net_profit|tzs }}
           </td>
           <td class="text-muted small">{{ s.generated_at|date:"d M Y, H:i" }}</td>
           <td class="text-end">

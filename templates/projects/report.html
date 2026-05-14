@@ -170,7 +170,7 @@
       <div class="lbl">Client Account</div>
       <div class="val" style="{% if funding.balance_due > 0 %}color:#dc2626{% else %}color:#16a34a{% endif %}">
         {% if funding.balance_due > 0 %}
-        TZS {{ funding.balance_due|floatformat:0 }}
+        TZS {{ funding.balance_due|tzs }}
         {% else %}
         Fully Paid ✓
         {% endif %}
@@ -179,8 +179,8 @@
         {% if funding.balance_due > 0 %}
         <strong style="color:#dc2626;">Client owes this amount</strong><br>
         {% endif %}
-        Paid: TZS {{ funding.total_client_received|floatformat:0 }}<br>
-        Contract: TZS {{ project.revenue|floatformat:0 }}
+        Paid: TZS {{ funding.total_client_received|tzs }}<br>
+        Contract: TZS {{ project.revenue|tzs }}
       </div>
     </div>
     <div class="meta-box">
@@ -191,7 +191,7 @@
         {% endif %}
         {% if project.invoice %}
         <strong>Invoice:</strong> {{ project.invoice.invoice_no }}<br>
-        Contract: TZS {{ project.invoice.contract_amount|floatformat:0 }}<br>
+        Contract: TZS {{ project.invoice.contract_amount|tzs }}<br>
         Status: {{ project.invoice.get_status_display }}
         {% else %}
         No invoice linked
@@ -201,16 +201,16 @@
     <div class="meta-box">
       <div class="lbl">Financial Snapshot</div>
       <div class="sub">
-        Revenue: <strong>TZS {{ project.revenue|floatformat:0 }}</strong>
+        Revenue: <strong>TZS {{ project.revenue|tzs }}</strong>
         {% if project.revenue_source == 'quotation' %}<small style="color:#2563eb;">(from accepted quotation)</small>
         {% elif project.revenue_source == 'invoice' %}<small style="color:#16a34a;">(from invoice)</small>{% endif %}<br>
-        Total Cost: <strong style="color:#dc2626;">TZS {{ funding.total_cost|floatformat:0 }}</strong><br>
+        Total Cost: <strong style="color:#dc2626;">TZS {{ funding.total_cost|tzs }}</strong><br>
         Net Profit: <strong style="color:{% if project.gross_profit >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
-          TZS {{ project.gross_profit|floatformat:0 }}
-          {% if project.revenue > 0 %}({{ project.profit_margin|floatformat:0 }}%){% endif %}
+          TZS {{ project.gross_profit|tzs }}
+          {% if project.revenue > 0 %}({{ project.profit_margin|tzs }}%){% endif %}
         </strong><br>
         {% if funding.project_debts_total > 0 %}
-        <span style="color:#dc2626;">Deni: <strong>TZS {{ funding.project_debts_total|floatformat:0 }}</strong></span>
+        <span style="color:#dc2626;">Deni: <strong>TZS {{ funding.project_debts_total|tzs }}</strong></span>
         {% endif %}
       </div>
     </div>
@@ -238,8 +238,8 @@
         <tr>
           <td style="color:#94a3b8;">{{ forloop.counter }}</td>
           <td>{{ item.item_type }}{% if item.description %}<br><span style="color:#94a3b8;font-size:8pt;">{{ item.description }}</span>{% endif %}</td>
-          <td class="r">{{ item.width|floatformat:0 }}</td>
-          <td class="r">{{ item.height|floatformat:0 }}</td>
+          <td class="r">{{ item.width|tzs }}</td>
+          <td class="r">{{ item.height|tzs }}</td>
           <td class="r">{{ item.quantity }}</td>
           <td class="r" style="font-weight:600;">{{ item.area_display }}</td>
         </tr>
@@ -257,7 +257,7 @@
   <div style="margin-bottom:18px;border:2px solid #16a34a;border-radius:8px;overflow:hidden;">
     <div style="background:#16a34a;color:#fff;padding:7px 12px;font-size:8.5pt;font-weight:700;">
       ✓ ACCEPTED MATERIAL OPTION — {{ opt.material.material_name }}
-      <span style="font-weight:400;margin-left:8px;">{{ q.total_area|floatformat:3 }} m² × TZS {{ opt.material.price_per_sqm|floatformat:0 }}/m²</span>
+      <span style="font-weight:400;margin-left:8px;">{{ q.total_area|floatformat:3 }} m² × TZS {{ opt.material.price_per_sqm|tzs }}/m²</span>
     </div>
     <table class="itbl" style="margin:0;">
       <thead>
@@ -270,11 +270,11 @@
       </thead>
       <tbody>
         <tr>
-          <td>{{ opt.subtotal|floatformat:0 }}</td>
-          {% for tax in opt.taxes %}<td class="r">{{ tax.amount|floatformat:0 }}</td>{% endfor %}
-          {% if opt.discount %}<td class="r" style="color:#dc2626;">-{{ opt.discount|floatformat:0 }}</td>
-          <td class="r">{{ opt.after_disc|floatformat:0 }}</td>{% endif %}
-          <td class="r" style="font-weight:800;font-size:11pt;color:#14532d;">{{ opt.grand|floatformat:0 }}</td>
+          <td>{{ opt.subtotal|tzs }}</td>
+          {% for tax in opt.taxes %}<td class="r">{{ tax.amount|tzs }}</td>{% endfor %}
+          {% if opt.discount %}<td class="r" style="color:#dc2626;">-{{ opt.discount|tzs }}</td>
+          <td class="r">{{ opt.after_disc|tzs }}</td>{% endif %}
+          <td class="r" style="font-weight:800;font-size:11pt;color:#14532d;">{{ opt.grand|tzs }}</td>
         </tr>
       </tbody>
     </table>
@@ -327,15 +327,15 @@
           <td style="color:#64748b;">{{ item.description|default:"—" }}</td>
           <td class="r">{{ item.quantity }}</td>
           <td>{{ item.get_unit_display }}</td>
-          <td class="r">{{ item.unit_cost|floatformat:0 }}</td>
-          <td class="r" style="font-weight:700;">{{ item.total|floatformat:0 }}</td>
+          <td class="r">{{ item.unit_cost|tzs }}</td>
+          <td class="r" style="font-weight:700;">{{ item.total|tzs }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="6" style="color:#94a3b8;text-align:center;padding:8px;">No items</td></tr>
         {% endfor %}
       </tbody>
     </table>
-    <div class="order-subtotal">Order Subtotal: TZS {{ order.total_cost|floatformat:0 }}</div>
+    <div class="order-subtotal">Order Subtotal: TZS {{ order.total_cost|tzs }}</div>
   </div>
   {% endfor %}
 
@@ -359,13 +359,13 @@
           {% else %}Unspecified{% endif %}
         </td>
         <td class="r">{{ order.items.count }}</td>
-        <td class="r">{{ order.total_cost|floatformat:0 }}</td>
+        <td class="r">{{ order.total_cost|tzs }}</td>
       </tr>
       {% endfor %}
     </tbody>
     <tfoot><tr>
       <td colspan="5" style="text-align:right;">Total Materials Cost:</td>
-      <td class="r text-red">{{ project.materials_cost|floatformat:0 }}</td>
+      <td class="r text-red">{{ project.materials_cost|tzs }}</td>
     </tr></tfoot>
   </table>
   {% endif %}
@@ -385,7 +385,7 @@
         <span style="font-size:8pt;color:#2563eb;font-weight:400;">— Quote {{ project.quotation.quote_no }}</span>
         {% endif %}
       </span>
-      <span>TZS {{ project.revenue|floatformat:0 }}</span>
+      <span>TZS {{ project.revenue|tzs }}</span>
     </div>
 
     <div style="border-left:3px solid #16a34a;padding-left:12px;margin:10px 0;">
@@ -399,7 +399,7 @@
           <span style="font-size:8pt;color:#94a3b8;">via {{ funding.advance_method }}</span>
           {% endif %}
         </span>
-        <span style="color:#16a34a;font-weight:600;">TZS {{ funding.advance_paid|floatformat:0 }}</span>
+        <span style="color:#16a34a;font-weight:600;">TZS {{ funding.advance_paid|tzs }}</span>
       </div>
       {% endif %}
       {% for pay in funding.inv_payments %}
@@ -410,7 +410,7 @@
             · {{ pay.payment_date|date:"d M Y" }}
           </span>
         </span>
-        <span style="color:#16a34a;font-weight:600;">TZS {{ pay.amount|floatformat:0 }}</span>
+        <span style="color:#16a34a;font-weight:600;">TZS {{ pay.amount|tzs }}</span>
       </div>
       {% endfor %}
       {% if not funding.advance_paid and not funding.inv_payments %}
@@ -418,7 +418,7 @@
       {% endif %}
       <div class="fin-row" style="font-size:10pt;font-weight:700;border-top:1px solid #e2e8f0;padding-top:6px;margin-top:4px;">
         <span>Jumla Iliyopokelewa (Total Received)</span>
-        <span class="text-green">TZS {{ funding.total_client_received|floatformat:0 }}</span>
+        <span class="text-green">TZS {{ funding.total_client_received|tzs }}</span>
       </div>
     </div>
 
@@ -427,10 +427,10 @@
     <div style="background:#fff1f2;border:2px solid #dc2626;border-radius:8px;padding:12px 16px;margin-top:10px;">
       <div class="fin-row" style="font-size:12pt;font-weight:800;color:#dc2626;margin-bottom:0;">
         <span>Mteja Anadaiwa (Balance Due)</span>
-        <span>TZS {{ funding.balance_due|floatformat:0 }}</span>
+        <span>TZS {{ funding.balance_due|tzs }}</span>
       </div>
       <div style="font-size:8.5pt;color:#92400e;margin-top:4px;">
-        Kiasi hiki bado hakijalipwa na mteja. Contract TZS {{ project.revenue|floatformat:0 }} - Received TZS {{ funding.total_client_received|floatformat:0 }} = <strong>TZS {{ funding.balance_due|floatformat:0 }}</strong>
+        Kiasi hiki bado hakijalipwa na mteja. Contract TZS {{ project.revenue|tzs }} - Received TZS {{ funding.total_client_received|tzs }} = <strong>TZS {{ funding.balance_due|tzs }}</strong>
       </div>
     </div>
     {% elif project.revenue > 0 %}
@@ -453,7 +453,7 @@
       <span>Materials (Vifaa)
         <span style="font-size:8pt;color:#94a3b8;">— {{ orders|length }} order{{ orders|length|pluralize }}</span>
       </span>
-      <span style="font-weight:600;color:#dc2626;">TZS {{ funding.materials_cost|floatformat:0 }}</span>
+      <span style="font-weight:600;color:#dc2626;">TZS {{ funding.materials_cost|tzs }}</span>
     </div>
 
     {% if funding.direct_expenses %}
@@ -461,7 +461,7 @@
       <span>Direct Expenses (Gharama za Moja kwa Moja)
         <span style="font-size:8pt;color:#94a3b8;">— {{ funding.direct_expenses|length }} item{{ funding.direct_expenses|length|pluralize }}</span>
       </span>
-      <span style="font-weight:600;color:#dc2626;">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</span>
+      <span style="font-weight:600;color:#dc2626;">TZS {{ funding.direct_expenses_cost|tzs }}</span>
     </div>
     {# Expense detail table #}
     <table style="width:100%;border-collapse:collapse;font-size:8.5pt;margin:6px 0 8px 0;">
@@ -483,7 +483,7 @@
           <td style="padding:4px 8px;color:#64748b;">{{ exp.description }}</td>
           <td style="padding:4px 8px;color:#64748b;">{{ exp.paid_to|default:"—" }}</td>
           <td style="padding:4px 8px;">{{ exp.get_payment_method_display }}</td>
-          <td style="padding:4px 8px;text-align:right;font-weight:600;color:#dc2626;">{{ exp.amount|floatformat:0 }}</td>
+          <td style="padding:4px 8px;text-align:right;font-weight:600;color:#dc2626;">{{ exp.amount|tzs }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -493,7 +493,7 @@
     <div style="background:#fff1f2;border-radius:6px;padding:10px 14px;margin-top:8px;">
       <div class="fin-row" style="font-size:12pt;font-weight:800;color:#dc2626;margin-bottom:0;">
         <span>Jumla ya Gharama (Total Project Cost)</span>
-        <span>TZS {{ funding.total_cost|floatformat:0 }}</span>
+        <span>TZS {{ funding.total_cost|tzs }}</span>
       </div>
     </div>
   </div>
@@ -523,37 +523,37 @@
           <td style="padding:7px 10px;font-weight:700;color:{{ src.color }};">
             {% if src.is_debt %}⚠ {% endif %}{{ src.label }}
           </td>
-          <td style="padding:7px 10px;text-align:right;">{% if src.materials %}{{ src.materials|floatformat:0 }}{% else %}—{% endif %}</td>
-          <td style="padding:7px 10px;text-align:right;">{% if src.expenses %}{{ src.expenses|floatformat:0 }}{% else %}—{% endif %}</td>
-          <td style="padding:7px 10px;text-align:right;font-weight:700;">{{ src.total|floatformat:0 }}</td>
+          <td style="padding:7px 10px;text-align:right;">{% if src.materials %}{{ src.materials|tzs }}{% else %}—{% endif %}</td>
+          <td style="padding:7px 10px;text-align:right;">{% if src.expenses %}{{ src.expenses|tzs }}{% else %}—{% endif %}</td>
+          <td style="padding:7px 10px;text-align:right;font-weight:700;">{{ src.total|tzs }}</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
         <tr style="background:#f1f5f9;border-top:2px solid #334155;">
           <td style="padding:8px 10px;font-weight:700;font-size:10pt;">Jumla ya Fedha Zilizotumika</td>
-          <td style="padding:8px 10px;text-align:right;font-weight:700;">{{ funding.materials_cost|floatformat:0 }}</td>
-          <td style="padding:8px 10px;text-align:right;font-weight:700;">{{ funding.direct_expenses_cost|floatformat:0 }}</td>
-          <td style="padding:8px 10px;text-align:right;font-weight:800;font-size:10pt;">{{ funding.total_cost|floatformat:0 }}</td>
+          <td style="padding:8px 10px;text-align:right;font-weight:700;">{{ funding.materials_cost|tzs }}</td>
+          <td style="padding:8px 10px;text-align:right;font-weight:700;">{{ funding.direct_expenses_cost|tzs }}</td>
+          <td style="padding:8px 10px;text-align:right;font-weight:800;font-size:10pt;">{{ funding.total_cost|tzs }}</td>
         </tr>
       </tfoot>
     </table>
 
     {% if funding.credit_amount > 0 %}
     <div style="padding:10px 12px;background:#fff1f2;border:1.5px solid #fecaca;border-radius:6px;font-size:9pt;color:#dc2626;margin-top:10px;">
-      <strong>⚠ Deni:</strong> TZS {{ funding.credit_amount|floatformat:0 }} ya vifaa vilinunuliwa kwa deni. Kiasi hiki ni deni ambalo lazima kilipwe.
+      <strong>⚠ Deni:</strong> TZS {{ funding.credit_amount|tzs }} ya vifaa vilinunuliwa kwa deni. Kiasi hiki ni deni ambalo lazima kilipwe.
     </div>
     {% endif %}
 
     {% if funding.shortfall > 0 %}
     <div style="padding:10px 12px;background:#fffbeb;border:1.5px solid #fde68a;border-radius:6px;font-size:9pt;color:#92400e;margin-top:8px;">
-      <strong>Taarifa:</strong> Mteja amelipa TZS {{ funding.total_client_received|floatformat:0 }} lakini gharama za mradi ni TZS {{ funding.total_cost|floatformat:0 }}.
-      Tofauti ya TZS {{ funding.shortfall|floatformat:0 }} imetolewa kutoka vyanzo vya ofisi/biashara au deni.
+      <strong>Taarifa:</strong> Mteja amelipa TZS {{ funding.total_client_received|tzs }} lakini gharama za mradi ni TZS {{ funding.total_cost|tzs }}.
+      Tofauti ya TZS {{ funding.shortfall|tzs }} imetolewa kutoka vyanzo vya ofisi/biashara au deni.
     </div>
     {% endif %}
     {% if funding.surplus > 0 %}
     <div style="padding:10px 12px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:6px;font-size:9pt;color:#15803d;margin-top:8px;">
-      <strong>✓ Fedha za Mteja Zimezidi:</strong> Malipo ya mteja yanazidi gharama za mradi kwa TZS {{ funding.surplus|floatformat:0 }}.
+      <strong>✓ Fedha za Mteja Zimezidi:</strong> Malipo ya mteja yanazidi gharama za mradi kwa TZS {{ funding.surplus|tzs }}.
     </div>
     {% endif %}
   </div>
@@ -566,15 +566,15 @@
     <div class="sec">D. Faida ya Mradi — Profit Summary</div>
     <div class="fin-row" style="font-size:10pt;">
       <span>Revenue (Mapato)</span>
-      <span style="font-weight:600;">TZS {{ project.revenue|floatformat:0 }}</span>
+      <span style="font-weight:600;">TZS {{ project.revenue|tzs }}</span>
     </div>
     <div class="fin-row" style="font-size:10pt;">
       <span>Total Cost (Gharama)</span>
-      <span style="font-weight:600;color:#dc2626;">– TZS {{ funding.total_cost|floatformat:0 }}</span>
+      <span style="font-weight:600;color:#dc2626;">– TZS {{ funding.total_cost|tzs }}</span>
     </div>
     <div class="fin-row total {% if project.gross_profit >= 0 %}text-green{% else %}text-red{% endif %}">
       <span>NET PROFIT (FAIDA)</span>
-      <span>TZS {{ project.gross_profit|floatformat:0 }}</span>
+      <span>TZS {{ project.gross_profit|tzs }}</span>
     </div>
     {% if project.revenue > 0 %}
     <div style="text-align:right;font-size:9pt;color:#64748b;margin-top:4px;">
@@ -609,16 +609,16 @@
           <td style="padding:6px 10px;font-weight:600;">{{ debt.creditor_name }}</td>
           <td style="padding:6px 10px;font-size:8.5pt;">{{ debt.get_debt_type_display }}</td>
           <td style="padding:6px 10px;color:#64748b;font-size:8.5pt;">{{ debt.description }}</td>
-          <td style="padding:6px 10px;text-align:right;">{{ debt.amount|floatformat:0 }}</td>
-          <td style="padding:6px 10px;text-align:right;color:#16a34a;">{{ debt.total_paid|floatformat:0 }}</td>
-          <td style="padding:6px 10px;text-align:right;font-weight:700;color:#dc2626;">{{ debt.balance|floatformat:0 }}</td>
+          <td style="padding:6px 10px;text-align:right;">{{ debt.amount|tzs }}</td>
+          <td style="padding:6px 10px;text-align:right;color:#16a34a;">{{ debt.total_paid|tzs }}</td>
+          <td style="padding:6px 10px;text-align:right;font-weight:700;color:#dc2626;">{{ debt.balance|tzs }}</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
         <tr style="background:#fff1f2;border-top:2px solid #dc2626;">
           <td colspan="5" style="padding:7px 10px;font-weight:700;font-size:9.5pt;">Jumla ya Deni la Mradi</td>
-          <td style="padding:7px 10px;text-align:right;font-weight:800;font-size:10pt;color:#dc2626;">TZS {{ funding.project_debts_total|floatformat:0 }}</td>
+          <td style="padding:7px 10px;text-align:right;font-weight:800;font-size:10pt;color:#dc2626;">TZS {{ funding.project_debts_total|tzs }}</td>
         </tr>
       </tfoot>
     </table>

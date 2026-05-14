@@ -31,7 +31,7 @@
     <div class="card border-0 shadow-sm text-center">
       <div class="card-body">
         <div class="text-success fw-semibold small mb-1">INCOME</div>
-        <div class="fs-4 fw-bold text-success">TZS {{ snapshot.total_income|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-success">TZS {{ snapshot.total_income|tzs }}</div>
       </div>
     </div>
   </div>
@@ -39,7 +39,7 @@
     <div class="card border-0 shadow-sm text-center">
       <div class="card-body">
         <div class="text-danger fw-semibold small mb-1">EXPENSES</div>
-        <div class="fs-4 fw-bold text-danger">TZS {{ snapshot.total_expenses|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-danger">TZS {{ snapshot.total_expenses|tzs }}</div>
       </div>
     </div>
   </div>
@@ -48,7 +48,7 @@
       <div class="card-body">
         <div class="fw-semibold small mb-1 {% if snapshot.net_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">NET PROFIT</div>
         <div class="fs-4 fw-bold {% if snapshot.net_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
-          TZS {{ snapshot.net_profit|floatformat:0 }}
+          TZS {{ snapshot.net_profit|tzs }}
         </div>
       </div>
     </div>
@@ -57,7 +57,7 @@
     <div class="card border-0 shadow-sm text-center">
       <div class="card-body">
         <div class="text-warning fw-semibold small mb-1">OUTSTANDING</div>
-        <div class="fs-4 fw-bold text-warning">TZS {{ data.total_receivable|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-warning">TZS {{ data.total_receivable|tzs }}</div>
       </div>
     </div>
   </div>
@@ -76,7 +76,7 @@
         {% for cat in data.by_category %}
         <tr>
           <td>{{ cat.name }}</td>
-          <td class="text-end">{{ cat.total|floatformat:0 }}</td>
+          <td class="text-end">{{ cat.total|tzs }}</td>
           <td><small>{{ cat.pct }}%</small></td>
         </tr>
         {% endfor %}
@@ -100,8 +100,8 @@
         <tr>
           <td>{{ p.name }}</td>
           <td>{{ p.client_name }}</td>
-          <td class="text-end">{{ p.revenue|floatformat:0 }}</td>
-          <td class="text-end text-success">{{ p.gross_profit|floatformat:0 }}</td>
+          <td class="text-end">{{ p.revenue|tzs }}</td>
+          <td class="text-end text-success">{{ p.gross_profit|tzs }}</td>
           <td>{{ p.profit_margin|floatformat:1 }}%</td>
         </tr>
         {% endfor %}

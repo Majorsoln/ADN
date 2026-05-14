@@ -247,17 +247,17 @@
   <table class="summary-table">
     <tr>
       <td class="label">Contract Amount</td>
-      <td class="amount">TZS {{ invoice.contract_amount|floatformat:0 }}</td>
+      <td class="amount">TZS {{ invoice.contract_amount|tzs }}</td>
     </tr>
     <tr>
       <td class="label">Advance Payment Received</td>
-      <td class="sub-amount">– TZS {{ invoice.advance_paid|floatformat:0 }}</td>
+      <td class="sub-amount">– TZS {{ invoice.advance_paid|tzs }}</td>
     </tr>
   </table>
 
   <div class="balance-due-block {% if invoice.balance_due <= 0 %}paid{% endif %}" style="max-width:380px;margin:12px 0 0 auto;">
     <div class="label-bd">Balance Due</div>
-    <div class="amount-bd">TZS {{ invoice.balance_due|floatformat:0 }}</div>
+    <div class="amount-bd">TZS {{ invoice.balance_due|tzs }}</div>
   </div>
 
   <!-- Payment History (if any) -->
@@ -277,7 +277,7 @@
         {% for pay in invoice.payments.all %}
         <tr>
           <td>{{ pay.payment_date|date:"d M Y" }}</td>
-          <td style="font-weight:600;color:#16a34a;">{{ pay.amount|floatformat:0 }}</td>
+          <td style="font-weight:600;color:#16a34a;">{{ pay.amount|tzs }}</td>
           <td>{{ pay.get_payment_method_display }}</td>
           <td>{{ pay.reference|default:"—" }}</td>
         </tr>

@@ -270,8 +270,8 @@
           <strong>{{ item.item_type }}</strong>
           {% if item.description %}<br><span style="font-size:8pt;color:#64748b;">{{ item.description }}</span>{% endif %}
         </td>
-        <td class="r">{{ item.width|floatformat:0 }}</td>
-        <td class="r">{{ item.height|floatformat:0 }}</td>
+        <td class="r">{{ item.width|tzs }}</td>
+        <td class="r">{{ item.height|tzs }}</td>
         <td class="r">{{ item.quantity }}</td>
         <td class="r"><strong>{{ item.area_display }}</strong></td>
       </tr>
@@ -322,36 +322,36 @@
         </td>
         <td>
           <span class="cell-label cell-price">TZS</span>
-          <span class="cell-amount cell-price">{{ selected_option.material.price_per_sqm|floatformat:0 }}</span>
+          <span class="cell-amount cell-price">{{ selected_option.material.price_per_sqm|tzs }}</span>
         </td>
         <td>
           <span class="cell-label cell-sub">TZS</span>
-          <span class="cell-amount cell-sub">{{ selected_option.subtotal|floatformat:0 }}</span>
+          <span class="cell-amount cell-sub">{{ selected_option.subtotal|tzs }}</span>
         </td>
         {% if quotation.discount_value %}
         <td>
           <span class="cell-label cell-disc">TZS</span>
-          <span class="cell-amount cell-disc">{{ selected_option.discount|floatformat:0 }}</span>
+          <span class="cell-amount cell-disc">{{ selected_option.discount|tzs }}</span>
         </td>
         {% endif %}
         <td>
           <span class="cell-label cell-after">TZS</span>
-          <span class="cell-amount cell-after">{{ selected_option.after_disc|floatformat:0 }}</span>
+          <span class="cell-amount cell-after">{{ selected_option.after_disc|tzs }}</span>
         </td>
         {% if has_tax %}
         <td>
           <span class="cell-label cell-tax">TZS</span>
-          <span class="cell-amount cell-tax">{{ selected_option.tax_total|floatformat:0 }}</span>
+          <span class="cell-amount cell-tax">{{ selected_option.tax_total|tzs }}</span>
           {% if selected_option.taxes %}
           <span style="font-size:7pt;color:#7c3aed;display:block;margin-top:3px;line-height:1.5;">
-            {% for tax in selected_option.taxes %}{{ tax.name }}: {{ tax.amount|floatformat:0 }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+            {% for tax in selected_option.taxes %}{{ tax.name }}: {{ tax.amount|tzs }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
           </span>
           {% endif %}
         </td>
         {% endif %}
         <td>
           <span class="cell-label cell-final">TZS</span>
-          <span class="cell-amount cell-final">{{ selected_option.grand|floatformat:0 }}</span>
+          <span class="cell-amount cell-final">{{ selected_option.grand|tzs }}</span>
         </td>
       </tr>
       {% else %}
@@ -364,36 +364,36 @@
         </td>
         <td>
           <span class="cell-label cell-price">TZS</span>
-          <span class="cell-amount cell-price">{{ opt.material.price_per_sqm|floatformat:0 }}</span>
+          <span class="cell-amount cell-price">{{ opt.material.price_per_sqm|tzs }}</span>
         </td>
         <td>
           <span class="cell-label cell-sub">TZS</span>
-          <span class="cell-amount cell-sub">{{ opt.subtotal|floatformat:0 }}</span>
+          <span class="cell-amount cell-sub">{{ opt.subtotal|tzs }}</span>
         </td>
         {% if quotation.discount_value %}
         <td>
           <span class="cell-label cell-disc">TZS</span>
-          <span class="cell-amount cell-disc">{{ opt.discount|floatformat:0 }}</span>
+          <span class="cell-amount cell-disc">{{ opt.discount|tzs }}</span>
         </td>
         {% endif %}
         <td>
           <span class="cell-label cell-after">TZS</span>
-          <span class="cell-amount cell-after">{{ opt.after_disc|floatformat:0 }}</span>
+          <span class="cell-amount cell-after">{{ opt.after_disc|tzs }}</span>
         </td>
         {% if has_tax %}
         <td>
           <span class="cell-label cell-tax">TZS</span>
-          <span class="cell-amount cell-tax">{{ opt.tax_total|floatformat:0 }}</span>
+          <span class="cell-amount cell-tax">{{ opt.tax_total|tzs }}</span>
           {% if opt.taxes %}
           <span style="font-size:7pt;color:#7c3aed;display:block;margin-top:3px;line-height:1.5;">
-            {% for tax in opt.taxes %}{{ tax.name }}: {{ tax.amount|floatformat:0 }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+            {% for tax in opt.taxes %}{{ tax.name }}: {{ tax.amount|tzs }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
           </span>
           {% endif %}
         </td>
         {% endif %}
         <td>
           <span class="cell-label cell-final">TZS</span>
-          <span class="cell-amount cell-final">{{ opt.grand|floatformat:0 }}</span>
+          <span class="cell-amount cell-final">{{ opt.grand|tzs }}</span>
         </td>
       </tr>
       {% endfor %}
@@ -404,7 +404,7 @@
   {% if quotation.discount_value %}
   <div style="font-size:8.5pt;color:#64748b;margin-top:6px;">
     * Discount applied: {{ quotation.discount_name|default:"Discount" }}
-    ({% if quotation.discount_type == 'percentage' %}{{ quotation.discount_value }}%{% else %}TZS {{ quotation.discount_value|floatformat:0 }} fixed{% endif %})
+    ({% if quotation.discount_type == 'percentage' %}{{ quotation.discount_value }}%{% else %}TZS {{ quotation.discount_value|tzs }} fixed{% endif %})
     {% if quotation.discount_duration %}– valid for {{ quotation.discount_duration }}{% endif %}
   </div>
   {% endif %}

@@ -102,11 +102,11 @@
         <hr class="my-2">
         <div class="d-flex justify-content-between small">
           <span class="text-muted">Total materials so far:</span>
-          <span class="fw-semibold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</span>
+          <span class="fw-semibold text-danger">TZS {{ project.materials_cost|tzs }}</span>
         </div>
         <div class="d-flex justify-content-between small mt-1">
           <span class="text-muted">Revenue:</span>
-          <span class="fw-semibold">TZS {{ project.revenue|floatformat:0 }}</span>
+          <span class="fw-semibold">TZS {{ project.revenue|tzs }}</span>
         </div>
       </div>
     </div>

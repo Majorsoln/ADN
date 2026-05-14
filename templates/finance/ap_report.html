@@ -43,22 +43,22 @@
   <div class="row g-3 align-items-center text-center">
     <div class="col-sm-3">
       <div class="small text-muted">Total Outstanding (AP)</div>
-      <div class="fs-3 fw-bold text-danger">TZS {{ data.total_outstanding|floatformat:0 }}</div>
+      <div class="fs-3 fw-bold text-danger">TZS {{ data.total_outstanding|tzs }}</div>
     </div>
     <div class="col-sm-3">
       <div class="small text-muted">Original Amount (Deni la Awali)</div>
-      <div class="fs-5 fw-bold">TZS {{ data.total_original|floatformat:0 }}</div>
+      <div class="fs-5 fw-bold">TZS {{ data.total_original|tzs }}</div>
     </div>
     <div class="col-sm-3">
       <div class="p-1 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
         <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Repaid — Cash</div>
-        <div class="fw-bold text-success">TZS {{ data.repaid_cash|floatformat:0 }}</div>
+        <div class="fw-bold text-success">TZS {{ data.repaid_cash|tzs }}</div>
       </div>
     </div>
     <div class="col-sm-3">
       <div class="p-1 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
         <div class="small text-muted"><i class="bi bi-bank me-1"></i>Repaid — Bank</div>
-        <div class="fw-bold text-primary">TZS {{ data.repaid_bank|floatformat:0 }}</div>
+        <div class="fw-bold text-primary">TZS {{ data.repaid_bank|tzs }}</div>
       </div>
     </div>
   </div>
@@ -72,7 +72,7 @@
     <span>
       <i class="bi bi-exclamation-triangle me-2 text-danger"></i>{{ section.label }}
     </span>
-    <span class="text-danger fw-bold">Balance: TZS {{ section.total_outstanding|floatformat:0 }}</span>
+    <span class="text-danger fw-bold">Balance: TZS {{ section.total_outstanding|tzs }}</span>
   </div>
 
   {# Method summary for this type #}
@@ -81,25 +81,25 @@
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
           <div class="small text-muted">Original (Deni la Awali)</div>
-          <div class="fw-bold">TZS {{ section.total_original|floatformat:0 }}</div>
+          <div class="fw-bold">TZS {{ section.total_original|tzs }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
           <div class="small text-muted"><i class="bi bi-cash-coin me-1"></i>Repaid via Cash</div>
-          <div class="fw-bold text-success">TZS {{ section.repaid_cash|floatformat:0 }}</div>
+          <div class="fw-bold text-success">TZS {{ section.repaid_cash|tzs }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#eff6ff;border:1px solid #bfdbfe;">
           <div class="small text-muted"><i class="bi bi-bank me-1"></i>Repaid via Bank</div>
-          <div class="fw-bold text-primary">TZS {{ section.repaid_bank|floatformat:0 }}</div>
+          <div class="fw-bold text-primary">TZS {{ section.repaid_bank|tzs }}</div>
         </div>
       </div>
       <div class="col-sm-3">
         <div class="p-2 rounded" style="background:#fff1f2;border:1px solid #fecaca;">
           <div class="small text-muted">Still Owed (Baki)</div>
-          <div class="fw-bold text-danger">TZS {{ section.total_outstanding|floatformat:0 }}</div>
+          <div class="fw-bold text-danger">TZS {{ section.total_outstanding|tzs }}</div>
         </div>
       </div>
     </div>
@@ -179,10 +179,10 @@
               </div>
               {% endif %}
             </td>
-            <td class="text-end">{{ r.original_amount|floatformat:0 }}</td>
-            <td class="text-end text-success fw-semibold">{{ r.repaid_cash|floatformat:0 }}</td>
-            <td class="text-end text-primary fw-semibold">{{ r.repaid_bank|floatformat:0 }}</td>
-            <td class="text-end fw-bold text-danger">{{ r.balance|floatformat:0 }}</td>
+            <td class="text-end">{{ r.original_amount|tzs }}</td>
+            <td class="text-end text-success fw-semibold">{{ r.repaid_cash|tzs }}</td>
+            <td class="text-end text-primary fw-semibold">{{ r.repaid_bank|tzs }}</td>
+            <td class="text-end fw-bold text-danger">{{ r.balance|tzs }}</td>
             <td class="no-print">
               {% if r.is_overdue %}
                 <span class="badge bg-danger">Overdue</span>
@@ -202,10 +202,10 @@
         <tfoot class="table-light fw-bold">
           <tr>
             <td colspan="3">TOTAL — {{ section.label }}</td>
-            <td class="text-end">TZS {{ section.total_original|floatformat:0 }}</td>
-            <td class="text-end text-success">{{ section.repaid_cash|floatformat:0 }}</td>
-            <td class="text-end text-primary">{{ section.repaid_bank|floatformat:0 }}</td>
-            <td class="text-end text-danger">TZS {{ section.total_outstanding|floatformat:0 }}</td>
+            <td class="text-end">TZS {{ section.total_original|tzs }}</td>
+            <td class="text-end text-success">{{ section.repaid_cash|tzs }}</td>
+            <td class="text-end text-primary">{{ section.repaid_bank|tzs }}</td>
+            <td class="text-end text-danger">TZS {{ section.total_outstanding|tzs }}</td>
             <td></td>
           </tr>
         </tfoot>
@@ -231,19 +231,19 @@
     <div class="row g-3 text-center fw-bold">
       <div class="col-sm-3">
         <div class="small text-muted">TOTAL ORIGINAL DEBT</div>
-        <div class="fs-5">TZS {{ data.total_original|floatformat:0 }}</div>
+        <div class="fs-5">TZS {{ data.total_original|tzs }}</div>
       </div>
       <div class="col-sm-3">
         <div class="small text-muted">REPAID (Cash)</div>
-        <div class="fs-5 text-success">TZS {{ data.repaid_cash|floatformat:0 }}</div>
+        <div class="fs-5 text-success">TZS {{ data.repaid_cash|tzs }}</div>
       </div>
       <div class="col-sm-3">
         <div class="small text-muted">REPAID (Bank)</div>
-        <div class="fs-5 text-primary">TZS {{ data.repaid_bank|floatformat:0 }}</div>
+        <div class="fs-5 text-primary">TZS {{ data.repaid_bank|tzs }}</div>
       </div>
       <div class="col-sm-3">
         <div class="small text-muted">TOTAL OUTSTANDING (AP)</div>
-        <div class="fs-4 text-danger">TZS {{ data.total_outstanding|floatformat:0 }}</div>
+        <div class="fs-4 text-danger">TZS {{ data.total_outstanding|tzs }}</div>
       </div>
     </div>
   </div>

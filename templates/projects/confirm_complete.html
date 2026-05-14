@@ -19,16 +19,16 @@
           <div class="card-body py-3">
             <div class="d-flex justify-content-between small mb-2">
               <span class="text-muted">Contract Revenue</span>
-              <span class="fw-semibold">TZS {{ project.revenue|floatformat:0 }}</span>
+              <span class="fw-semibold">TZS {{ project.revenue|tzs }}</span>
             </div>
             <div class="d-flex justify-content-between small mb-2">
               <span class="text-muted">Materials Cost</span>
-              <span class="fw-semibold text-danger">− TZS {{ project.materials_cost|floatformat:0 }}</span>
+              <span class="fw-semibold text-danger">− TZS {{ project.materials_cost|tzs }}</span>
             </div>
             <hr class="my-2">
             <div class="d-flex justify-content-between fw-bold">
               <span>Gross Profit to Record</span>
-              <span class="text-success fs-5">TZS {{ project.gross_profit|floatformat:0 }}</span>
+              <span class="text-success fs-5">TZS {{ project.gross_profit|tzs }}</span>
             </div>
           </div>
         </div>

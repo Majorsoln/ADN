@@ -10,7 +10,7 @@
       <div class="card-body">
         <p>Delete this debt record?</p>
         <p class="text-muted">
-          <strong>{{ debt.creditor_name }}</strong> — TZS {{ debt.amount|floatformat:0 }}<br>
+          <strong>{{ debt.creditor_name }}</strong> — TZS {{ debt.amount|tzs }}<br>
           <em>{{ debt.description|truncatechars:80 }}</em>
         </p>
         {% if debt.payments.exists %}

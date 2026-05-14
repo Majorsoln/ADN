@@ -44,7 +44,7 @@
       </div>
       <div class="text-muted" style="font-size:.72rem;margin-top:.5rem;">
         <span class="text-danger fw-semibold">{{ unpaid_invoices }}</span> unpaid ·
-        TZS {{ total_revenue|floatformat:0 }} collected
+        TZS {{ total_revenue|tzs }} collected
       </div>
     </div>
   </div>
@@ -70,7 +70,7 @@
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Office Debts</div>
           <div class="fw-bold fs-3 mt-1 text-danger" style="font-size:1rem!important;">
-            TZS {{ total_debt|floatformat:0 }}
+            TZS {{ total_debt|tzs }}
           </div>
         </div>
         <div class="stat-icon" style="background:#fee2e2;color:#dc2626;">
@@ -89,7 +89,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Project Profits</div>
-          <div class="fw-bold mt-1 text-primary" style="font-size:1.1rem;">TZS {{ project_profit|floatformat:0 }}</div>
+          <div class="fw-bold mt-1 text-primary" style="font-size:1.1rem;">TZS {{ project_profit|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-building"></i></div>
       </div>
@@ -100,7 +100,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Office Service Income</div>
-          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ service_income|floatformat:0 }}</div>
+          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ service_income|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-grid-3x3-gap"></i></div>
       </div>
@@ -111,7 +111,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Office Revenue</div>
-          <div class="fw-bold mt-1" style="font-size:1.2rem;color:var(--adn-navy);">TZS {{ total_income|floatformat:0 }}</div>
+          <div class="fw-bold mt-1" style="font-size:1.2rem;color:var(--adn-navy);">TZS {{ total_income|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#e0e7ff;color:#4338ca;"><i class="bi bi-graph-up-arrow"></i></div>
       </div>
@@ -168,7 +168,7 @@
             <tr style="cursor:pointer" onclick="window.location='{% url 'invoices:detail' inv.pk %}'">
               <td><a href="{% url 'invoices:detail' inv.pk %}" class="fw-semibold text-decoration-none">{{ inv.invoice_no }}</a></td>
               <td>{{ inv.client_name }}</td>
-              <td>{{ inv.contract_amount|floatformat:0 }}</td>
+              <td>{{ inv.contract_amount|tzs }}</td>
               <td><span class="badge rounded-pill badge-{{ inv.status }} px-2 py-1">{{ inv.get_status_display }}</span></td>
             </tr>
             {% empty %}
@@ -210,7 +210,7 @@
                 </span>
               </td>
               <td class="text-end fw-semibold {% if p.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-                {{ p.gross_profit|floatformat:0 }}
+                {{ p.gross_profit|tzs }}
               </td>
             </tr>
             {% empty %}
@@ -242,7 +242,7 @@
                 {% if d.client_phone %}<div class="text-muted" style="font-size:.72rem;">{{ d.client_phone }}</div>{% endif %}
               </td>
               <td class="text-muted small">{{ d.date_recorded|date:"d M Y" }}</td>
-              <td class="text-end fw-bold text-danger">{{ d.balance|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-danger">{{ d.balance|tzs }}</td>
               <td>
                 <span class="badge rounded-pill px-2
                   {% if d.status == 'partial' %}badge-expired{% else %}badge-draft{% endif %}">

@@ -77,7 +77,7 @@
       <div>
         <div class="fw-bold">Accepted Option: {{ quotation.accepted_material.material_name }}</div>
         <div class="small">
-          TZS {{ quotation.accepted_material.price_per_sqm|floatformat:0 }} / m²
+          TZS {{ quotation.accepted_material.price_per_sqm|tzs }} / m²
           {% if quotation.accepted_material.notes %} · {{ quotation.accepted_material.notes }}{% endif %}
         </div>
       </div>
@@ -112,8 +112,8 @@
                 <div class="fw-semibold">{{ item.item_type }}</div>
                 {% if item.description %}<div class="text-muted small">{{ item.description }}</div>{% endif %}
               </td>
-              <td>{{ item.width|floatformat:0 }}</td>
-              <td>{{ item.height|floatformat:0 }}</td>
+              <td>{{ item.width|tzs }}</td>
+              <td>{{ item.height|tzs }}</td>
               <td>{{ item.quantity }}</td>
               <td class="fw-semibold">{{ item.area_display }} m²</td>
             </tr>
@@ -164,19 +164,19 @@
                 {% if opt.material.pk == accepted_mat_pk %}<span class="badge bg-success ms-1" style="font-size:.65rem;"><i class="bi bi-check-circle me-1"></i>Accepted</span>{% endif %}
                 {% if opt.material.notes %}<div class="text-muted small">{{ opt.material.notes }}</div>{% endif %}
               </td>
-              <td class="text-end">{{ opt.material.price_per_sqm|floatformat:0 }}</td>
-              <td class="text-end">{{ opt.subtotal|floatformat:0 }}</td>
+              <td class="text-end">{{ opt.material.price_per_sqm|tzs }}</td>
+              <td class="text-end">{{ opt.subtotal|tzs }}</td>
               {% if quotation.discount_value %}
-              <td class="text-end text-danger">-{{ opt.discount|floatformat:0 }}</td>
-              <td class="text-end">{{ opt.after_disc|floatformat:0 }}</td>
+              <td class="text-end text-danger">-{{ opt.discount|tzs }}</td>
+              <td class="text-end">{{ opt.after_disc|tzs }}</td>
               {% endif %}
               <td class="text-end text-muted">
                 {% for tax in opt.taxes %}
-                <div style="font-size:.78rem;">{{ tax.name }}: {{ tax.amount|floatformat:0 }}</div>
+                <div style="font-size:.78rem;">{{ tax.name }}: {{ tax.amount|tzs }}</div>
                 {% endfor %}
                 {% if not opt.taxes %}—{% endif %}
               </td>
-              <td class="text-end fw-bold fs-6">{{ opt.grand|floatformat:0 }}</td>
+              <td class="text-end fw-bold fs-6">{{ opt.grand|tzs }}</td>
               <td>
                 <a href="{% url 'quotations:pdf' quotation.pk %}?mat={{ forloop.counter0 }}" target="_blank"
                    class="btn btn-sm btn-outline-secondary" title="PDF for this option">
@@ -192,7 +192,7 @@
                   {% csrf_token %}
                   <input type="hidden" name="material_pk" value="{{ opt.material.pk }}">
                   <button type="submit" class="btn btn-sm btn-outline-success"
-                          onclick="return confirm('Accept {{ opt.material.material_name }} for TZS {{ opt.grand|floatformat:0 }}?')">
+                          onclick="return confirm('Accept {{ opt.material.material_name }} for TZS {{ opt.grand|tzs }}?')">
                     <i class="bi bi-check-circle me-1"></i>Accept
                   </button>
                 </form>
@@ -263,7 +263,7 @@
           <a href="{% url 'quotations:pdf' quotation.pk %}?mat={{ forloop.counter0 }}" target="_blank"
              class="btn btn-sm btn-outline-secondary btn-sm d-flex justify-content-between">
             <span><i class="bi bi-printer me-1"></i>{{ opt.material.material_name }}</span>
-            <span class="text-muted">TZS {{ opt.grand|floatformat:0 }}</span>
+            <span class="text-muted">TZS {{ opt.grand|tzs }}</span>
           </a>
           {% endfor %}
           {% endif %}
@@ -281,7 +281,7 @@
           {% if quotation.discount_type == 'percentage' %}
             {{ quotation.discount_value }}% off
           {% else %}
-            TZS {{ quotation.discount_value|floatformat:0 }} off
+            TZS {{ quotation.discount_value|tzs }} off
           {% endif %}
           {% if quotation.discount_duration %}· Valid for {{ quotation.discount_duration }}{% endif %}
         </div>

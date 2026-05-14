@@ -80,7 +80,7 @@
         </div>
         <div>
           <div class="text-muted small">Total In</div>
-          <div class="fw-bold fs-5 text-success">TZS {{ total_in|floatformat:0 }}</div>
+          <div class="fw-bold fs-5 text-success">TZS {{ total_in|tzs }}</div>
         </div>
       </div>
     </div>
@@ -93,7 +93,7 @@
         </div>
         <div>
           <div class="text-muted small">Total Out</div>
-          <div class="fw-bold fs-5 text-danger">TZS {{ total_out|floatformat:0 }}</div>
+          <div class="fw-bold fs-5 text-danger">TZS {{ total_out|tzs }}</div>
         </div>
       </div>
     </div>
@@ -107,7 +107,7 @@
         <div>
           <div class="text-muted small">Net Balance</div>
           <div class="fw-bold fs-5 {% if net >= 0 %}text-success{% else %}text-danger{% endif %}">
-            TZS {{ net|floatformat:0 }}
+            TZS {{ net|tzs }}
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@
             <td class="text-end"><span class="text-muted">—</span></td>
             <td class="text-end"><span class="text-muted">—</span></td>
             <td class="text-end fw-semibold {% if opening_balance >= 0 %}bal-pos{% else %}bal-neg{% endif %}">
-              {{ opening_balance|floatformat:0 }}
+              {{ opening_balance|tzs }}
             </td>
           </tr>
           {% for e in entries %}
@@ -170,16 +170,16 @@
             </td>
             <td class="text-end">
               {% if e.in %}
-              <span class="type-in">{{ e.in|floatformat:0 }}</span>
+              <span class="type-in">{{ e.in|tzs }}</span>
               {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td class="text-end">
               {% if e.out %}
-              <span class="type-out">{{ e.out|floatformat:0 }}</span>
+              <span class="type-out">{{ e.out|tzs }}</span>
               {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td class="text-end fw-semibold {% if e.balance >= 0 %}bal-pos{% else %}bal-neg{% endif %}">
-              {{ e.balance|floatformat:0 }}
+              {{ e.balance|tzs }}
             </td>
           </tr>
           {% endfor %}
@@ -187,16 +187,16 @@
         <tfoot class="table-light fw-bold">
           <tr>
             <td colspan="4" class="text-end text-muted" style="font-size:.85rem;">Period Movement</td>
-            <td class="text-end text-success">{{ total_in|floatformat:0 }}</td>
-            <td class="text-end text-danger">{{ total_out|floatformat:0 }}</td>
+            <td class="text-end text-success">{{ total_in|tzs }}</td>
+            <td class="text-end text-danger">{{ total_out|tzs }}</td>
             <td class="text-end {% if net >= 0 %}text-success{% else %}text-danger{% endif %}">
-              {{ net|floatformat:0 }}
+              {{ net|tzs }}
             </td>
           </tr>
           <tr style="border-top:2px solid #1a2e5a;">
             <td colspan="6" class="text-end">Closing Balance</td>
             <td class="text-end {% if closing_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-              {{ closing_balance|floatformat:0 }}
+              {{ closing_balance|tzs }}
             </td>
           </tr>
         </tfoot>

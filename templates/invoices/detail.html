@@ -80,17 +80,17 @@
               <tbody>
                 <tr>
                   <td class="text-muted border-0">Contract Amount</td>
-                  <td class="text-end fw-semibold border-0">TZS {{ invoice.contract_amount|floatformat:0 }}</td>
+                  <td class="text-end fw-semibold border-0">TZS {{ invoice.contract_amount|tzs }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted">Advance Paid</td>
-                  <td class="text-end fw-semibold text-success">– TZS {{ invoice.advance_paid|floatformat:0 }}</td>
+                  <td class="text-end fw-semibold text-success">– TZS {{ invoice.advance_paid|tzs }}</td>
                 </tr>
                 <tr style="border-top:2px solid var(--adn-border);">
                   <td class="fw-bold">Balance Due</td>
                   <td class="text-end fw-bold fs-5 {% if invoice.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
                     {% if invoice.balance_due > 0 %}
-                      TZS {{ invoice.balance_due|floatformat:0 }}
+                      TZS {{ invoice.balance_due|tzs }}
                     {% else %}
                       <i class="bi bi-check-circle-fill me-1"></i>Paid in Full
                     {% endif %}
@@ -101,7 +101,7 @@
                   <td colspan="2">
                     <div class="alert alert-warning py-2 px-3 mb-0 small">
                       <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                      <strong>Overpayment:</strong> Client paid TZS {{ invoice.overpaid_amount|floatformat:0 }}
+                      <strong>Overpayment:</strong> Client paid TZS {{ invoice.overpaid_amount|tzs }}
                       more than the contract amount. Consider issuing a credit note or adjusting the contract.
                     </div>
                   </td>
@@ -178,7 +178,7 @@
             {% for pay in payments %}
             <tr>
               <td>{{ pay.payment_date|date:"d M Y" }}</td>
-              <td class="fw-semibold text-success">{{ pay.amount|floatformat:0 }}</td>
+              <td class="fw-semibold text-success">{{ pay.amount|tzs }}</td>
               <td>{{ pay.get_payment_method_display }}</td>
               <td>{{ pay.reference|default:"—" }}</td>
               <td class="text-muted small">{{ pay.notes|default:"—" }}</td>
@@ -243,7 +243,7 @@
         {% endif %}
         {% endwith %}
         <div class="mt-2 text-muted small">
-          TZS {{ invoice.advance_paid|floatformat:0 }} of {{ invoice.contract_amount|floatformat:0 }}
+          TZS {{ invoice.advance_paid|tzs }} of {{ invoice.contract_amount|tzs }}
         </div>
       </div>
     </div>

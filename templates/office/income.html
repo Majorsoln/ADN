@@ -16,7 +16,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Project Profits</div>
-          <div class="fw-bold mt-1 text-primary" style="font-size:1.1rem;">TZS {{ project_total|floatformat:0 }}</div>
+          <div class="fw-bold mt-1 text-primary" style="font-size:1.1rem;">TZS {{ project_total|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-building"></i></div>
       </div>
@@ -27,7 +27,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Office Service</div>
-          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ service_total|floatformat:0 }}</div>
+          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ service_total|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-grid-3x3-gap"></i></div>
       </div>
@@ -38,7 +38,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Other Income</div>
-          <div class="fw-bold mt-1" style="font-size:1.1rem;">TZS {{ other_total|floatformat:0 }}</div>
+          <div class="fw-bold mt-1" style="font-size:1.1rem;">TZS {{ other_total|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#fef9c3;color:#ca8a04;"><i class="bi bi-three-dots"></i></div>
       </div>
@@ -49,7 +49,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Revenue</div>
-          <div class="fw-bold mt-1" style="font-size:1.3rem;color:var(--adn-navy);">TZS {{ grand_total|floatformat:0 }}</div>
+          <div class="fw-bold mt-1" style="font-size:1.3rem;color:var(--adn-navy);">TZS {{ grand_total|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#e0e7ff;color:#4338ca;"><i class="bi bi-graph-up-arrow"></i></div>
       </div>
@@ -71,7 +71,7 @@
           </div>
           <div>
             <div class="text-muted small fw-semibold">CASH</div>
-            <div class="fw-bold fs-5 text-success">TZS {{ cash_total|floatformat:0 }}</div>
+            <div class="fw-bold fs-5 text-success">TZS {{ cash_total|tzs }}</div>
           </div>
         </div>
       </div>
@@ -82,7 +82,7 @@
           </div>
           <div>
             <div class="text-muted small fw-semibold">BANK</div>
-            <div class="fw-bold fs-5 text-primary">TZS {{ bank_total|floatformat:0 }}</div>
+            <div class="fw-bold fs-5 text-primary">TZS {{ bank_total|tzs }}</div>
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@
           </div>
           <div>
             <div class="text-muted small fw-semibold">M-PESA</div>
-            <div class="fw-bold fs-5 text-success">TZS {{ mpesa_total|floatformat:0 }}</div>
+            <div class="fw-bold fs-5 text-success">TZS {{ mpesa_total|tzs }}</div>
           </div>
         </div>
       </div>
@@ -114,7 +114,7 @@
           <div class="progress-bar" style="width:{{ proj_pct }}%;background:#2563eb;">{{ proj_pct }}%</div>
         </div>
       </div>
-      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ project_total|floatformat:0 }}</div>
+      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ project_total|tzs }}</div>
     </div>
     <div class="d-flex align-items-center gap-3 mb-2">
       <div class="small text-muted" style="width:120px;">Office Service</div>
@@ -124,7 +124,7 @@
           <div class="progress-bar bg-success" style="width:{{ svc_pct }}%;">{{ svc_pct }}%</div>
         </div>
       </div>
-      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ service_total|floatformat:0 }}</div>
+      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ service_total|tzs }}</div>
     </div>
     <div class="d-flex align-items-center gap-3">
       <div class="small text-muted" style="width:120px;">Other</div>
@@ -134,7 +134,7 @@
           <div class="progress-bar bg-warning" style="width:{{ other_pct }}%;">{{ other_pct }}%</div>
         </div>
       </div>
-      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ other_total|floatformat:0 }}</div>
+      <div class="small fw-semibold" style="width:100px;text-align:right;">TZS {{ other_total|tzs }}</div>
     </div>
   </div>
 </div>
@@ -196,7 +196,7 @@
               <span class="badge bg-light text-muted">—</span>
             {% endif %}
           </td>
-          <td class="text-end fw-semibold text-success">{{ entry.amount|floatformat:0 }}</td>
+          <td class="text-end fw-semibold text-success">{{ entry.amount|tzs }}</td>
           <td class="text-end">
             {% if entry.source == 'other' %}
             <form method="post" action="{% url 'office:income_delete' entry.pk %}" class="d-inline"
@@ -222,7 +222,7 @@
       <tfoot class="table-light">
         <tr>
           <td colspan="4" class="text-end fw-bold">Grand Total:</td>
-          <td class="text-end fw-bold text-success fs-6">TZS {{ grand_total|floatformat:0 }}</td>
+          <td class="text-end fw-bold text-success fs-6">TZS {{ grand_total|tzs }}</td>
           <td></td>
         </tr>
       </tfoot>

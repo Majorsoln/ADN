@@ -67,6 +67,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'accounts.context_processors.user_role',
             ],
+            'builtins': ['core.templatetags.adn_filters'],
         },
     },
 ]

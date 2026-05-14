@@ -18,7 +18,7 @@
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
         <div class="text-muted fw-semibold small mb-1">TOTAL OWED</div>
-        <div class="fs-4 fw-bold text-danger">TZS {{ total_owed|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-danger">TZS {{ total_owed|tzs }}</div>
       </div>
     </div>
   </div>
@@ -26,7 +26,7 @@
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
         <div class="text-muted fw-semibold small mb-1">ALREADY PAID</div>
-        <div class="fs-4 fw-bold text-success">TZS {{ total_paid|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-success">TZS {{ total_paid|tzs }}</div>
       </div>
     </div>
   </div>
@@ -34,7 +34,7 @@
     <div class="card border-0 shadow-sm text-center h-100">
       <div class="card-body">
         <div class="text-danger fw-semibold small mb-1">STILL OUTSTANDING</div>
-        <div class="fs-4 fw-bold text-danger">TZS {{ total_balance|floatformat:0 }}</div>
+        <div class="fs-4 fw-bold text-danger">TZS {{ total_balance|tzs }}</div>
       </div>
     </div>
   </div>
@@ -43,7 +43,7 @@
       <div class="card-body">
         <div class="text-danger fw-semibold small mb-1">OVERDUE</div>
         <div class="fs-4 fw-bold text-danger">{{ overdue_count }}</div>
-        {% if overdue_amount %}<div class="small text-muted">TZS {{ overdue_amount|floatformat:0 }}</div>{% endif %}
+        {% if overdue_amount %}<div class="small text-muted">TZS {{ overdue_amount|tzs }}</div>{% endif %}
       </div>
     </div>
   </div>
@@ -119,10 +119,10 @@
               {{ debt.due_date|date:"d M Y"|default:"—" }}
               {% if debt.is_overdue %}<div><span class="badge bg-danger" style="font-size:.65rem;">OVERDUE</span></div>{% endif %}
             </td>
-            <td class="text-end fw-semibold">{{ debt.amount|floatformat:0 }}</td>
-            <td class="text-end text-success">{{ debt.total_paid|floatformat:0 }}</td>
+            <td class="text-end fw-semibold">{{ debt.amount|tzs }}</td>
+            <td class="text-end text-success">{{ debt.total_paid|tzs }}</td>
             <td class="text-end fw-bold {% if debt.balance > 0 %}text-danger{% else %}text-success{% endif %}">
-              {{ debt.balance|floatformat:0 }}
+              {{ debt.balance|tzs }}
             </td>
             <td>
               {% if debt.status == 'settled' %}
@@ -145,9 +145,9 @@
         <tfoot class="table-light">
           <tr>
             <td colspan="4" class="fw-bold text-end">Totals</td>
-            <td class="text-end fw-bold">{{ total_owed|floatformat:0 }}</td>
-            <td class="text-end fw-bold text-success">{{ total_paid|floatformat:0 }}</td>
-            <td class="text-end fw-bold text-danger">{{ total_balance|floatformat:0 }}</td>
+            <td class="text-end fw-bold">{{ total_owed|tzs }}</td>
+            <td class="text-end fw-bold text-success">{{ total_paid|tzs }}</td>
+            <td class="text-end fw-bold text-danger">{{ total_balance|tzs }}</td>
             <td colspan="2"></td>
           </tr>
         </tfoot>

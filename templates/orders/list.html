@@ -128,7 +128,7 @@
             </span>
           </td>
           <td class="text-end text-muted small">{{ order.items.count }}</td>
-          <td class="text-end fw-semibold">{{ order.total_cost|floatformat:0 }}</td>
+          <td class="text-end fw-semibold">{{ order.total_cost|tzs }}</td>
           <td class="text-end" onclick="event.stopPropagation()">
             <div class="btn-group btn-group-sm">
               <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline-secondary" title="View">

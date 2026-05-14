@@ -113,21 +113,21 @@
     <div class="kpi-card card h-100" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;">
       <div class="card-body">
         <div class="kpi-label">Money In</div>
-        <div class="kpi-val">TZS {{ data.total_in|floatformat:0 }}</div>
+        <div class="kpi-val">TZS {{ data.total_in|tzs }}</div>
         <div class="kpi-sub">Cash received today</div>
         {% if data.total_in %}
         <div class="kpi-breakdown">
           {% if data.invoice_income %}
-          <div class="kpi-row"><span>Invoice payments</span><span>{{ data.invoice_income|floatformat:0 }}</span></div>
+          <div class="kpi-row"><span>Invoice payments</span><span>{{ data.invoice_income|tzs }}</span></div>
           {% endif %}
           {% if data.advance_income %}
-          <div class="kpi-row"><span>Advances</span><span>{{ data.advance_income|floatformat:0 }}</span></div>
+          <div class="kpi-row"><span>Advances</span><span>{{ data.advance_income|tzs }}</span></div>
           {% endif %}
           {% if data.office_income %}
-          <div class="kpi-row"><span>Office service</span><span>{{ data.office_income|floatformat:0 }}</span></div>
+          <div class="kpi-row"><span>Office service</span><span>{{ data.office_income|tzs }}</span></div>
           {% endif %}
           {% if data.other_income %}
-          <div class="kpi-row"><span>Other income</span><span>{{ data.other_income|floatformat:0 }}</span></div>
+          <div class="kpi-row"><span>Other income</span><span>{{ data.other_income|tzs }}</span></div>
           {% endif %}
         </div>
         {% endif %}
@@ -140,20 +140,20 @@
     <div class="kpi-card card h-100" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;">
       <div class="card-body">
         <div class="kpi-label">Money Out</div>
-        <div class="kpi-val">TZS {{ data.total_out|floatformat:0 }}</div>
+        <div class="kpi-val">TZS {{ data.total_out|tzs }}</div>
         <div class="kpi-sub">Cash paid today</div>
         <div class="kpi-breakdown">
           {% if data.exp_total %}
-          <div class="kpi-row"><span>Cash expenses</span><span>{{ data.exp_total|floatformat:0 }}</span></div>
+          <div class="kpi-row"><span>Cash expenses</span><span>{{ data.exp_total|tzs }}</span></div>
           {% endif %}
           {% if data.mat_orders_today %}
-          <div class="kpi-row"><span>Material orders</span><span>{{ data.mat_orders_today|floatformat:0 }}</span></div>
+          <div class="kpi-row"><span>Material orders</span><span>{{ data.mat_orders_today|tzs }}</span></div>
           {% endif %}
           {% if data.debt_payments_total %}
-          <div class="kpi-row"><span>Debt repayments</span><span>{{ data.debt_payments_total|floatformat:0 }}</span></div>
+          <div class="kpi-row"><span>Debt repayments</span><span>{{ data.debt_payments_total|tzs }}</span></div>
           {% endif %}
           {% if data.credit_exp_total %}
-          <div class="kpi-row" style="opacity:.75;"><span>+ Credit (no cash)</span><span>{{ data.credit_exp_total|floatformat:0 }}</span></div>
+          <div class="kpi-row" style="opacity:.75;"><span>+ Credit (no cash)</span><span>{{ data.credit_exp_total|tzs }}</span></div>
           {% endif %}
         </div>
       </div>
@@ -166,17 +166,17 @@
          style="background:{% if data.net_today >= 0 %}linear-gradient(135deg,#1a2e5a,#2563eb){% else %}linear-gradient(135deg,#7c3aed,#9333ea){% endif %};color:#fff;">
       <div class="card-body">
         <div class="kpi-label">Net Today</div>
-        <div class="kpi-val">TZS {{ data.net_today|floatformat:0 }}</div>
+        <div class="kpi-val">TZS {{ data.net_today|tzs }}</div>
         <div class="kpi-sub">In minus Out</div>
         <div class="kpi-breakdown">
           <div class="kpi-row">
             <span>Outstanding receivables</span>
-            <span>{{ data.total_receivable|floatformat:0 }}</span>
+            <span>{{ data.total_receivable|tzs }}</span>
           </div>
           {% if data.liabilities.total_balance %}
           <div class="kpi-row">
             <span>Total liabilities</span>
-            <span>{{ data.liabilities.total_balance|floatformat:0 }}</span>
+            <span>{{ data.liabilities.total_balance|tzs }}</span>
           </div>
           {% endif %}
         </div>
@@ -203,7 +203,7 @@
         <span class="text-muted ms-1" style="font-size:.78rem;">{{ inv.invoice_no }}</span>
         <span class="text-muted ms-2" style="font-size:.75rem;">Due {{ inv.due_date|date:"d M Y" }}</span>
       </div>
-      <div class="text-danger fw-bold">TZS {{ inv.balance_due|floatformat:0 }}</div>
+      <div class="text-danger fw-bold">TZS {{ inv.balance_due|tzs }}</div>
     </div>
     {% endfor %}
     {% for inv in invoices_due %}
@@ -213,7 +213,7 @@
         <strong>{{ inv.client_name }}</strong>
         <span class="text-muted ms-1" style="font-size:.78rem;">{{ inv.invoice_no }}</span>
       </div>
-      <div class="text-warning fw-bold">TZS {{ inv.balance_due|floatformat:0 }}</div>
+      <div class="text-warning fw-bold">TZS {{ inv.balance_due|tzs }}</div>
     </div>
     {% endfor %}
   </div>
@@ -285,7 +285,7 @@
             </a>
             <div class="text-muted" style="font-size:.75rem;">{{ inv.invoice_no }} · Due {{ inv.due_date|date:"d M Y"|default:"—" }}</div>
           </div>
-          <div class="act-amount text-success">TZS {{ inv.contract_amount|floatformat:0 }}</div>
+          <div class="act-amount text-success">TZS {{ inv.contract_amount|tzs }}</div>
         </div>
         {% endfor %}
       </div>
@@ -322,7 +322,7 @@
                 <div class="text-muted" style="font-size:.72rem;">{{ inv.invoice_no }}</div>
               </td>
               <td class="text-muted small">{{ inv.advance_payment_method }}</td>
-              <td class="text-end fw-bold text-success">{{ inv.advance_paid|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-success">{{ inv.advance_paid|tzs }}</td>
             </tr>
             {% endfor %}
             {% for p in data.inv_payments %}
@@ -333,7 +333,7 @@
                 <div class="text-muted" style="font-size:.72rem;">{{ p.invoice.invoice_no }}</div>
               </td>
               <td class="text-muted small">{{ p.get_payment_method_display }}</td>
-              <td class="text-end fw-bold text-success">{{ p.amount|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-success">{{ p.amount|tzs }}</td>
             </tr>
             {% endfor %}
             {% for p in data.off_payments %}
@@ -341,7 +341,7 @@
               <td><span class="badge bg-secondary">Office</span></td>
               <td class="fw-semibold" style="font-size:.83rem;">{{ p.record.client_name }}</td>
               <td class="text-muted small">{{ p.get_payment_method_display }}</td>
-              <td class="text-end fw-bold text-success">{{ p.amount|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-success">{{ p.amount|tzs }}</td>
             </tr>
             {% endfor %}
             {% for inc in data.other_income_rows %}
@@ -349,14 +349,14 @@
               <td><span class="badge" style="background:#ca8a04;">Other</span></td>
               <td class="text-muted small">{{ inc.description|default:"—" }}</td>
               <td class="text-muted small">{{ inc.get_payment_method_display }}</td>
-              <td class="text-end fw-bold text-success">{{ inc.amount|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-success">{{ inc.amount|tzs }}</td>
             </tr>
             {% endfor %}
           </tbody>
           <tfoot class="table-light">
             <tr>
               <td colspan="3" class="text-end fw-bold">Total</td>
-              <td class="text-end fw-bold text-success">{{ data.total_in|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-success">{{ data.total_in|tzs }}</td>
             </tr>
           </tfoot>
         </table>
@@ -385,7 +385,7 @@
         <span class="text-warning fw-semibold">
           <i class="bi bi-exclamation-circle me-1"></i>Credit expenses (no cash paid — new debts)
         </span>
-        <span class="fw-bold text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
+        <span class="fw-bold text-warning">TZS {{ data.credit_exp_total|tzs }}</span>
       </div>
       {% endif %}
       <div class="card-body p-0">
@@ -413,7 +413,7 @@
                 {% endif %}
               </td>
               <td class="text-end fw-semibold {% if e.payment_method == 'credit' %}text-warning{% else %}text-danger{% endif %}">
-                {{ e.amount|floatformat:0 }}
+                {{ e.amount|tzs }}
               </td>
             </tr>
             {% endfor %}
@@ -421,7 +421,7 @@
           <tfoot class="table-light">
             <tr>
               <td colspan="3" class="text-end fw-bold">Cash Total</td>
-              <td class="text-end fw-bold text-danger">{{ data.exp_total|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-danger">{{ data.exp_total|tzs }}</td>
             </tr>
           </tfoot>
         </table>
@@ -441,7 +441,7 @@
   <div class="card-header d-flex justify-content-between align-items-center"
        style="background:#fef2f2;color:#dc2626;">
     <span><i class="bi bi-arrow-return-right me-2"></i>Debt Repayments Today</span>
-    <span class="fw-bold">TZS {{ data.debt_payments_total|floatformat:0 }}</span>
+    <span class="fw-bold">TZS {{ data.debt_payments_total|tzs }}</span>
   </div>
   <div class="card-body p-0">
     <table class="table table-sm table-hover mb-0">
@@ -465,7 +465,7 @@
               {{ dp.get_payment_source_display }}
             </span>
           </td>
-          <td class="text-end fw-bold text-danger">{{ dp.amount|floatformat:0 }}</td>
+          <td class="text-end fw-bold text-danger">{{ dp.amount|tzs }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -509,18 +509,18 @@
       <div class="card-header d-flex justify-content-between align-items-center"
            style="background:#fffbeb;color:#92400e;">
         <span><i class="bi bi-clock-history me-2"></i>Outstanding Receivables</span>
-        <span class="fw-bold">TZS {{ data.total_receivable|floatformat:0 }}</span>
+        <span class="fw-bold">TZS {{ data.total_receivable|tzs }}</span>
       </div>
       <div class="card-body py-3">
         <div class="row g-3">
           <div class="col-sm-6">
             <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
               <div class="text-muted small fw-semibold mb-1">Invoice Balances</div>
-              <div class="fw-bold fs-6">TZS {{ data.invoice_receivable|floatformat:0 }}</div>
+              <div class="fw-bold fs-6">TZS {{ data.invoice_receivable|tzs }}</div>
               {% if data.invoice_overdue_count %}
               <div class="text-danger small mt-1">
                 <i class="bi bi-exclamation-circle"></i>
-                {{ data.invoice_overdue_count }} overdue — TZS {{ data.invoice_overdue_amount|floatformat:0 }}
+                {{ data.invoice_overdue_count }} overdue — TZS {{ data.invoice_overdue_amount|tzs }}
               </div>
               {% endif %}
             </div>
@@ -528,11 +528,11 @@
           <div class="col-sm-6">
             <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
               <div class="text-muted small fw-semibold mb-1">Office Service Balances</div>
-              <div class="fw-bold fs-6">TZS {{ data.service_receivable|floatformat:0 }}</div>
+              <div class="fw-bold fs-6">TZS {{ data.service_receivable|tzs }}</div>
               {% if data.service_overdue_count %}
               <div class="text-danger small mt-1">
                 <i class="bi bi-exclamation-circle"></i>
-                {{ data.service_overdue_count }} overdue — TZS {{ data.service_overdue_amount|floatformat:0 }}
+                {{ data.service_overdue_count }} overdue — TZS {{ data.service_overdue_amount|tzs }}
               </div>
               {% endif %}
             </div>
@@ -554,28 +554,28 @@
   <div class="card-header d-flex justify-content-between align-items-center"
        style="background:#fef2f2;color:#dc2626;">
     <span><i class="bi bi-exclamation-triangle me-2"></i>Outstanding Debts &amp; Liabilities</span>
-    <span class="fw-bold">TZS {{ data.liabilities.total_balance|floatformat:0 }}</span>
+    <span class="fw-bold">TZS {{ data.liabilities.total_balance|tzs }}</span>
   </div>
   <div class="card-body py-3">
     <div class="row g-3 align-items-center">
       <div class="col-sm-4">
         <div class="text-muted small mb-1">Total Owed</div>
-        <div class="fw-bold">TZS {{ data.liabilities.total_owed|floatformat:0 }}</div>
+        <div class="fw-bold">TZS {{ data.liabilities.total_owed|tzs }}</div>
       </div>
       <div class="col-sm-4">
         <div class="text-muted small mb-1">Total Repaid</div>
-        <div class="fw-bold text-success">TZS {{ data.liabilities.total_paid|floatformat:0 }}</div>
+        <div class="fw-bold text-success">TZS {{ data.liabilities.total_paid|tzs }}</div>
       </div>
       <div class="col-sm-4">
         <div class="text-muted small mb-1">Balance Remaining</div>
-        <div class="fw-bold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</div>
+        <div class="fw-bold text-danger">TZS {{ data.liabilities.total_balance|tzs }}</div>
       </div>
       {% if data.liabilities.overdue_count %}
       <div class="col-12">
         <div class="alert alert-danger py-2 mb-0 small">
           <i class="bi bi-alarm me-1"></i>
           <strong>{{ data.liabilities.overdue_count }} overdue debt(s)</strong>
-          — TZS {{ data.liabilities.overdue_amount|floatformat:0 }} past due date
+          — TZS {{ data.liabilities.overdue_amount|tzs }} past due date
         </div>
       </div>
       {% endif %}
@@ -585,7 +585,7 @@
           {% for t in data.liabilities.by_type %}
           <span class="badge px-2 py-1"
                 style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-weight:600;font-size:.75rem;">
-            {{ t.label }}: TZS {{ t.balance|floatformat:0 }} ({{ t.count }})
+            {{ t.label }}: TZS {{ t.balance|tzs }} ({{ t.count }})
           </span>
           {% endfor %}
         </div>
@@ -618,9 +618,9 @@
         <div class="funds-account">
           <div class="fa-label"><i class="bi {{ acc.icon }} me-1" style="color:{{ acc.color }};"></i>{{ acc.label }}</div>
           <div class="fa-val {% if acc.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-            TZS {{ acc.balance|floatformat:0 }}
+            TZS {{ acc.balance|tzs }}
           </div>
-          <div class="fa-sub">In {{ acc.in|floatformat:0 }} / Out {{ acc.out|floatformat:0 }}</div>
+          <div class="fa-sub">In {{ acc.in|tzs }} / Out {{ acc.out|tzs }}</div>
         </div>
       </div>
       {% endfor %}
@@ -630,18 +630,18 @@
       <div class="col-sm-4">
         <div class="p-3 rounded text-center" style="background:#f0fdf4;border:1px solid #bbf7d0;">
           <div class="text-muted small fw-semibold mb-1">Receivables (Owed to Us)</div>
-          <div class="fw-bold text-success">TZS {{ data.funds.total_receivable|floatformat:0 }}</div>
+          <div class="fw-bold text-success">TZS {{ data.funds.total_receivable|tzs }}</div>
         </div>
       </div>
       <div class="col-sm-4">
         <div class="p-3 rounded text-center" style="background:#fff1f2;border:1px solid #fecaca;">
           <div class="text-muted small fw-semibold mb-1">Payables (We Owe)</div>
-          <div class="fw-bold text-danger">TZS {{ data.funds.total_payable|floatformat:0 }}</div>
+          <div class="fw-bold text-danger">TZS {{ data.funds.total_payable|tzs }}</div>
           {% if data.funds.labour_credit > 0 %}
-          <div style="font-size:.68rem;color:#dc2626;">Labour: {{ data.funds.labour_credit|floatformat:0 }}</div>
+          <div style="font-size:.68rem;color:#dc2626;">Labour: {{ data.funds.labour_credit|tzs }}</div>
           {% endif %}
           {% if data.funds.material_credit > 0 %}
-          <div style="font-size:.68rem;color:#dc2626;">Materials: {{ data.funds.material_credit|floatformat:0 }}</div>
+          <div style="font-size:.68rem;color:#dc2626;">Materials: {{ data.funds.material_credit|tzs }}</div>
           {% endif %}
         </div>
       </div>
@@ -649,7 +649,7 @@
         <div class="p-3 rounded text-center" style="background:#1a2e5a;">
           <div class="small fw-semibold mb-1" style="color:#94a3b8;">NET POSITION</div>
           <div class="fw-bold fs-5 {% if data.funds.net_position >= 0 %}text-success{% else %}text-warning{% endif %}">
-            TZS {{ data.funds.net_position|floatformat:0 }}
+            TZS {{ data.funds.net_position|tzs }}
           </div>
         </div>
       </div>

@@ -134,21 +134,21 @@
   <div class="kpi-row">
     <div class="kpi-box">
       <div class="kpi-label">Total Income</div>
-      <div class="kpi-val green">TZS {{ data.total_income|floatformat:0 }}</div>
+      <div class="kpi-val green">TZS {{ data.total_income|tzs }}</div>
     </div>
     <div class="kpi-box">
       <div class="kpi-label">Total Expenses</div>
-      <div class="kpi-val red">TZS {{ data.total_expenses|floatformat:0 }}</div>
+      <div class="kpi-val red">TZS {{ data.total_expenses|tzs }}</div>
     </div>
     <div class="kpi-box">
       <div class="kpi-label">Net Profit</div>
       <div class="kpi-val {% if data.net_profit >= 0 %}blue{% else %}red{% endif %}">
-        TZS {{ data.net_profit|floatformat:0 }}
+        TZS {{ data.net_profit|tzs }}
       </div>
     </div>
     <div class="kpi-box">
       <div class="kpi-label">Outstanding</div>
-      <div class="kpi-val orange">TZS {{ data.total_receivable|floatformat:0 }}</div>
+      <div class="kpi-val orange">TZS {{ data.total_receivable|tzs }}</div>
     </div>
   </div>
 
@@ -160,11 +160,11 @@
     </thead>
     <tbody>
       {% for item in data.income_breakdown %}
-      <tr><td>{{ item.source }}</td><td class="text-right">{{ item.amount|floatformat:0 }}</td></tr>
+      <tr><td>{{ item.source }}</td><td class="text-right">{{ item.amount|tzs }}</td></tr>
       {% endfor %}
       <tr class="total-row">
         <td>Total Income</td>
-        <td class="text-right">{{ data.total_income|floatformat:0 }}</td>
+        <td class="text-right">{{ data.total_income|tzs }}</td>
       </tr>
     </tbody>
   </table>
@@ -179,14 +179,14 @@
       {% for cat in data.by_category %}
       <tr>
         <td>{{ cat.name }}</td>
-        <td class="text-right">{{ cat.total|floatformat:0 }}</td>
+        <td class="text-right">{{ cat.total|tzs }}</td>
         <td>{{ cat.pct }}%</td>
         <td>{{ cat.count }}</td>
       </tr>
       {% endfor %}
       <tr class="total-row">
         <td>Total Expenses</td>
-        <td class="text-right">{{ data.total_expenses|floatformat:0 }}</td>
+        <td class="text-right">{{ data.total_expenses|tzs }}</td>
         <td colspan="2"></td>
       </tr>
     </tbody>
@@ -206,7 +206,7 @@
         <td>{{ e.category }}</td>
         <td>{{ e.description }}</td>
         <td>{{ e.paid_to|default:"—" }}</td>
-        <td class="text-right">{{ e.amount|floatformat:0 }}</td>
+        <td class="text-right">{{ e.amount|tzs }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -226,7 +226,7 @@
         <td>Invoice {{ r.invoice_no }}</td><td>{{ r.client_name }}</td>
         <td>{{ r.due_date }}</td>
         <td>{% if r.is_overdue %}<span style="color:#dc2626;font-weight:600;">OVERDUE</span>{% else %}Pending{% endif %}</td>
-        <td class="text-right">{{ r.balance|floatformat:0 }}</td>
+        <td class="text-right">{{ r.balance|tzs }}</td>
       </tr>
       {% endfor %}
       {% for r in data.service_recv_rows %}
@@ -234,12 +234,12 @@
         <td>Office Service</td><td>{{ r.client_name }}</td>
         <td>{{ r.due_date|default:"—" }}</td>
         <td>{% if r.is_overdue %}<span style="color:#dc2626;font-weight:600;">OVERDUE</span>{% else %}Pending{% endif %}</td>
-        <td class="text-right">{{ r.balance|floatformat:0 }}</td>
+        <td class="text-right">{{ r.balance|tzs }}</td>
       </tr>
       {% endfor %}
       <tr class="total-row">
         <td colspan="4">Total Outstanding</td>
-        <td class="text-right">{{ data.total_receivable|floatformat:0 }}</td>
+        <td class="text-right">{{ data.total_receivable|tzs }}</td>
       </tr>
     </tbody>
   </table>
@@ -259,17 +259,17 @@
       {% for p in ps.projects %}
       <tr>
         <td>{{ p.name }}</td><td>{{ p.client_name }}</td><td>{{ p.completion_date }}</td>
-        <td class="text-right">{{ p.revenue|floatformat:0 }}</td>
-        <td class="text-right">{{ p.materials_cost|floatformat:0 }}</td>
-        <td class="text-right">{{ p.gross_profit|floatformat:0 }}</td>
+        <td class="text-right">{{ p.revenue|tzs }}</td>
+        <td class="text-right">{{ p.materials_cost|tzs }}</td>
+        <td class="text-right">{{ p.gross_profit|tzs }}</td>
         <td>{{ p.profit_margin|floatformat:1 }}%</td>
       </tr>
       {% endfor %}
       <tr class="total-row">
         <td colspan="3">Totals</td>
-        <td class="text-right">{{ ps.total_revenue|floatformat:0 }}</td>
-        <td class="text-right">{{ ps.total_materials|floatformat:0 }}</td>
-        <td class="text-right">{{ ps.total_profit|floatformat:0 }}</td>
+        <td class="text-right">{{ ps.total_revenue|tzs }}</td>
+        <td class="text-right">{{ ps.total_materials|tzs }}</td>
+        <td class="text-right">{{ ps.total_profit|tzs }}</td>
         <td>{{ ps.profit_margin|floatformat:1 }}%</td>
       </tr>
     </tbody>

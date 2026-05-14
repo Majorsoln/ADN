@@ -16,7 +16,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Charged</div>
-          <div class="fw-bold mt-1" style="font-size:1.1rem;">TZS {{ total_charged|floatformat:0 }}</div>
+          <div class="fw-bold mt-1" style="font-size:1.1rem;">TZS {{ total_charged|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-receipt"></i></div>
       </div>
@@ -27,7 +27,7 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Collected</div>
-          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ total_paid|floatformat:0 }}</div>
+          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ total_paid|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-cash-coin"></i></div>
       </div>
@@ -38,13 +38,13 @@
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Outstanding Debt</div>
-          <div class="fw-bold mt-1 text-danger" style="font-size:1.1rem;">TZS {{ total_balance|floatformat:0 }}</div>
+          <div class="fw-bold mt-1 text-danger" style="font-size:1.1rem;">TZS {{ total_balance|tzs }}</div>
         </div>
         <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-exclamation-circle"></i></div>
       </div>
       {% if active_rate %}
       <div class="text-muted mt-2" style="font-size:.72rem;">
-        Rate: TZS {{ active_rate.rate_per_window|floatformat:0 }}/window · TZS {{ active_rate.rate_per_door|floatformat:0 }}/door
+        Rate: TZS {{ active_rate.rate_per_window|tzs }}/window · TZS {{ active_rate.rate_per_door|tzs }}/door
         <a href="{% url 'office:rates' %}" class="ms-1" style="font-size:.7rem;">Change</a>
       </div>
       {% else %}
@@ -116,10 +116,10 @@
             {{ r.due_date|date:"d M Y"|default:"—" }}
             {% if r.is_overdue %}<span class="badge badge-overdue rounded-pill ms-1" style="font-size:.65rem;">Late</span>{% endif %}
           </td>
-          <td class="text-end fw-semibold">{{ r.total_charge|floatformat:0 }}</td>
-          <td class="text-end text-success fw-semibold">{{ r.total_paid|floatformat:0 }}</td>
+          <td class="text-end fw-semibold">{{ r.total_charge|tzs }}</td>
+          <td class="text-end text-success fw-semibold">{{ r.total_paid|tzs }}</td>
           <td class="text-end fw-bold {% if r.balance > 0 %}text-danger{% else %}text-success{% endif %}">
-            {{ r.balance|floatformat:0 }}
+            {{ r.balance|tzs }}
           </td>
           <td><span class="badge rounded-pill px-2
             {% if r.status == 'paid' %}badge-accepted

@@ -123,24 +123,24 @@
           <div class="col-md-4">
             <div class="section-heading">Financials</div>
             <div class="small mb-1">
-              Revenue: <strong>TZS {{ project.revenue|floatformat:0 }}</strong>
+              Revenue: <strong>TZS {{ project.revenue|tzs }}</strong>
               {% if project.revenue_source == 'quotation' %}
               <span class="badge bg-primary ms-1" style="font-size:.6rem;">Quote</span>
               {% elif project.revenue_source == 'invoice' %}
               <span class="badge bg-success ms-1" style="font-size:.6rem;">Invoice</span>
               {% endif %}
             </div>
-            <div class="small mb-1">Received: <strong class="text-primary">TZS {{ funding.total_client_received|floatformat:0 }}</strong></div>
+            <div class="small mb-1">Received: <strong class="text-primary">TZS {{ funding.total_client_received|tzs }}</strong></div>
             {% if funding.balance_due > 0 %}
-            <div class="small mb-1 text-warning">Balance owed: <strong>TZS {{ funding.balance_due|floatformat:0 }}</strong></div>
+            <div class="small mb-1 text-warning">Balance owed: <strong>TZS {{ funding.balance_due|tzs }}</strong></div>
             {% endif %}
-            <div class="small mb-1 text-danger">Materials: <strong>TZS {{ project.materials_cost|floatformat:0 }}</strong></div>
+            <div class="small mb-1 text-danger">Materials: <strong>TZS {{ project.materials_cost|tzs }}</strong></div>
             {% if project.direct_expenses_cost > 0 %}
-            <div class="small mb-1 text-danger">Direct Expenses: <strong>TZS {{ project.direct_expenses_cost|floatformat:0 }}</strong></div>
+            <div class="small mb-1 text-danger">Direct Expenses: <strong>TZS {{ project.direct_expenses_cost|tzs }}</strong></div>
             {% endif %}
             <div class="small fw-bold {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-              Net Profit: TZS {{ project.gross_profit|floatformat:0 }}
-              {% if project.revenue > 0 %}({{ project.profit_margin|floatformat:0 }}%){% endif %}
+              Net Profit: TZS {{ project.gross_profit|tzs }}
+              {% if project.revenue > 0 %}({{ project.profit_margin|tzs }}%){% endif %}
             </div>
             {% if funding.own_funds_message %}
             <div class="mt-1 small text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i>Own funds used</div>
@@ -234,7 +234,7 @@
                   {% endif %}
                 {% else %}—{% endif %}
               </td>
-              <td class="text-end fw-semibold">{{ order.total_cost|floatformat:0 }}</td>
+              <td class="text-end fw-semibold">{{ order.total_cost|tzs }}</td>
               <td class="text-end">
                 <div class="btn-group btn-group-sm">
                   <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline-secondary"><i class="bi bi-eye"></i></a>
@@ -256,7 +256,7 @@
           <tfoot class="table-light">
             <tr>
               <td colspan="5" class="text-end fw-bold">Total Materials Cost:</td>
-              <td class="text-end fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-danger">TZS {{ project.materials_cost|tzs }}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -307,7 +307,7 @@
                 {% elif exp.payment_method == 'cheque' %}<span class="badge bg-secondary" style="font-size:.65rem;">Cheque</span>
                 {% else %}<span class="badge bg-light text-muted" style="font-size:.65rem;">{{ exp.get_payment_method_display }}</span>{% endif %}
               </td>
-              <td class="text-end fw-semibold text-danger">{{ exp.amount|floatformat:0 }}</td>
+              <td class="text-end fw-semibold text-danger">{{ exp.amount|tzs }}</td>
               <td class="text-end">
                 <a href="{% url 'finance:expense_edit' exp.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
               </td>
@@ -326,7 +326,7 @@
           <tfoot class="table-light">
             <tr>
               <td colspan="5" class="text-end fw-bold">Total Direct Expenses:</td>
-              <td class="text-end fw-bold text-danger">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</td>
+              <td class="text-end fw-bold text-danger">TZS {{ funding.direct_expenses_cost|tzs }}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -365,12 +365,12 @@
             <span class="badge bg-success ms-1" style="font-size:.58rem;">Invoice</span>
             {% endif %}
           </span>
-          <span class="fw-semibold">TZS {{ project.revenue|floatformat:0 }}</span>
+          <span class="fw-semibold">TZS {{ project.revenue|tzs }}</span>
         </div>
         {% if funding.advance_paid %}
         <div class="d-flex justify-content-between mb-1 small">
           <span class="text-muted">Advance Paid</span>
-          <span class="fw-semibold text-primary">TZS {{ funding.advance_paid|floatformat:0 }}</span>
+          <span class="fw-semibold text-primary">TZS {{ funding.advance_paid|tzs }}</span>
         </div>
         {% endif %}
         {% for pay in funding.inv_payments %}
@@ -384,17 +384,17 @@
               {% else %}{{ pay.get_payment_method_display }}{% endif %}
             </span>
           </span>
-          <span class="fw-semibold text-success">TZS {{ pay.amount|floatformat:0 }}</span>
+          <span class="fw-semibold text-success">TZS {{ pay.amount|tzs }}</span>
         </div>
         {% endfor %}
         <div class="d-flex justify-content-between mb-1 small border-top pt-1">
           <span class="fw-semibold">Total Received</span>
-          <span class="fw-bold text-primary">TZS {{ funding.total_client_received|floatformat:0 }}</span>
+          <span class="fw-bold text-primary">TZS {{ funding.total_client_received|tzs }}</span>
         </div>
         {% if funding.balance_due > 0 %}
         <div class="d-flex justify-content-between mb-2 small">
           <span class="text-muted">Balance Still Owed</span>
-          <span class="fw-semibold text-warning">TZS {{ funding.balance_due|floatformat:0 }}</span>
+          <span class="fw-semibold text-warning">TZS {{ funding.balance_due|tzs }}</span>
         </div>
         {% elif project.revenue > 0 %}
         <div class="d-flex justify-content-between mb-2 small">
@@ -415,14 +415,14 @@
             {% endif %}
             {{ item.label }}
           </span>
-          <span class="fw-semibold text-danger">TZS {{ item.amount|floatformat:0 }}</span>
+          <span class="fw-semibold text-danger">TZS {{ item.amount|tzs }}</span>
         </div>
         {% empty %}
         <div class="small text-muted">No finalised orders yet.</div>
         {% endfor %}
         <div class="d-flex justify-content-between mb-2 small border-top pt-1">
           <span class="fw-semibold">Total Materials</span>
-          <span class="fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</span>
+          <span class="fw-bold text-danger">TZS {{ project.materials_cost|tzs }}</span>
         </div>
 
         {# ── Direct Project Expenses ── #}
@@ -433,12 +433,12 @@
           <span class="text-muted">
             <i class="bi {{ cat.icon }} me-1" style="color:{{ cat.color }};"></i>{{ cat.name }}
           </span>
-          <span class="fw-semibold text-danger">TZS {{ cat.total|floatformat:0 }}</span>
+          <span class="fw-semibold text-danger">TZS {{ cat.total|tzs }}</span>
         </div>
         {% endfor %}
         <div class="d-flex justify-content-between mb-2 small border-top pt-1">
           <span class="fw-semibold">Total Expenses</span>
-          <span class="fw-bold text-danger">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</span>
+          <span class="fw-bold text-danger">TZS {{ funding.direct_expenses_cost|tzs }}</span>
         </div>
         {% endif %}
 
@@ -446,7 +446,7 @@
         {% if funding.direct_expenses_cost > 0 %}
         <div class="d-flex justify-content-between mb-2 small" style="background:#fff1f2;border-radius:5px;padding:4px 6px;">
           <span class="fw-semibold text-danger"><i class="bi bi-dash-circle me-1"></i>Total Project Cost</span>
-          <span class="fw-bold text-danger">TZS {{ funding.total_cost|floatformat:0 }}</span>
+          <span class="fw-bold text-danger">TZS {{ funding.total_cost|tzs }}</span>
         </div>
         {% endif %}
 
@@ -455,7 +455,7 @@
         <div class="d-flex justify-content-between">
           <span class="fw-bold">Net Profit</span>
           <span class="fw-bold fs-5 {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
-            TZS {{ project.gross_profit|floatformat:0 }}
+            TZS {{ project.gross_profit|tzs }}
           </span>
         </div>
         {% if project.revenue > 0 %}
@@ -466,7 +466,7 @@
         {% if funding.credit_orders %}
         <div class="alert alert-danger py-2 px-3 mt-2 mb-0 small">
           <i class="bi bi-exclamation-triangle-fill me-1"></i>
-          <strong>TZS {{ funding.credit_amount|floatformat:0 }}</strong> of materials purchased on credit.
+          <strong>TZS {{ funding.credit_amount|tzs }}</strong> of materials purchased on credit.
           {% for o in funding.credit_orders %}
             {% with debt=o.debts.first %}
             {% if debt %}
@@ -487,7 +487,7 @@
         {% if funding.surplus and funding.surplus > 0 %}
         <div class="alert alert-success py-2 px-3 mt-2 mb-0 small">
           <i class="bi bi-check-circle me-1"></i>
-          Client payments exceed materials cost by TZS {{ funding.surplus|floatformat:0 }} — profit well-covered.
+          Client payments exceed materials cost by TZS {{ funding.surplus|tzs }} — profit well-covered.
         </div>
         {% endif %}
 

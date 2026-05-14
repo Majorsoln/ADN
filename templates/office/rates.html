@@ -60,13 +60,13 @@
         <div class="row g-2 mt-1">
           <div class="col-6">
             <div class="p-3 rounded text-center" style="background:#dbeafe;">
-              <div class="fw-bold" style="font-size:1.4rem;color:#2563eb;">TZS {{ active_rate.rate_per_window|floatformat:0 }}</div>
+              <div class="fw-bold" style="font-size:1.4rem;color:#2563eb;">TZS {{ active_rate.rate_per_window|tzs }}</div>
               <div class="small text-muted">per Window</div>
             </div>
           </div>
           <div class="col-6">
             <div class="p-3 rounded text-center" style="background:#e0e7ff;">
-              <div class="fw-bold" style="font-size:1.4rem;color:#4338ca;">TZS {{ active_rate.rate_per_door|floatformat:0 }}</div>
+              <div class="fw-bold" style="font-size:1.4rem;color:#4338ca;">TZS {{ active_rate.rate_per_door|tzs }}</div>
               <div class="small text-muted">per Door</div>
             </div>
           </div>
@@ -99,8 +99,8 @@
             {% for rate in all_rates %}
             <tr {% if rate.is_active %}class="table-success"{% endif %}>
               <td class="fw-semibold">{{ rate.effective_from|date:"d M Y" }}</td>
-              <td class="text-end">{{ rate.rate_per_window|floatformat:0 }}</td>
-              <td class="text-end">{{ rate.rate_per_door|floatformat:0 }}</td>
+              <td class="text-end">{{ rate.rate_per_window|tzs }}</td>
+              <td class="text-end">{{ rate.rate_per_door|tzs }}</td>
               <td class="text-center">
                 {% if rate.is_active %}
                 <span class="badge bg-success rounded-pill">Active</span>

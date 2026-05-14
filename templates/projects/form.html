@@ -66,7 +66,7 @@
               </div>
               {% for opt in locked_quotation.material_options %}
               {% if opt.material.pk == locked_quotation.accepted_material_id %}
-              <div class="small text-success fw-bold mt-1">Contract Value: TZS {{ opt.grand|floatformat:0 }}</div>
+              <div class="small text-success fw-bold mt-1">Contract Value: TZS {{ opt.grand|tzs }}</div>
               {% endif %}
               {% endfor %}
               {% endif %}

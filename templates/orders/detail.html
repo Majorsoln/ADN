@@ -220,8 +220,8 @@
               <td class="text-muted small">{{ item.description|default:"—" }}</td>
               <td class="text-end">{{ item.quantity }}</td>
               <td class="small">{{ item.get_unit_display }}</td>
-              <td class="text-end">{{ item.unit_cost|floatformat:0 }}</td>
-              <td class="text-end fw-bold">{{ item.total|floatformat:0 }}</td>
+              <td class="text-end">{{ item.unit_cost|tzs }}</td>
+              <td class="text-end fw-bold">{{ item.total|tzs }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="7" class="text-center text-muted py-4">No items recorded</td></tr>
@@ -231,7 +231,7 @@
             <tr>
               <td colspan="6" class="text-end fw-bold">Order Total:</td>
               <td class="text-end fw-bold text-danger" style="font-size:1.05rem;">
-                TZS {{ order.total_cost|floatformat:0 }}
+                TZS {{ order.total_cost|tzs }}
               </td>
             </tr>
           </tfoot>
@@ -277,7 +277,7 @@
         <div class="d-flex justify-content-between">
           <span class="fw-bold">Total Cost</span>
           <span class="fw-bold text-danger" style="font-size:1.05rem;">
-            TZS {{ order.total_cost|floatformat:0 }}
+            TZS {{ order.total_cost|tzs }}
           </span>
         </div>
       </div>

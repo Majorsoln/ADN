@@ -101,10 +101,10 @@
               {% endif %}
               {% if p.completion_date %}<div class="text-success"><i class="bi bi-check-circle me-1" style="font-size:.6rem;"></i>{{ p.completion_date|date:"d M Y" }}</div>{% endif %}
             </td>
-            <td class="text-end">{% if p.revenue %}<span class="fw-semibold">{{ p.revenue|floatformat:0 }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
-            <td class="text-end text-danger">{% if p.materials_cost %}{{ p.materials_cost|floatformat:0 }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td class="text-end">{% if p.revenue %}<span class="fw-semibold">{{ p.revenue|tzs }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td class="text-end text-danger">{% if p.materials_cost %}{{ p.materials_cost|tzs }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
             <td class="text-end fw-bold {% if p.gross_profit > 0 %}text-success{% elif p.gross_profit < 0 %}text-danger{% endif %}">
-              {% if p.revenue %}{{ p.gross_profit|floatformat:0 }}{% else %}<span class="text-muted fw-normal">—</span>{% endif %}
+              {% if p.revenue %}{{ p.gross_profit|tzs }}{% else %}<span class="text-muted fw-normal">—</span>{% endif %}
             </td>
             <td class="text-end" onclick="event.stopPropagation()">
               <div class="btn-group btn-group-sm">
@@ -159,13 +159,13 @@
             {% if p.revenue %}
             <div class="mt-1 d-flex justify-content-between" style="font-size:.68rem;">
               <span class="text-muted">Revenue</span>
-              <span class="fw-semibold">TZS {{ p.revenue|floatformat:0 }}</span>
+              <span class="fw-semibold">TZS {{ p.revenue|tzs }}</span>
             </div>
             {% endif %}
             {% if p.orders.count %}
             <div class="mt-1" style="font-size:.68rem;color:#64748b;">
               <i class="bi bi-cart me-1"></i>{{ p.orders.count }} order{{ p.orders.count|pluralize }}
-              · TZS {{ p.materials_cost|floatformat:0 }}
+              · TZS {{ p.materials_cost|tzs }}
             </div>
             {% endif %}
             <div class="mt-2 d-flex gap-1" onclick="event.stopPropagation()">

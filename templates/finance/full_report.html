@@ -122,7 +122,7 @@
       <div class="card-body">
         <div class="kpi-lbl">Fedha Iliyoingia</div>
         <div class="kpi-val text-in">
-          {{ data.grand_total_in|floatformat:0 }}
+          {{ data.grand_total_in|tzs }}
         </div>
         <small class="text-muted">TZS</small>
       </div>
@@ -133,7 +133,7 @@
       <div class="card-body">
         <div class="kpi-lbl">Fedha Iliyotoka</div>
         <div class="kpi-val text-out">
-          {{ data.grand_total_out|floatformat:0 }}
+          {{ data.grand_total_out|tzs }}
         </div>
         <small class="text-muted">TZS</small>
       </div>
@@ -145,7 +145,7 @@
       <div class="card-body">
         <div class="kpi-lbl">Net</div>
         <div class="kpi-val {% if data.grand_net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
-          {% if data.grand_net >= 0 %}+{% endif %}{{ data.grand_net|floatformat:0 }}
+          {% if data.grand_net >= 0 %}+{% endif %}{{ data.grand_net|tzs }}
         </div>
         <small class="text-muted">TZS</small>
       </div>
@@ -184,37 +184,37 @@
           <td class="lbl-col"><i class="bi bi-receipt me-1 text-muted"></i>Invoice (Malipo)</td>
           {% for row in data.account_rows %}
             <td class="text-end {% if row.inv_in %}text-in{% else %}text-muted{% endif %}">
-              {{ row.inv_in|floatformat:0 }}
+              {{ row.inv_in|tzs }}
             </td>
           {% endfor %}
-          <td class="text-end fw-semibold text-in">{{ data.grand_inv_in|floatformat:0 }}</td>
+          <td class="text-end fw-semibold text-in">{{ data.grand_inv_in|tzs }}</td>
         </tr>
         <tr>
           <td class="lbl-col"><i class="bi bi-shop me-1 text-muted"></i>Huduma za Ofisi</td>
           {% for row in data.account_rows %}
             <td class="text-end {% if row.svc_in %}text-in{% else %}text-muted{% endif %}">
-              {{ row.svc_in|floatformat:0 }}
+              {{ row.svc_in|tzs }}
             </td>
           {% endfor %}
-          <td class="text-end fw-semibold text-in">{{ data.grand_svc_in|floatformat:0 }}</td>
+          <td class="text-end fw-semibold text-in">{{ data.grand_svc_in|tzs }}</td>
         </tr>
         {% if data.grand_oth_in %}
         <tr>
           <td class="lbl-col"><i class="bi bi-plus-circle me-1 text-muted"></i>Mapato Mengine</td>
           {% for row in data.account_rows %}
             <td class="text-end {% if row.oth_in %}text-in{% else %}text-muted{% endif %}">
-              {{ row.oth_in|floatformat:0 }}
+              {{ row.oth_in|tzs }}
             </td>
           {% endfor %}
-          <td class="text-end fw-semibold text-in">{{ data.grand_oth_in|floatformat:0 }}</td>
+          <td class="text-end fw-semibold text-in">{{ data.grand_oth_in|tzs }}</td>
         </tr>
         {% endif %}
         <tr class="fw-bold" style="background:#f0fdf4;">
           <td>Jumla Inayoingia</td>
           {% for row in data.account_rows %}
-            <td class="text-end text-in">{{ row.total_in|floatformat:0 }}</td>
+            <td class="text-end text-in">{{ row.total_in|tzs }}</td>
           {% endfor %}
-          <td class="text-end text-in">{{ data.grand_total_in|floatformat:0 }}</td>
+          <td class="text-end text-in">{{ data.grand_total_in|tzs }}</td>
         </tr>
 
         {# ── OUTFLOWS ─────────────────────────────────────────── #}
@@ -227,37 +227,37 @@
           <td class="lbl-col"><i class="bi bi-box-seam me-1 text-muted"></i>Vifaa (Material Orders)</td>
           {% for row in data.account_rows %}
             <td class="text-end {% if row.mat_out %}text-out{% else %}text-muted{% endif %}">
-              {{ row.mat_out|floatformat:0 }}
+              {{ row.mat_out|tzs }}
             </td>
           {% endfor %}
-          <td class="text-end fw-semibold text-out">{{ data.grand_mat_out|floatformat:0 }}</td>
+          <td class="text-end fw-semibold text-out">{{ data.grand_mat_out|tzs }}</td>
         </tr>
         <tr>
           <td class="lbl-col"><i class="bi bi-cash-stack me-1 text-muted"></i>Gharama (Expenses)</td>
           {% for row in data.account_rows %}
             <td class="text-end {% if row.exp_out %}text-out{% else %}text-muted{% endif %}">
-              {{ row.exp_out|floatformat:0 }}
+              {{ row.exp_out|tzs }}
             </td>
           {% endfor %}
-          <td class="text-end fw-semibold text-out">{{ data.grand_exp_out|floatformat:0 }}</td>
+          <td class="text-end fw-semibold text-out">{{ data.grand_exp_out|tzs }}</td>
         </tr>
         {% if data.grand_dbt_out %}
         <tr>
           <td class="lbl-col"><i class="bi bi-arrow-return-right me-1 text-muted"></i>Malipo ya Deni</td>
           {% for row in data.account_rows %}
             <td class="text-end {% if row.dbt_out %}text-out{% else %}text-muted{% endif %}">
-              {{ row.dbt_out|floatformat:0 }}
+              {{ row.dbt_out|tzs }}
             </td>
           {% endfor %}
-          <td class="text-end fw-semibold text-out">{{ data.grand_dbt_out|floatformat:0 }}</td>
+          <td class="text-end fw-semibold text-out">{{ data.grand_dbt_out|tzs }}</td>
         </tr>
         {% endif %}
         <tr class="fw-bold" style="background:#fff5f5;">
           <td>Jumla Inayotoka</td>
           {% for row in data.account_rows %}
-            <td class="text-end text-out">{{ row.total_out|floatformat:0 }}</td>
+            <td class="text-end text-out">{{ row.total_out|tzs }}</td>
           {% endfor %}
-          <td class="text-end text-out">{{ data.grand_total_out|floatformat:0 }}</td>
+          <td class="text-end text-out">{{ data.grand_total_out|tzs }}</td>
         </tr>
       </tbody>
       <tfoot>
@@ -265,11 +265,11 @@
           <td class="fw-bold">NET</td>
           {% for row in data.account_rows %}
             <td class="text-end fw-bold {% if row.net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
-              {% if row.net >= 0 %}+{% endif %}{{ row.net|floatformat:0 }}
+              {% if row.net >= 0 %}+{% endif %}{{ row.net|tzs }}
             </td>
           {% endfor %}
           <td class="text-end fw-bold {% if data.grand_net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
-            {% if data.grand_net >= 0 %}+{% endif %}{{ data.grand_net|floatformat:0 }}
+            {% if data.grand_net >= 0 %}+{% endif %}{{ data.grand_net|tzs }}
           </td>
         </tr>
       </tfoot>
@@ -298,21 +298,21 @@
       {% if row.inv_in %}
       <div class="flow-row">
         <span class="flow-lbl"><i class="bi bi-receipt text-muted me-1"></i>Invoice (Malipo)</span>
-        <span class="flow-amt text-in">{{ row.inv_in|floatformat:0 }}</span>
+        <span class="flow-amt text-in">{{ row.inv_in|tzs }}</span>
       </div>
       {% endif %}
 
       {% if row.svc_in %}
       <div class="flow-row">
         <span class="flow-lbl"><i class="bi bi-shop text-muted me-1"></i>Huduma za Ofisi</span>
-        <span class="flow-amt text-in">{{ row.svc_in|floatformat:0 }}</span>
+        <span class="flow-amt text-in">{{ row.svc_in|tzs }}</span>
       </div>
       {% endif %}
 
       {% if row.oth_in %}
       <div class="flow-row">
         <span class="flow-lbl"><i class="bi bi-plus-circle text-muted me-1"></i>Mapato Mengine</span>
-        <span class="flow-amt text-in">{{ row.oth_in|floatformat:0 }}</span>
+        <span class="flow-amt text-in">{{ row.oth_in|tzs }}</span>
       </div>
       {% endif %}
 
@@ -325,7 +325,7 @@
 
       <div class="flow-total">
         <span class="flow-lbl">Jumla Inayoingia</span>
-        <span class="flow-amt text-in">{{ row.total_in|floatformat:0 }}</span>
+        <span class="flow-amt text-in">{{ row.total_in|tzs }}</span>
       </div>
 
       {# Outflows #}
@@ -334,21 +334,21 @@
       {% if row.mat_out %}
       <div class="flow-row">
         <span class="flow-lbl"><i class="bi bi-box-seam text-muted me-1"></i>Vifaa (Material Orders)</span>
-        <span class="flow-amt text-out">{{ row.mat_out|floatformat:0 }}</span>
+        <span class="flow-amt text-out">{{ row.mat_out|tzs }}</span>
       </div>
       {% endif %}
 
       {% if row.exp_out %}
       <div class="flow-row">
         <span class="flow-lbl"><i class="bi bi-cash-stack text-muted me-1"></i>Gharama (Expenses)</span>
-        <span class="flow-amt text-out">{{ row.exp_out|floatformat:0 }}</span>
+        <span class="flow-amt text-out">{{ row.exp_out|tzs }}</span>
       </div>
       {% endif %}
 
       {% if row.dbt_out %}
       <div class="flow-row">
         <span class="flow-lbl"><i class="bi bi-arrow-return-right text-muted me-1"></i>Malipo ya Deni</span>
-        <span class="flow-amt text-out">{{ row.dbt_out|floatformat:0 }}</span>
+        <span class="flow-amt text-out">{{ row.dbt_out|tzs }}</span>
       </div>
       {% endif %}
 
@@ -361,7 +361,7 @@
 
       <div class="flow-total">
         <span class="flow-lbl">Jumla Inayotoka</span>
-        <span class="flow-amt text-out">{{ row.total_out|floatformat:0 }}</span>
+        <span class="flow-amt text-out">{{ row.total_out|tzs }}</span>
       </div>
 
       {# Net #}
@@ -370,7 +370,7 @@
         <span class="fw-bold">NET {{ row.label }}</span>
         <span class="fw-bold fs-5
           {% if row.net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
-          {% if row.net >= 0 %}+{% endif %}{{ row.net|floatformat:0 }} TZS
+          {% if row.net >= 0 %}+{% endif %}{{ row.net|tzs }} TZS
         </span>
       </div>
     </div>
@@ -389,12 +389,12 @@
     <div class="mt-1 d-flex flex-wrap gap-3">
       {% if data.unacc_in %}
         <span class="badge bg-success bg-opacity-75 fs-6 fw-normal px-3 py-2">
-          <i class="bi bi-arrow-down me-1"></i>Inayoingia: TZS {{ data.unacc_in|floatformat:0 }}
+          <i class="bi bi-arrow-down me-1"></i>Inayoingia: TZS {{ data.unacc_in|tzs }}
         </span>
       {% endif %}
       {% if data.unacc_out %}
         <span class="badge bg-danger bg-opacity-75 fs-6 fw-normal px-3 py-2">
-          <i class="bi bi-arrow-up me-1"></i>Inayotoka: TZS {{ data.unacc_out|floatformat:0 }}
+          <i class="bi bi-arrow-up me-1"></i>Inayotoka: TZS {{ data.unacc_out|tzs }}
         </span>
       {% endif %}
     </div>
