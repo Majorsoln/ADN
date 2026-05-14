@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Debt{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <a href="{% url 'finance:debt_list' %}" class="btn btn-link text-muted me-2 p-0">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <div>
+    <h2 class="mb-0">{{ action }} Debt Record</h2>
+    <small class="text-muted">Track money owed to suppliers, lenders, or individuals</small>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <div class="col-sm-8">
+              <label class="form-label fw-semibold small">Creditor Name *</label>
+              {{ form.creditor_name }}
+              {% if form.creditor_name.errors %}<div class="text-danger small">{{ form.creditor_name.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label fw-semibold small">Phone</label>
+              {{ form.creditor_phone }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Debt Type *</label>
+              {{ form.debt_type }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Total Amount (TZS) *</label>
+              {{ form.amount }}
+              {% if form.amount.errors %}<div class="text-danger small">{{ form.amount.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Date Incurred *</label>
+              {{ form.date_incurred }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Due Date</label>
+              {{ form.due_date }}
+              <div class="form-text">Leave blank if no fixed deadline</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Description / Purpose *</label>
+              {{ form.description }}
+              {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Linked Project</label>
+              {{ form.project }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Linked Material Order</label>
+              {{ form.material_order }}
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Notes</label>
+              {{ form.notes }}
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-danger px-4">
+              <i class="bi bi-check-lg me-1"></i>Save Debt
+            </button>
+            <a href="{% url 'finance:debt_list' %}" class="btn btn-link text-muted">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

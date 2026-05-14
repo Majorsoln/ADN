@@ -1,0 +1,658 @@
+{% extends "base.html" %}
+{% block title %}Business Report{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0"><i class="bi bi-bar-chart-line text-primary me-2"></i>Business Report</h2>
+    <small class="text-muted">Income · Expenses · Receivables · Project Performance</small>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if data %}
+    <a href="{% url 'finance:report_pdf' %}?{{ request.GET.urlencode }}"
+       class="btn btn-outline-secondary btn-sm" target="_blank">
+      <i class="bi bi-printer me-1"></i>Print PDF
+    </a>
+    <a href="{% url 'finance:save_report' %}?{{ request.GET.urlencode }}"
+       class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-cloud-arrow-down me-1"></i>Save Report
+    </a>
+    {% endif %}
+    <a href="{% url 'finance:archive' %}" class="btn btn-outline-dark btn-sm">
+      <i class="bi bi-archive me-1"></i>Archive
+    </a>
+  </div>
+</div>
+
+<!-- ── Filter bar ──────────────────────────────────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-3">
+        <label class="form-label small mb-1">Period</label>
+        {{ form.period }}
+      </div>
+      <div class="col-sm-3" id="date-from-wrap">
+        <label class="form-label small mb-1">From</label>
+        {{ form.date_from }}
+      </div>
+      <div class="col-sm-3" id="date-to-wrap">
+        <label class="form-label small mb-1">To</label>
+        {{ form.date_to }}
+      </div>
+      <div class="col-sm-3">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-arrow-clockwise me-1"></i>Generate
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if data %}
+
+{% if data.alerts %}
+<div class="mb-3">
+  {% for alert in data.alerts %}
+  <div class="alert alert-{{ alert.level }} d-flex align-items-center gap-2 py-2 mb-2">
+    <i class="bi {{ alert.icon }}"></i><span>{{ alert.message }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Summary KPIs ────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="text-success fw-semibold small mb-1">TOTAL INCOME</div>
+        <div class="fs-4 fw-bold text-success">TZS {{ data.total_income|floatformat:0 }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="text-danger fw-semibold small mb-1">TOTAL EXPENSES</div>
+        <div class="fs-4 fw-bold text-danger">TZS {{ data.total_expenses|floatformat:0 }}</div>
+        {% if data.project_expenses_total or data.office_expenses_total %}
+        <div class="mt-2 border-top pt-2">
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted"><i class="bi bi-tools me-1"></i>Project</span>
+            <span class="fw-semibold text-danger">TZS {{ data.project_expenses_total|floatformat:0 }}</span>
+          </div>
+          <div class="d-flex justify-content-between small">
+            <span class="text-muted"><i class="bi bi-building me-1"></i>Office</span>
+            <span class="fw-semibold text-danger">TZS {{ data.office_expenses_total|floatformat:0 }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="fw-semibold small mb-1 {% if data.net_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">NET PROFIT</div>
+        <div class="fs-4 fw-bold {% if data.net_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
+          TZS {{ data.net_profit|floatformat:0 }}
+        </div>
+        {% if data.debt_payments_total %}
+        <div class="border-top mt-2 pt-2">
+          <div class="d-flex justify-content-between small">
+            <span class="text-muted"><i class="bi bi-arrow-return-right me-1"></i>Madeni Yalipwa</span>
+            <span class="fw-semibold text-danger">−TZS {{ data.debt_payments_total|floatformat:0 }}</span>
+          </div>
+          <div class="d-flex justify-content-between small mt-1 border-top pt-1">
+            <span class="text-muted">Net Cash Flow</span>
+            <span class="fw-semibold {% if data.net_cash_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
+              TZS {{ data.net_cash_flow|floatformat:0 }}
+            </span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="text-warning fw-semibold small mb-1">OUTSTANDING</div>
+        <div class="fs-4 fw-bold text-warning">TZS {{ data.total_receivable|floatformat:0 }}</div>
+        <div class="small text-muted">{{ data.invoice_overdue_count|add:data.service_overdue_count }} overdue</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- ── Income breakdown ──────────────────────────────────────────────────── -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header fw-semibold bg-success bg-opacity-10 text-success">
+        <i class="bi bi-arrow-down-circle-fill me-2"></i>Income Breakdown
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          {% for item in data.income_breakdown %}
+          <tr>
+            <td>{{ item.source }}</td>
+            <td class="text-end fw-semibold">TZS {{ item.amount|floatformat:0 }}</td>
+            <td class="text-end text-muted small" style="width:60px">
+              {% if data.total_income %}
+                {{ item.amount|floatformat:0 }}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          <tr class="table-success fw-bold">
+            <td>Total</td>
+            <td class="text-end">TZS {{ data.total_income|floatformat:0 }}</td>
+            <td></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Expense by category ───────────────────────────────────────────────── -->
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header fw-semibold bg-danger bg-opacity-10 text-danger">
+        <i class="bi bi-pie-chart-fill me-2"></i>Expenses by Category
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead class="table-light">
+            <tr><th>Category</th><th class="text-end">Total</th><th class="text-end" style="font-size:.75rem;">Project</th><th class="text-end" style="font-size:.75rem;">Office</th><th>Share</th></tr>
+          </thead>
+          <tbody>
+            {% for cat in data.by_category %}
+            <tr>
+              <td>
+                <i class="bi {{ cat.icon }}" style="color:{{ cat.color }}"></i>
+                {{ cat.name }}
+                <small class="text-muted">({{ cat.count }})</small>
+              </td>
+              <td class="text-end">TZS {{ cat.total|floatformat:0 }}</td>
+              <td class="text-end text-muted small">{% if cat.project_total %}{{ cat.project_total|floatformat:0 }}{% else %}—{% endif %}</td>
+              <td class="text-end text-muted small">{% if cat.office_total %}{{ cat.office_total|floatformat:0 }}{% else %}—{% endif %}</td>
+              <td style="width:100px">
+                <div class="progress" style="height:6px;margin-top:6px">
+                  <div class="progress-bar bg-danger" style="width:{{ cat.pct }}%"></div>
+                </div>
+                <small class="text-muted">{{ cat.pct }}%</small>
+              </td>
+            </tr>
+            {% endfor %}
+            {% if not data.by_category %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No expenses in this period.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Receivables ──────────────────────────────────────────────────────────── -->
+{% if data.invoice_recv_rows or data.service_recv_rows %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-wallet2 me-2 text-warning"></i>Outstanding Receivables
+    <span class="float-end fw-bold text-warning">TZS {{ data.total_receivable|floatformat:0 }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr><th>Type</th><th>Client</th><th class="text-end">Balance (TZS)</th><th>Due Date</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for r in data.invoice_recv_rows %}
+          <tr class="{% if r.is_overdue %}table-danger{% endif %}">
+            <td><span class="badge bg-info text-dark">Invoice</span> {{ r.invoice_no }}</td>
+            <td>{{ r.client_name }}</td>
+            <td class="text-end fw-semibold">{{ r.balance|floatformat:0 }}</td>
+            <td>{{ r.due_date }}</td>
+            <td>
+              {% if r.is_overdue %}<span class="badge bg-danger">Overdue</span>
+              {% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          {% for r in data.service_recv_rows %}
+          <tr class="{% if r.is_overdue %}table-danger{% endif %}">
+            <td><span class="badge bg-secondary">Office</span></td>
+            <td>{{ r.client_name }}</td>
+            <td class="text-end fw-semibold">{{ r.balance|floatformat:0 }}</td>
+            <td>{{ r.due_date|default:"—" }}</td>
+            <td>
+              {% if r.is_overdue %}<span class="badge bg-danger">Overdue</span>
+              {% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Liabilities ─────────────────────────────────────────────────────────── -->
+{% if data.liabilities.total_balance > 0 %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Outstanding Debts &amp; Liabilities</span>
+    <span class="fw-bold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</span>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-sm-4 text-center">
+        <div class="small text-muted mb-1">Total Owed</div>
+        <div class="fs-5 fw-bold">TZS {{ data.liabilities.total_owed|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-4 text-center">
+        <div class="small text-muted mb-1">Total Repaid</div>
+        <div class="fs-5 fw-bold text-success">TZS {{ data.liabilities.total_paid|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-4 text-center">
+        <div class="small text-muted mb-1">Balance Due</div>
+        <div class="fs-5 fw-bold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</div>
+      </div>
+    </div>
+    {% if data.liabilities.overdue_count %}
+    <div class="alert alert-danger py-2 mb-3 small">
+      <i class="bi bi-alarm me-1"></i>
+      <strong>{{ data.liabilities.overdue_count }} overdue debt(s)</strong> — TZS {{ data.liabilities.overdue_amount|floatformat:0 }} past due date.
+      <a href="{% url 'finance:debt_list' %}?status=outstanding" class="alert-link ms-2">View details →</a>
+    </div>
+    {% endif %}
+    {% if data.liabilities.by_type %}
+    <div class="d-flex flex-wrap gap-2">
+      {% for t in data.liabilities.by_type %}
+      <div class="border rounded p-2 small" style="min-width:160px">
+        <div class="text-muted">{{ t.label }}</div>
+        <div class="fw-semibold text-danger">TZS {{ t.balance|floatformat:0 }}</div>
+        <div class="text-muted">{{ t.count }} debt(s)</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-footer bg-transparent text-end">
+    <a href="{% url 'finance:debt_list' %}" class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>Manage Debts
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Project Performance ─────────────────────────────────────────────────── -->
+{% with ps=data.project_stats %}
+{% if ps.count %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-clipboard-check me-2 text-primary"></i>
+    Projects Completed in Period ({{ ps.count }})
+    <span class="float-end text-primary">Gross Profit: TZS {{ ps.total_profit|floatformat:0 }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Project</th><th>Client</th><th>Completed</th>
+            <th class="text-end">Revenue</th>
+            <th class="text-end">Materials</th>
+            <th class="text-end">Profit</th>
+            <th>Margin</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in ps.projects %}
+          <tr>
+            <td><a href="{% url 'projects:detail' p.pk %}">{{ p.name }}</a></td>
+            <td>{{ p.client_name }}</td>
+            <td>{{ p.completion_date }}</td>
+            <td class="text-end">{{ p.revenue|floatformat:0 }}</td>
+            <td class="text-end">{{ p.materials_cost|floatformat:0 }}</td>
+            <td class="text-end fw-semibold text-success">{{ p.gross_profit|floatformat:0 }}</td>
+            <td>
+              <div class="progress" style="height:6px;margin-top:6px">
+                <div class="progress-bar bg-success" style="width:{{ p.profit_margin|floatformat:0 }}%"></div>
+              </div>
+              <small>{{ p.profit_margin|floatformat:1 }}%</small>
+            </td>
+          </tr>
+          {% endfor %}
+          <tr class="table-light fw-bold">
+            <td colspan="3">Totals</td>
+            <td class="text-end">{{ ps.total_revenue|floatformat:0 }}</td>
+            <td class="text-end">{{ ps.total_materials|floatformat:0 }}</td>
+            <td class="text-end text-success">{{ ps.total_profit|floatformat:0 }}</td>
+            <td><small>{{ ps.profit_margin|floatformat:1 }}% avg</small></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ── Funds Position (Pesa Ziko Wapi) ─────────────────────────────────────── -->
+{% if data.funds %}
+<div class="card border-0 shadow-sm mb-4" style="border-left:4px solid #1a2e5a!important;">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f0f4ff;">
+    <span><i class="bi bi-wallet2 me-2" style="color:#1a2e5a;"></i>Pesa Ziko Wapi — Funds Position (All-Time)</span>
+    <span class="fw-bold {% if data.funds.net_position >= 0 %}text-success{% else %}text-danger{% endif %}">
+      Net: TZS {{ data.funds.net_position|floatformat:0 }}
+    </span>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+
+      {# ── Cash / Bank / M-Pesa accounts ── #}
+      {% for acc in data.funds.accounts %}
+      <div class="col-sm-6 col-lg-3">
+        <div class="border rounded p-3 h-100" style="border-color:{{ acc.color }}40!important;">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi {{ acc.icon }} fs-5" style="color:{{ acc.color }};"></i>
+            <span class="fw-semibold" style="color:{{ acc.color }};">{{ acc.label }}</span>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Iliingia (In)</span>
+            <span class="text-success fw-semibold">+TZS {{ acc.in|floatformat:0 }}</span>
+          </div>
+          <div class="d-flex justify-content-between small mb-2">
+            <span class="text-muted">Ilitoka (Out)</span>
+            <span class="text-danger fw-semibold">−TZS {{ acc.out|floatformat:0 }}</span>
+          </div>
+          <div class="border-top pt-2 d-flex justify-content-between">
+            <span class="fw-bold small">Salio</span>
+            <span class="fw-bold {% if acc.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+              TZS {{ acc.balance|floatformat:0 }}
+            </span>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-muted small">Hakuna muamala ulioandikwa bado.</div>
+      {% endfor %}
+
+      {# ── Total liquid ── #}
+      {% if data.funds.accounts %}
+      <div class="col-sm-6 col-lg-3">
+        <div class="border rounded p-3 h-100" style="background:#f8fafc;">
+          <div class="fw-semibold text-muted small mb-2 text-uppercase">Jumla ya Pesa Halisi</div>
+          <div class="fs-4 fw-bold {% if data.funds.total_liquid >= 0 %}text-success{% else %}text-danger{% endif %}">
+            TZS {{ data.funds.total_liquid|floatformat:0 }}
+          </div>
+          <div class="text-muted small mt-1">(Cash + Bank + M-Pesa)</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <hr class="my-3">
+
+    <div class="row g-3">
+      {# ── Receivables (wateja wanaodaiwa) ── #}
+      <div class="col-md-6">
+        <div class="p-3 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+          <div class="fw-semibold mb-2" style="color:#15803d;">
+            <i class="bi bi-arrow-down-circle-fill me-2"></i>Wateja Wanaokudai (Receivables)
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted">Invoices zisizolipwa</span>
+            <span class="fw-semibold">TZS {{ data.funds.inv_receivable|floatformat:0 }}</span>
+          </div>
+          <div class="d-flex justify-content-between small mb-2">
+            <span class="text-muted">Office service charges</span>
+            <span class="fw-semibold">TZS {{ data.funds.svc_receivable|floatformat:0 }}</span>
+          </div>
+          <div class="d-flex justify-content-between border-top pt-2">
+            <span class="fw-bold">Jumla Receivables</span>
+            <span class="fw-bold text-success">TZS {{ data.funds.total_receivable|floatformat:0 }}</span>
+          </div>
+        </div>
+      </div>
+
+      {# ── Payables (tunawadai) ── #}
+      <div class="col-md-6">
+        <div class="p-3 rounded" style="background:#fff1f2;border:1px solid #fecaca;">
+          <div class="fw-semibold mb-2" style="color:#dc2626;">
+            <i class="bi bi-arrow-up-circle-fill me-2"></i>Tunaodai (Payables — Credit)
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted"><i class="bi bi-box-seam me-1"></i>Malighafi (Materials Credit)</span>
+            <span class="fw-semibold">TZS {{ data.funds.material_credit|floatformat:0 }}</span>
+          </div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted"><i class="bi bi-people me-1"></i>Mafundi (Labour Credit)</span>
+            <span class="fw-semibold">TZS {{ data.funds.labour_credit|floatformat:0 }}</span>
+          </div>
+          {% if data.funds.other_payable > 0 %}
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-muted"><i class="bi bi-three-dots me-1"></i>Mengine (Other)</span>
+            <span class="fw-semibold">TZS {{ data.funds.other_payable|floatformat:0 }}</span>
+          </div>
+          {% endif %}
+          <div class="d-flex justify-content-between border-top pt-2">
+            <span class="fw-bold">Jumla Payables</span>
+            <span class="fw-bold text-danger">TZS {{ data.funds.total_payable|floatformat:0 }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-3">
+
+    {# ── Net Position formula ── #}
+    <div class="p-3 rounded text-center" style="background:#1a2e5a;color:#fff;">
+      <div class="small mb-1 opacity-75">NET POSITION = Pesa Halisi + Receivables − Payables</div>
+      <div class="fs-3 fw-bold">
+        <span class="opacity-75">TZS {{ data.funds.total_liquid|floatformat:0 }}</span>
+        <span class="mx-2 opacity-50">+</span>
+        <span class="text-success">{{ data.funds.total_receivable|floatformat:0 }}</span>
+        <span class="mx-2 opacity-50">−</span>
+        <span style="color:#fca5a5;">{{ data.funds.total_payable|floatformat:0 }}</span>
+        <span class="mx-2 opacity-50">=</span>
+        <span class="{% if data.funds.net_position >= 0 %}text-success{% else %}text-warning{% endif %}">
+          TZS {{ data.funds.net_position|floatformat:0 }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── 6-Month Trend ────────────────────────────────────────────────────────── -->
+{% if data.monthly_trends %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-graph-up me-2 text-primary"></i>6-Month Trend
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Month</th>
+            <th class="text-end text-success">Income (TZS)</th>
+            <th class="text-end text-danger">Expenses (TZS)</th>
+            <th class="text-end">Net (TZS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in data.monthly_trends %}
+          <tr>
+            <td>{{ t.label }}</td>
+            <td class="text-end text-success">{{ t.income|floatformat:0 }}</td>
+            <td class="text-end text-danger">{{ t.expenses|floatformat:0 }}</td>
+            <td class="text-end fw-semibold {% if t.net >= 0 %}text-primary{% else %}text-danger{% endif %}">
+              {{ t.net|floatformat:0 }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Detailed Expense Ledger ─────────────────────────────────────────────── -->
+{% if data.expense_rows %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-list-ul me-2"></i>Expense Detail Ledger
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr><th>Date</th><th>Category</th><th>Description / Project</th><th>Paid To</th><th>Method</th><th class="text-end">Amount (TZS)</th></tr>
+        </thead>
+        <tbody>
+          {% for e in data.expense_rows %}
+          <tr>
+            <td class="text-muted small">{{ e.date }}</td>
+            <td>{{ e.category }}</td>
+            <td>
+              {{ e.description|truncatechars:40 }}
+              {% if e.project_name %}
+              <br><a href="{% url 'projects:detail' e.project_pk %}" class="badge bg-primary text-white text-decoration-none" style="font-size:.6rem;">
+                <i class="bi bi-tools me-1"></i>{{ e.project_name|truncatechars:25 }}
+              </a>
+              {% else %}
+              <br><span class="badge bg-light text-muted" style="font-size:.6rem;"><i class="bi bi-building me-1"></i>Office</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">{{ e.paid_to|default:"—" }}</td>
+            <td><span class="badge bg-light text-dark">{{ e.payment_method }}</span></td>
+            <td class="text-end fw-semibold text-danger">{{ e.amount|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light">
+          <tr>
+            <td colspan="5" class="fw-bold">Total Expenses</td>
+            <td class="text-end fw-bold text-danger">TZS {{ data.total_expenses|floatformat:0 }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Debt Repayments Ledger ──────────────────────────────────────────────── -->
+{% if data.debt_payment_rows %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-arrow-return-right me-2 text-danger"></i>Malipo ya Madeni Katika Kipindi Hiki</span>
+    <span class="text-danger fw-bold">−TZS {{ data.debt_payments_total|floatformat:0 }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="alert alert-info m-3 py-2 small mb-0">
+      <i class="bi bi-info-circle me-1"></i>
+      Hizi ni pesa zilizotoka (cash/bank) kulipa madeni katika kipindi hiki. Zinaathiri salio la pesa lakini <strong>si sehemu ya gharama za kawaida</strong> kwenye P&amp;L.
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Tarehe</th><th>Deni (Creditor)</th><th>Aina</th>
+            <th>Chanzo</th><th>Kumbukumbu</th>
+            <th class="text-end">Kiasi (TZS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dp in data.debt_payment_rows %}
+          <tr>
+            <td class="text-muted small">{{ dp.payment_date }}</td>
+            <td class="fw-semibold">{{ dp.creditor_name }}</td>
+            <td class="small text-muted">{{ dp.debt_type }}</td>
+            <td>
+              <span class="badge {% if dp.payment_source == 'cash' %}bg-success{% elif dp.payment_source == 'bank' %}bg-primary{% elif dp.payment_source == 'mpesa' %}bg-success bg-opacity-75{% else %}bg-secondary{% endif %}">
+                {{ dp.payment_source|upper }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ dp.reference|default:"—" }}</td>
+            <td class="text-end fw-semibold text-danger">{{ dp.amount|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light">
+          <tr>
+            <td colspan="5" class="fw-bold">Jumla ya Madeni Yalipwa</td>
+            <td class="text-end fw-bold text-danger">TZS {{ data.debt_payments_total|floatformat:0 }}</td>
+          </tr>
+          {% for src, amt in data.debt_payments_by_source.items %}
+          <tr class="text-muted small">
+            <td colspan="5" class="ps-4">Kwa {{ src|upper }}</td>
+            <td class="text-end">{{ amt|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Cash Flow Summary ────────────────────────────────────────────────────── -->
+{% if data.debt_payments_total %}
+<div class="card border-0 shadow-sm mb-4" style="border-left:4px solid #0f172a!important;">
+  <div class="card-header fw-semibold" style="background:#f8fafc;">
+    <i class="bi bi-cash-stack me-2"></i>Muhtasari wa Mtiririko wa Pesa (Cash Flow)
+  </div>
+  <div class="card-body py-3">
+    <div class="row g-2 text-center">
+      <div class="col-sm-3">
+        <div class="small text-muted mb-1">Mapato (Income)</div>
+        <div class="fw-bold text-success">+TZS {{ data.total_income|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-3">
+        <div class="small text-muted mb-1">Gharama (Expenses)</div>
+        <div class="fw-bold text-danger">−TZS {{ data.total_expenses|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-3">
+        <div class="small text-muted mb-1">Madeni Yalipwa</div>
+        <div class="fw-bold text-danger">−TZS {{ data.debt_payments_total|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-3">
+        <div class="small text-muted mb-1">Net Cash Flow</div>
+        <div class="fw-bold fs-5 {% if data.net_cash_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
+          TZS {{ data.net_cash_flow|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center text-muted py-5">
+  <i class="bi bi-bar-chart display-3 d-block mb-3"></i>
+  Select a period above and click Generate to view the report.
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const periodSel = document.querySelector('[name="period"]');
+  const customWrap = document.querySelectorAll('#date-from-wrap, #date-to-wrap');
+  function toggle() {
+    const show = periodSel.value === 'custom';
+    customWrap.forEach(el => el.style.display = show ? '' : 'none');
+  }
+  toggle();
+  periodSel.addEventListener('change', toggle);
+});
+</script>
+{% endblock %}

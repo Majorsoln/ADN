@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Material Orders – ADN Solutions{% endblock %}
+{% block page_title %}Material Orders{% endblock %}
+
+{% block content %}
+
+<!-- Status summary cards -->
+<div class="row g-2 mb-3">
+  <div class="col-6 col-md">
+    <div class="stat-card py-2 text-center">
+      <div class="text-muted" style="font-size:.68rem;font-weight:700;text-transform:uppercase;">Draft</div>
+      <div class="fw-bold fs-4" style="color:#64748b;">{{ totals.draft }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="stat-card py-2 text-center">
+      <div class="text-muted" style="font-size:.68rem;font-weight:700;text-transform:uppercase;">Ordered</div>
+      <div class="fw-bold fs-4 text-primary">{{ totals.ordered }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="stat-card py-2 text-center">
+      <div class="text-muted" style="font-size:.68rem;font-weight:700;text-transform:uppercase;">Partial</div>
+      <div class="fw-bold fs-4 text-warning">{{ totals.partially_received }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="stat-card py-2 text-center">
+      <div class="text-muted" style="font-size:.68rem;font-weight:700;text-transform:uppercase;">Received</div>
+      <div class="fw-bold fs-4 text-success">{{ totals.received }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="stat-card py-2 text-center">
+      <div class="text-muted" style="font-size:.68rem;font-weight:700;text-transform:uppercase;">Cancelled</div>
+      <div class="fw-bold fs-4 text-danger">{{ totals.cancelled }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm"
+          placeholder="Search supplier or project name…">
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All Statuses</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-adn w-100">Filter</button>
+      </div>
+      {% if search or status_filter %}
+      <div class="col-md-2">
+        <a href="{% url 'orders:list' %}" class="btn btn-sm btn-outline-secondary w-100">Clear</a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Orders Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Supplier</th>
+          <th>Project</th>
+          <th>Order Date</th>
+          <th>Expected</th>
+          <th>Status</th>
+          <th class="text-end">Items</th>
+          <th class="text-end">Total (TZS)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr onclick="window.location='{% url 'orders:detail' order.pk %}'" style="cursor:pointer;">
+          <td>
+            <div class="fw-semibold" style="color:var(--adn-navy);">{{ order.supplier_name }}</div>
+          </td>
+          <td>
+            <a href="{% url 'projects:detail' order.project.pk %}"
+               class="text-decoration-none small fw-semibold"
+               style="color:var(--adn-sky);"
+               onclick="event.stopPropagation()">
+              {{ order.project.name }}
+            </a>
+            <div class="text-muted" style="font-size:.7rem;">{{ order.project.client_name }}</div>
+          </td>
+          <td class="small">{{ order.order_date|date:"d M Y" }}</td>
+          <td class="small">
+            {% if order.expected_delivery %}
+              <span {% if order.is_overdue %}class="text-danger fw-semibold"{% endif %}>
+                {{ order.expected_delivery|date:"d M Y" }}
+              </span>
+              {% if order.is_overdue %}
+              <br><span class="badge badge-overdue rounded-pill" style="font-size:.6rem;">Overdue</span>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <!-- Mini step tracker: Draft / Ordered / Partial / Received -->
+            <div class="d-flex gap-1 mb-1" style="width:80px;">
+              <div title="Draft"             style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 0 and order.status != 'cancelled' %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+              <div title="Ordered"           style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 1 %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+              <div title="Partially Received" style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 2 %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+              <div title="Received"          style="flex:1;height:4px;border-radius:2px;background:{% if order.status_step >= 3 %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+            </div>
+            <span class="badge rounded-pill px-2
+              {% if order.status == 'received' %}badge-accepted
+              {% elif order.status == 'ordered' %}badge-sent
+              {% elif order.status == 'partially_received' %}badge-expired
+              {% elif order.status == 'cancelled' %}badge-rejected
+              {% else %}badge-draft{% endif %}" style="font-size:.68rem;">
+              {{ order.get_status_display }}
+            </span>
+          </td>
+          <td class="text-end text-muted small">{{ order.items.count }}</td>
+          <td class="text-end fw-semibold">{{ order.total_cost|floatformat:0 }}</td>
+          <td class="text-end" onclick="event.stopPropagation()">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline-secondary" title="View">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{% url 'orders:edit' order.pk %}" class="btn btn-outline-secondary" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-5">
+            <i class="bi bi-cart-x fs-1 text-muted d-block mb-2"></i>
+            <div class="text-muted mb-3">No material orders found.</div>
+            <a href="{% url 'projects:list' %}" class="btn btn-sm btn-adn">Go to Projects to add orders</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

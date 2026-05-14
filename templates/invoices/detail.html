@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.invoice_no }} – ADN Solutions{% endblock %}
+{% block page_title %}Invoice {{ invoice.invoice_no }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2">
+  <a href="{% url 'invoices:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <a href="{% url 'invoices:edit' invoice.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+  <a href="{% url 'invoices:pdf' invoice.pk %}" target="_blank" class="btn btn-sm btn-adn-sky"><i class="bi bi-printer me-1"></i>Print / PDF</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Left main -->
+  <div class="col-lg-8">
+
+    <!-- Invoice card -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h4 class="fw-bold mb-1" style="color:var(--adn-navy)">{{ invoice.invoice_no }}</h4>
+            <div class="text-muted small">Issued: {{ invoice.invoice_date|date:"d F Y" }}</div>
+            {% if invoice.quote_ref %}
+            <div class="text-muted small">Quote Ref: <strong>{{ invoice.quote_ref }}</strong></div>
+            {% endif %}
+          </div>
+          <span class="badge rounded-pill badge-{{ invoice.status }} px-3 py-2 fs-6">
+            {{ invoice.get_status_display }}
+            {% if invoice.is_overdue %} · OVERDUE{% endif %}
+          </span>
+        </div>
+
+        <div class="row g-4">
+          <!-- Bill To -->
+          <div class="col-md-6">
+            <div class="section-heading">Bill To</div>
+            <div class="fw-semibold fs-5">{{ invoice.client_name }}</div>
+            {% if invoice.client_phone %}<div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ invoice.client_phone }}</div>{% endif %}
+            {% if invoice.client_email %}<div class="text-muted small"><i class="bi bi-envelope me-1"></i>{{ invoice.client_email }}</div>{% endif %}
+            {% if invoice.client_address %}<div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ invoice.client_address }}</div>{% endif %}
+          </div>
+          <!-- Dates -->
+          <div class="col-md-6">
+            <div class="section-heading">Dates</div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="text-muted">Invoice Date:</span>
+              <strong>{{ invoice.invoice_date|date:"d M Y" }}</strong>
+            </div>
+            {% if invoice.due_date %}
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="text-muted">Due Date:</span>
+              <strong {% if invoice.is_overdue %}class="text-danger"{% endif %}>{{ invoice.due_date|date:"d M Y" }}</strong>
+            </div>
+            {% endif %}
+            {% if invoice.completion_date %}
+            <div class="d-flex justify-content-between small">
+              <span class="text-muted">Completion Date:</span>
+              <strong>{{ invoice.completion_date|date:"d M Y" }}</strong>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Description -->
+        {% if invoice.description %}
+        <div class="mt-4 p-3 rounded" style="background:#f8fafc;border-left:3px solid var(--adn-sky);">
+          <div class="section-heading">Work Description</div>
+          <div class="text-muted">{{ invoice.description }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Financial Summary -->
+        <div class="mt-4">
+          <div class="section-heading">Financial Summary</div>
+          <div class="table-responsive">
+            <table class="table mb-0" style="max-width:400px;">
+              <tbody>
+                <tr>
+                  <td class="text-muted border-0">Contract Amount</td>
+                  <td class="text-end fw-semibold border-0">TZS {{ invoice.contract_amount|floatformat:0 }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Advance Paid</td>
+                  <td class="text-end fw-semibold text-success">– TZS {{ invoice.advance_paid|floatformat:0 }}</td>
+                </tr>
+                <tr style="border-top:2px solid var(--adn-border);">
+                  <td class="fw-bold">Balance Due</td>
+                  <td class="text-end fw-bold fs-5 {% if invoice.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
+                    {% if invoice.balance_due > 0 %}
+                      TZS {{ invoice.balance_due|floatformat:0 }}
+                    {% else %}
+                      <i class="bi bi-check-circle-fill me-1"></i>Paid in Full
+                    {% endif %}
+                  </td>
+                </tr>
+                {% if invoice.overpaid_amount > 0 %}
+                <tr>
+                  <td colspan="2">
+                    <div class="alert alert-warning py-2 px-3 mb-0 small">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                      <strong>Overpayment:</strong> Client paid TZS {{ invoice.overpaid_amount|floatformat:0 }}
+                      more than the contract amount. Consider issuing a credit note or adjusting the contract.
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center py-3 px-4">
+        <span><i class="bi bi-cash-coin me-2 text-success"></i>Payment History</span>
+        <button class="btn btn-sm btn-adn" data-bs-toggle="collapse" data-bs-target="#paymentForm">
+          <i class="bi bi-plus-lg me-1"></i>Record Payment
+        </button>
+      </div>
+
+      <!-- Payment Form (collapsible) -->
+      <div class="collapse" id="paymentForm">
+        <div class="card-body bg-light border-bottom">
+          <form method="post" action="{% url 'invoices:add_payment' invoice.pk %}">
+            {% csrf_token %}
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label">Amount (TZS) *</label>
+                <input type="number" name="amount" class="form-control form-control-sm" required min="1">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date *</label>
+                <input type="date" name="payment_date" class="form-control form-control-sm" required value="{{ today }}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Method</label>
+                <select name="payment_method" class="form-select form-select-sm">
+                  {% for val, label in payment_form.payment_method.field.choices %}
+                  <option value="{{ val }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Reference / Txn ID</label>
+                <input type="text" name="reference" class="form-control form-control-sm" placeholder="Optional">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Notes</label>
+                <input type="text" name="notes" class="form-control form-control-sm" placeholder="Optional">
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-sm btn-adn w-100">
+                  <i class="bi bi-check-lg me-1"></i>Save Payment
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Amount (TZS)</th>
+              <th>Method</th>
+              <th>Reference</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pay in payments %}
+            <tr>
+              <td>{{ pay.payment_date|date:"d M Y" }}</td>
+              <td class="fw-semibold text-success">{{ pay.amount|floatformat:0 }}</td>
+              <td>{{ pay.get_payment_method_display }}</td>
+              <td>{{ pay.reference|default:"—" }}</td>
+              <td class="text-muted small">{{ pay.notes|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-3">No payments recorded</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="col-lg-4">
+
+    <!-- Update Status -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Update Status</div>
+        <form method="post" action="{% url 'invoices:update_status' invoice.pk %}">
+          {% csrf_token %}
+          <div class="input-group">
+            <select name="status" class="form-select form-select-sm">
+              {% for val, label in invoice.STATUS_CHOICES %}
+              <option value="{{ val }}" {% if invoice.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-adn">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Linked Quote -->
+    {% if invoice.quotation %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Linked Quotation</div>
+        <a href="{% url 'quotations:detail' invoice.quotation.pk %}" class="btn btn-sm btn-outline-primary w-100">
+          <i class="bi bi-file-earmark-text me-1"></i>{{ invoice.quotation.quote_no }}
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Payment Progress -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Payment Progress</div>
+        {% with total_paid=invoice.advance_paid %}
+        {% if invoice.contract_amount > 0 %}
+        {% widthratio invoice.advance_paid invoice.contract_amount 100 as pct %}
+        <div class="d-flex justify-content-between small mb-1">
+          <span class="text-muted">Paid</span>
+          <span class="fw-semibold">{{ pct }}%</span>
+        </div>
+        <div class="progress" style="height:8px;border-radius:4px;">
+          <div class="progress-bar bg-success" style="width:{{ pct }}%"></div>
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="mt-2 text-muted small">
+          TZS {{ invoice.advance_paid|floatformat:0 }} of {{ invoice.contract_amount|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+
+    {% if invoice.notes %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Notes</div>
+        <div class="text-muted small">{{ invoice.notes }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-danger">
+      <div class="card-body">
+        <div class="section-heading text-danger">Danger Zone</div>
+        <a href="{% url 'invoices:delete' invoice.pk %}" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-trash me-1"></i>Delete Invoice
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const today = new Date().toISOString().slice(0,10);
+document.querySelector('[name=payment_date]') && (document.querySelector('[name=payment_date]').value = today);
+</script>
+{% endblock %}

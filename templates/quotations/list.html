@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Quotations – ADN Solutions{% endblock %}
+{% block page_title %}Quotations{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'quotations:create' %}" class="btn btn-sm btn-adn">
+  <i class="bi bi-plus-lg me-1"></i>New Quotation
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label mb-1">Search</label>
+        <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Client name, quote no, project…">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label mb-1">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All Statuses</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-adn w-100">Filter</button>
+      </div>
+      {% if search or status_filter %}
+      <div class="col-md-2">
+        <a href="{% url 'quotations:list' %}" class="btn btn-sm btn-outline-secondary w-100">Clear</a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Quote #</th>
+          <th>Client</th>
+          <th>Project</th>
+          <th>Date</th>
+          <th>Valid Until</th>
+          <th>Area / Amount</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in quotations %}
+        <tr>
+          <td>
+            <a href="{% url 'quotations:detail' q.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">
+              {{ q.quote_no }}
+            </a>
+          </td>
+          <td>
+            <div class="fw-semibold">{{ q.client_name }}</div>
+            {% if q.client_phone %}<div class="text-muted" style="font-size:.75rem;">{{ q.client_phone }}</div>{% endif %}
+          </td>
+          <td>{{ q.project_name|default:"—" }}</td>
+          <td>{{ q.quote_date|date:"d M Y" }}</td>
+          <td>
+            {% if q.status == 'accepted' %}
+            <span class="text-muted small">—</span>
+            {% else %}
+            {{ q.valid_until|date:"d M Y" }}
+            {% if q.valid_until and q.valid_until < today %}
+            <span class="badge rounded-pill badge-expired ms-1" style="font-size:.65rem;">Expired</span>
+            {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            {% if q.accepted_material %}
+            <div class="fw-semibold text-success small">
+              <i class="bi bi-check-circle me-1"></i>{{ q.accepted_material.material_name }}
+            </div>
+            <div class="text-muted" style="font-size:.75rem;">
+              {% with area=q.total_area %}{{ area|floatformat:2 }} m²{% endwith %}
+            </div>
+            {% else %}
+            {% with area=q.total_area %}
+            {% if area %}{{ area|floatformat:2 }} m²{% else %}—{% endif %}
+            {% endwith %}
+            {% endif %}
+          </td>
+          <td><span class="badge rounded-pill badge-{{ q.status }} px-2 py-1">{{ q.get_status_display }}</span></td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <a href="{% url 'quotations:detail' q.pk %}" class="btn btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'quotations:edit' q.pk %}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+              <a href="{% url 'quotations:pdf' q.pk %}" class="btn btn-outline-secondary" title="{% if q.accepted_material %}Final PDF{% else %}Preview PDF{% endif %}" target="_blank"><i class="bi bi-printer"></i></a>
+              {% if q.status == 'accepted' %}
+              {% if q.project %}
+              <a href="{% url 'invoices:create' %}?from_quote={{ q.pk }}&from_project={{ q.project.pk }}" class="btn btn-outline-success" title="Create Invoice &amp; Link Project"><i class="bi bi-receipt"></i></a>
+              {% else %}
+              <a href="{% url 'invoices:create' %}?from_quote={{ q.pk }}" class="btn btn-outline-success" title="Create Invoice"><i class="bi bi-receipt"></i></a>
+              {% endif %}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-5">
+            <i class="bi bi-file-earmark-text fs-1 text-muted d-block mb-2"></i>
+            <div class="text-muted">No quotations found.</div>
+            <a href="{% url 'quotations:create' %}" class="btn btn-sm btn-adn mt-3">Create First Quotation</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

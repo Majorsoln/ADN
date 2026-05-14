@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Delete Service Record{% endblock %}
+{% block page_title %}Delete Service Record{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="card border-danger">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size:3rem;"></i>
+        <h4 class="mt-3 fw-bold">Delete record for {{ record.client_name }}?</h4>
+        <p class="text-muted">This will permanently delete this service record and all its payment history.</p>
+        {% if record.total_paid > 0 %}
+        <div class="alert alert-warning py-2 text-start small">
+          <i class="bi bi-exclamation-circle me-1"></i>
+          This record has <strong>TZS {{ record.total_paid|floatformat:0 }}</strong> in recorded payments that will also be deleted.
+        </div>
+        {% endif %}
+        <div class="d-flex gap-2 justify-content-center mt-4">
+          <a href="{% url 'office:service_detail' record.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <form method="post">{% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

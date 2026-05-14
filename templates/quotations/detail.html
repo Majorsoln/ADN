@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}{{ quotation.quote_no }} – ADN Solutions{% endblock %}
+{% block page_title %}Quotation {{ quotation.quote_no }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  <a href="{% url 'quotations:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  {% if quotation.status == 'draft' or quotation.status == 'sent' %}
+  <a href="{% url 'quotations:edit' quotation.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+  {% else %}
+  <a href="{% url 'quotations:edit' quotation.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Edit</a>
+  {% endif %}
+  <a href="{% url 'quotations:pdf' quotation.pk %}" target="_blank" class="btn btn-sm btn-adn-sky">
+    <i class="bi bi-printer me-1"></i>{% if quotation.accepted_material %}Print Accepted PDF{% else %}Print / PDF{% endif %}
+  </a>
+  {% if quotation.status == 'accepted' %}
+  {% if quotation.project %}
+  <a href="{% url 'invoices:create' %}?from_quote={{ quotation.pk }}&from_project={{ quotation.project.pk }}"
+     class="btn btn-sm btn-adn"><i class="bi bi-receipt me-1"></i>Create Invoice</a>
+  {% else %}
+  <a href="{% url 'invoices:create' %}?from_quote={{ quotation.pk }}"
+     class="btn btn-sm btn-adn"><i class="bi bi-receipt me-1"></i>Create Invoice</a>
+  {% endif %}
+  <a href="{% url 'projects:create' %}?from_quote={{ quotation.pk }}" class="btn btn-sm btn-outline-success"><i class="bi bi-kanban me-1"></i>Create Project</a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- Main Info -->
+  <div class="col-lg-8">
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h4 class="fw-bold mb-1" style="color:var(--adn-navy);">{{ quotation.quote_no }}</h4>
+            <div class="text-muted" style="font-size:.85rem;">{{ quotation.quote_date|date:"d F Y" }}</div>
+          </div>
+          <div class="d-flex flex-column align-items-end gap-1">
+            <span class="badge rounded-pill badge-{{ quotation.status }} px-3 py-2 fs-6">
+              {{ quotation.get_status_display }}
+            </span>
+            {% if quotation.accepted_material %}
+            <span class="badge bg-success px-2 py-1" style="font-size:.75rem;">
+              <i class="bi bi-check-circle me-1"></i>{{ quotation.accepted_material.material_name }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="section-heading">Bill To</div>
+            <div class="fw-semibold fs-5">{{ quotation.client_name }}</div>
+            {% if quotation.client_phone %}<div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ quotation.client_phone }}</div>{% endif %}
+            {% if quotation.client_email %}<div class="text-muted small"><i class="bi bi-envelope me-1"></i>{{ quotation.client_email }}</div>{% endif %}
+            {% if quotation.client_address %}<div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ quotation.client_address }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <div class="section-heading">Project Details</div>
+            {% if quotation.project_name %}<div class="fw-semibold">{{ quotation.project_name }}</div>{% endif %}
+            <div class="text-muted small">Valid Until: <strong>{{ quotation.valid_until|date:"d M Y" }}</strong></div>
+            <div class="text-muted small">Installation: <strong>{{ quotation.installation_days }} working days</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accepted Option Banner -->
+    {% if quotation.accepted_material %}
+    <div class="alert alert-success d-flex align-items-center gap-3 mb-3">
+      <i class="bi bi-check-circle-fill fs-4"></i>
+      <div>
+        <div class="fw-bold">Accepted Option: {{ quotation.accepted_material.material_name }}</div>
+        <div class="small">
+          TZS {{ quotation.accepted_material.price_per_sqm|floatformat:0 }} / m²
+          {% if quotation.accepted_material.notes %} · {{ quotation.accepted_material.notes }}{% endif %}
+        </div>
+      </div>
+      <a href="{% url 'quotations:pdf' quotation.pk %}" target="_blank" class="btn btn-sm btn-success ms-auto">
+        <i class="bi bi-printer me-1"></i>Print Final PDF
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Items -->
+    <div class="card mb-3">
+      <div class="card-header py-2 px-4">
+        <i class="bi bi-list-check me-2"></i>Items Specification
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Width (cm)</th>
+              <th>Height (cm)</th>
+              <th>Qty</th>
+              <th>Area (m²)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td class="text-muted">{{ forloop.counter }}</td>
+              <td>
+                <div class="fw-semibold">{{ item.item_type }}</div>
+                {% if item.description %}<div class="text-muted small">{{ item.description }}</div>{% endif %}
+              </td>
+              <td>{{ item.width|floatformat:0 }}</td>
+              <td>{{ item.height|floatformat:0 }}</td>
+              <td>{{ item.quantity }}</td>
+              <td class="fw-semibold">{{ item.area_display }} m²</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-3">No items added</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="5" class="text-end fw-bold">Total Area:</td>
+              <td class="fw-bold">{{ quotation.total_area|floatformat:4 }} m²</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Material Options -->
+    {% if material_options %}
+    <div class="card mb-3">
+      <div class="card-header py-2 px-4 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-grid-3x3-gap me-2"></i>Material Options &amp; Pricing</span>
+        {% if quotation.status == 'draft' or quotation.status == 'sent' %}
+        <small class="text-muted">Click <strong>Accept</strong> on the option the client has chosen</small>
+        {% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th class="text-end">Price/m²</th>
+              <th class="text-end">Subtotal</th>
+              {% if quotation.discount_value %}<th class="text-end">Discount</th><th class="text-end">After Disc.</th>{% endif %}
+              <th class="text-end">Taxes</th>
+              <th class="text-end fw-bold">Total (TZS)</th>
+              <th>PDF</th>
+              {% if quotation.status != 'expired' and quotation.status != 'rejected' %}
+              <th>Action</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for opt in material_options %}
+            <tr class="{% if opt.material.pk == accepted_mat_pk %}table-success{% endif %}">
+              <td class="fw-semibold">
+                {{ opt.material.material_name }}
+                {% if opt.material.pk == accepted_mat_pk %}<span class="badge bg-success ms-1" style="font-size:.65rem;"><i class="bi bi-check-circle me-1"></i>Accepted</span>{% endif %}
+                {% if opt.material.notes %}<div class="text-muted small">{{ opt.material.notes }}</div>{% endif %}
+              </td>
+              <td class="text-end">{{ opt.material.price_per_sqm|floatformat:0 }}</td>
+              <td class="text-end">{{ opt.subtotal|floatformat:0 }}</td>
+              {% if quotation.discount_value %}
+              <td class="text-end text-danger">-{{ opt.discount|floatformat:0 }}</td>
+              <td class="text-end">{{ opt.after_disc|floatformat:0 }}</td>
+              {% endif %}
+              <td class="text-end text-muted">
+                {% for tax in opt.taxes %}
+                <div style="font-size:.78rem;">{{ tax.name }}: {{ tax.amount|floatformat:0 }}</div>
+                {% endfor %}
+                {% if not opt.taxes %}—{% endif %}
+              </td>
+              <td class="text-end fw-bold fs-6">{{ opt.grand|floatformat:0 }}</td>
+              <td>
+                <a href="{% url 'quotations:pdf' quotation.pk %}?mat={{ forloop.counter0 }}" target="_blank"
+                   class="btn btn-sm btn-outline-secondary" title="PDF for this option">
+                  <i class="bi bi-printer"></i>
+                </a>
+              </td>
+              {% if quotation.status != 'expired' and quotation.status != 'rejected' %}
+              <td>
+                {% if opt.material.pk == accepted_mat_pk %}
+                <span class="badge bg-success py-2"><i class="bi bi-check2-circle me-1"></i>Accepted</span>
+                {% else %}
+                <form method="post" action="{% url 'quotations:accept_option' quotation.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="material_pk" value="{{ opt.material.pk }}">
+                  <button type="submit" class="btn btn-sm btn-outline-success"
+                          onclick="return confirm('Accept {{ opt.material.material_name }} for TZS {{ opt.grand|floatformat:0 }}?')">
+                    <i class="bi bi-check-circle me-1"></i>Accept
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="col-lg-4">
+
+    <!-- Update Status -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Update Status</div>
+        {% if quotation.status == 'accepted' %}
+        <div class="alert alert-warning py-2 small mb-2">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Changing status from <strong>Accepted</strong> will clear the accepted option.
+        </div>
+        {% endif %}
+        <form method="post" action="{% url 'quotations:update_status' quotation.pk %}">
+          {% csrf_token %}
+          <div class="input-group">
+            <select name="status" class="form-select form-select-sm">
+              {% for val, label in quotation.STATUS_CHOICES %}
+              <option value="{{ val }}" {% if quotation.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-adn">Update</button>
+          </div>
+        </form>
+        {% if quotation.status == 'draft' %}
+        <div class="mt-2">
+          <form method="post" action="{% url 'quotations:update_status' quotation.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="status" value="sent">
+            <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+              <i class="bi bi-send me-1"></i>Mark as Sent to Client
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Quick Actions</div>
+        <div class="d-grid gap-2">
+          <a href="{% url 'quotations:pdf' quotation.pk %}" target="_blank" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>
+            {% if quotation.accepted_material %}Print Final PDF ({{ quotation.accepted_material.material_name }})
+            {% else %}Print / Preview PDF (All Options){% endif %}
+          </a>
+          {% if material_options|length > 1 %}
+          <div class="text-muted small text-center">— or print specific option —</div>
+          {% for opt in material_options %}
+          <a href="{% url 'quotations:pdf' quotation.pk %}?mat={{ forloop.counter0 }}" target="_blank"
+             class="btn btn-sm btn-outline-secondary btn-sm d-flex justify-content-between">
+            <span><i class="bi bi-printer me-1"></i>{{ opt.material.material_name }}</span>
+            <span class="text-muted">TZS {{ opt.grand|floatformat:0 }}</span>
+          </a>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Discount Info -->
+    {% if quotation.discount_value %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Discount Applied</div>
+        <div class="fw-semibold">{{ quotation.discount_name|default:"Discount" }}</div>
+        <div class="text-muted small">
+          {% if quotation.discount_type == 'percentage' %}
+            {{ quotation.discount_value }}% off
+          {% else %}
+            TZS {{ quotation.discount_value|floatformat:0 }} off
+          {% endif %}
+          {% if quotation.discount_duration %}· Valid for {{ quotation.discount_duration }}{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tax Summary -->
+    {% if quotation.vat_enabled or quotation.service_levy_enabled or quotation.skills_levy_enabled or quotation.withholding_enabled or quotation.custom1_enabled or quotation.custom2_enabled %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Active Taxes</div>
+        {% if quotation.vat_enabled %}<div class="d-flex justify-content-between small"><span>VAT</span><span class="fw-semibold">{{ quotation.vat_rate }}%</span></div>{% endif %}
+        {% if quotation.service_levy_enabled %}<div class="d-flex justify-content-between small"><span>Service Levy</span><span class="fw-semibold">{{ quotation.service_levy_rate }}%</span></div>{% endif %}
+        {% if quotation.skills_levy_enabled %}<div class="d-flex justify-content-between small"><span>Skills Levy</span><span class="fw-semibold">{{ quotation.skills_levy_rate }}%</span></div>{% endif %}
+        {% if quotation.withholding_enabled %}<div class="d-flex justify-content-between small"><span>Withholding</span><span class="fw-semibold">{{ quotation.withholding_rate }}%</span></div>{% endif %}
+        {% if quotation.custom1_enabled and quotation.custom1_name %}<div class="d-flex justify-content-between small"><span>{{ quotation.custom1_name }}</span><span class="fw-semibold">{{ quotation.custom1_rate }}%</span></div>{% endif %}
+        {% if quotation.custom2_enabled and quotation.custom2_name %}<div class="d-flex justify-content-between small"><span>{{ quotation.custom2_name }}</span><span class="fw-semibold">{{ quotation.custom2_rate }}%</span></div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if quotation.notes %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Notes</div>
+        <div class="text-muted small">{{ quotation.notes }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Danger zone -->
+    <div class="card border-danger">
+      <div class="card-body">
+        <div class="section-heading text-danger">Danger Zone</div>
+        <a href="{% url 'quotations:delete' quotation.pk %}" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-trash me-1"></i>Delete Quotation
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Projects – ADN Solutions{% endblock %}
+{% block page_title %}Projects{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2">
+  <button class="btn btn-sm" id="btnTable" onclick="setView('table')" title="Table view">
+    <i class="bi bi-list-ul"></i>
+  </button>
+  <button class="btn btn-sm" id="btnPipeline" onclick="setView('pipeline')" title="Pipeline view">
+    <i class="bi bi-columns-gap"></i>
+  </button>
+  <a href="{% url 'projects:create' %}" class="btn btn-sm btn-adn">
+    <i class="bi bi-plus-lg me-1"></i>New Project
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filters + mini stats -->
+<div class="row g-2 mb-3 align-items-center">
+  <div class="col-md-6">
+    <form method="get" class="d-flex gap-1">
+      <input type="text" name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Search project or client…">
+      <select name="status" class="form-select form-select-sm" style="min-width:130px;">
+        <option value="">All Statuses</option>
+        {% for val, label in status_choices %}
+        <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-sm btn-adn">Filter</button>
+      {% if search or status_filter %}
+      <a href="{% url 'projects:list' %}" class="btn btn-sm btn-outline-secondary">×</a>
+      {% endif %}
+    </form>
+  </div>
+  <div class="col-md-6">
+    <div class="d-flex gap-2 justify-content-md-end">
+      {% for stage_val, stage_label, stage_color, stage_projects in pipeline %}
+      <div class="px-3 py-1 rounded text-center" style="background:#f8fafc;border:1px solid #e2e8f0;min-width:80px;">
+        <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;color:{{ stage_color }};">{{ stage_label }}</div>
+        <div class="fw-bold" style="color:{{ stage_color }};font-size:1.2rem;">{{ stage_projects|length }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TABLE VIEW ═══ -->
+<div id="viewTable">
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Client</th>
+            <th>Progress</th>
+            <th>Timeline</th>
+            <th class="text-end">Revenue</th>
+            <th class="text-end">Mat. Cost</th>
+            <th class="text-end">Profit</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in projects %}
+          <tr onclick="window.location='{% url 'projects:detail' p.pk %}'" style="cursor:pointer;">
+            <td>
+              <div class="fw-semibold" style="color:var(--adn-navy);">{{ p.name }}</div>
+              {% if p.quotation %}<div class="text-muted" style="font-size:.7rem;"><i class="bi bi-file-earmark-text me-1"></i>{{ p.quotation.quote_no }}</div>{% endif %}
+            </td>
+            <td>
+              <div>{{ p.client_name }}</div>
+              {% if p.client_phone %}<div class="text-muted" style="font-size:.7rem;">{{ p.client_phone }}</div>{% endif %}
+            </td>
+            <td style="min-width:180px;">
+              <!-- 4-step mini progress bar -->
+              <div class="d-flex gap-1 mb-1">
+                {% for sv, sl in p.STATUS_CHOICES %}{% if sv != 'cancelled' %}
+                <div title="{{ sl }}" style="flex:1;height:5px;border-radius:3px;
+                  background:{% if p.status_step >= forloop.counter0 %}var(--adn-navy){% else %}#e2e8f0{% endif %};"></div>
+                {% endif %}{% endfor %}
+              </div>
+              <span class="badge rounded-pill px-2
+                {% if p.status == 'completed' %}badge-accepted
+                {% elif p.status == 'in_progress' %}badge-sent
+                {% elif p.status == 'ordered' %}badge-expired
+                {% elif p.status == 'cancelled' %}badge-rejected
+                {% else %}badge-draft{% endif %}" style="font-size:.68rem;">
+                {{ p.get_status_display }}
+              </span>
+            </td>
+            <td class="small text-muted">
+              <div><i class="bi bi-play-fill text-muted me-1" style="font-size:.6rem;"></i>{{ p.start_date|date:"d M Y" }}</div>
+              {% if p.target_date %}
+              <div {% if not p.completion_date and p.target_date < today %}class="text-danger"{% endif %}>
+                <i class="bi bi-flag {% if not p.completion_date and p.target_date < today %}text-danger{% else %}text-muted{% endif %} me-1" style="font-size:.6rem;"></i>{{ p.target_date|date:"d M Y" }}
+              </div>
+              {% endif %}
+              {% if p.completion_date %}<div class="text-success"><i class="bi bi-check-circle me-1" style="font-size:.6rem;"></i>{{ p.completion_date|date:"d M Y" }}</div>{% endif %}
+            </td>
+            <td class="text-end">{% if p.revenue %}<span class="fw-semibold">{{ p.revenue|floatformat:0 }}</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td class="text-end text-danger">{% if p.materials_cost %}{{ p.materials_cost|floatformat:0 }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td class="text-end fw-bold {% if p.gross_profit > 0 %}text-success{% elif p.gross_profit < 0 %}text-danger{% endif %}">
+              {% if p.revenue %}{{ p.gross_profit|floatformat:0 }}{% else %}<span class="text-muted fw-normal">—</span>{% endif %}
+            </td>
+            <td class="text-end" onclick="event.stopPropagation()">
+              <div class="btn-group btn-group-sm">
+                <a href="{% url 'projects:detail' p.pk %}" class="btn btn-outline-secondary" title="View"><i class="bi bi-eye"></i></a>
+                <a href="{% url 'orders:create' p.pk %}" class="btn btn-outline-secondary" title="Add Order"><i class="bi bi-cart-plus"></i></a>
+                {% if p.status == 'completed' %}
+                <a href="{% url 'projects:report' p.pk %}" class="btn btn-outline-secondary" title="Report" target="_blank"><i class="bi bi-file-earmark-bar-graph"></i></a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center py-5">
+              <i class="bi bi-kanban fs-1 text-muted d-block mb-2"></i>
+              <div class="text-muted mb-3">No projects yet.</div>
+              <a href="{% url 'projects:create' %}" class="btn btn-sm btn-adn">Create First Project</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PIPELINE VIEW ═══ -->
+<div id="viewPipeline" style="display:none;">
+  <div class="row g-3">
+    {% for stage_val, stage_label, stage_color, stage_projects in pipeline %}
+    <div class="col-md-6 col-xl-3">
+      <div class="card" style="border-top:3px solid {{ stage_color }};min-height:300px;">
+        <div class="card-header py-2 px-3 d-flex justify-content-between align-items-center">
+          <span class="fw-bold small" style="color:{{ stage_color }};">{{ stage_label }}</span>
+          <span class="badge rounded-pill" style="background:{{ stage_color }};">{{ stage_projects|length }}</span>
+        </div>
+        <div class="card-body p-2">
+          {% for p in stage_projects %}
+          <div class="mb-2 p-2 rounded border bg-white" style="cursor:pointer;"
+            onclick="window.location='{% url 'projects:detail' p.pk %}'">
+            <div class="fw-semibold small mb-1" style="color:var(--adn-navy);">{{ p.name }}</div>
+            <div class="text-muted" style="font-size:.7rem;">
+              <i class="bi bi-person me-1"></i>{{ p.client_name }}
+            </div>
+            {% if p.target_date %}
+            <div class="mt-1" style="font-size:.68rem;
+              color:{% if not p.completion_date and p.target_date < today %}#dc2626{% else %}#94a3b8{% endif %};">
+              <i class="bi bi-flag me-1"></i>{{ p.target_date|date:"d M Y" }}
+              {% if not p.completion_date and p.target_date < today %}<strong>— OVERDUE</strong>{% endif %}
+            </div>
+            {% endif %}
+            {% if p.revenue %}
+            <div class="mt-1 d-flex justify-content-between" style="font-size:.68rem;">
+              <span class="text-muted">Revenue</span>
+              <span class="fw-semibold">TZS {{ p.revenue|floatformat:0 }}</span>
+            </div>
+            {% endif %}
+            {% if p.orders.count %}
+            <div class="mt-1" style="font-size:.68rem;color:#64748b;">
+              <i class="bi bi-cart me-1"></i>{{ p.orders.count }} order{{ p.orders.count|pluralize }}
+              · TZS {{ p.materials_cost|floatformat:0 }}
+            </div>
+            {% endif %}
+            <div class="mt-2 d-flex gap-1" onclick="event.stopPropagation()">
+              <a href="{% url 'projects:detail' p.pk %}" class="btn btn-outline-secondary"
+                style="font-size:.65rem;padding:2px 8px;">
+                <i class="bi bi-eye me-1"></i>View
+              </a>
+              <a href="{% url 'orders:create' p.pk %}" class="btn btn-outline-secondary"
+                style="font-size:.65rem;padding:2px 8px;">
+                <i class="bi bi-cart-plus me-1"></i>Order
+              </a>
+            </div>
+          </div>
+          {% empty %}
+          <div class="text-center text-muted py-4" style="font-size:.8rem;">
+            <i class="bi bi-inbox d-block fs-3 mb-1"></i>
+            No projects in this stage
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setView(v) {
+  document.getElementById('viewTable').style.display    = v === 'table'    ? '' : 'none';
+  document.getElementById('viewPipeline').style.display = v === 'pipeline' ? '' : 'none';
+  document.getElementById('btnTable').className    = 'btn btn-sm ' + (v === 'table'    ? 'btn-adn' : 'btn-outline-secondary');
+  document.getElementById('btnPipeline').className = 'btn btn-sm ' + (v === 'pipeline' ? 'btn-adn' : 'btn-outline-secondary');
+  localStorage.setItem('projectView', v);
+}
+setView(localStorage.getItem('projectView') || 'table');
+</script>
+{% endblock %}

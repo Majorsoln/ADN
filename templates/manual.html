@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mwongozo wa Mtumiaji – ADN Solutions</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;font-size:10.5pt;background:#fff;color:#1e293b;line-height:1.65}
+.page{max-width:900px;margin:0 auto;padding:32px 40px}
+
+/* Print bar */
+.print-bar{background:#1a2e5a;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:9px 28px;position:sticky;top:0;z-index:100;gap:12px;flex-wrap:wrap}
+.print-bar .brand{font-family:'DM Serif Display',serif;font-size:14pt;color:#3aacdc}
+.print-bar .btn-print{background:#3aacdc;color:#fff;border:none;padding:6px 20px;border-radius:6px;font-weight:700;cursor:pointer;font-size:10pt}
+.print-bar a{color:#94ccde;text-decoration:none;font-size:9pt}
+
+/* Header */
+.doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:22px;border-bottom:3px solid #1a2e5a;margin-bottom:30px}
+.doc-header .co h1{font-family:'DM Serif Display',serif;font-size:20pt;color:#1a2e5a}
+.doc-header .co h1 span{color:#3aacdc}
+.doc-header .co .sub{font-size:9pt;color:#64748b;margin-top:3px}
+.doc-header .label .title{font-size:26pt;font-weight:800;color:#1a2e5a;letter-spacing:-1px}
+.doc-header .label .sub{font-size:10pt;color:#3aacdc;font-weight:600;margin-top:3px}
+
+/* TOC */
+.toc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px 24px;margin-bottom:32px}
+.toc h3{font-size:9pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:14px;border-bottom:1px solid #e2e8f0;padding-bottom:6px}
+.toc ol{padding-left:20px}
+.toc ol li{margin-bottom:5px;font-size:10pt}
+.toc ol li a{color:#1a2e5a;text-decoration:none;font-weight:500}
+.toc ol li a:hover{color:#3aacdc}
+.toc .sub-toc{padding-left:16px;margin-top:4px}
+.toc .sub-toc li{font-size:9pt;color:#64748b;margin-bottom:2px}
+
+/* Chapter */
+.chapter{margin-bottom:40px;page-break-inside:avoid}
+.ch-header{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #1a2e5a}
+.ch-num{background:#1a2e5a;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13pt;flex-shrink:0}
+.ch-title{font-family:'DM Serif Display',serif;font-size:16pt;color:#1a2e5a}
+.ch-sub{font-size:9pt;color:#3aacdc;font-weight:600;margin-top:2px}
+
+/* Section */
+.sec{font-size:7.5pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin:20px 0 10px}
+
+/* Steps */
+.steps-list{list-style:none;padding:0;margin:12px 0}
+.steps-list li{display:flex;gap:14px;margin-bottom:10px;align-items:flex-start}
+.step-num{background:#3aacdc;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9pt;flex-shrink:0;margin-top:1px}
+.step-body{flex:1;font-size:10pt}
+.step-body strong{color:#1a2e5a}
+
+/* Info boxes */
+.info-box{border-radius:8px;padding:12px 16px;margin:12px 0;font-size:9.5pt}
+.info-box.tip{background:#eff6ff;border-left:4px solid #3aacdc;color:#1e3a5f}
+.info-box.warn{background:#fffbeb;border-left:4px solid #f59e0b;color:#78350f}
+.info-box.success{background:#f0fdf4;border-left:4px solid #16a34a;color:#14532d}
+.info-box.danger{background:#fef2f2;border-left:4px solid #dc2626;color:#7f1d1d}
+.info-box strong{font-weight:700}
+
+/* Flow diagram */
+.flow{display:flex;flex-wrap:wrap;gap:0;align-items:center;margin:14px 0}
+.flow-box{background:#1a2e5a;color:#fff;border-radius:8px;padding:10px 16px;font-size:9pt;font-weight:600;text-align:center;min-width:110px}
+.flow-box.alt{background:#3aacdc}
+.flow-box.green{background:#16a34a}
+.flow-box.orange{background:#d97706}
+.flow-arrow{font-size:16pt;color:#94a3b8;padding:0 6px;display:flex;align-items:center}
+
+/* Table */
+.dtbl{width:100%;border-collapse:collapse;margin:12px 0;font-size:9.5pt}
+.dtbl thead tr{background:#1a2e5a;color:#fff}
+.dtbl thead th{padding:8px 12px;text-align:left;font-size:8pt;font-weight:600}
+.dtbl tbody td{padding:7px 12px;border-bottom:1px solid #e2e8f0;vertical-align:top}
+.dtbl tbody tr:nth-child(even){background:#f8fafc}
+.dtbl .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:7.5pt;font-weight:700}
+.badge-navy{background:#dbeafe;color:#1d4ed8}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-orange{background:#fef3c7;color:#d97706}
+.badge-red{background:#fee2e2;color:#dc2626}
+
+/* Status pills */
+.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:8pt;font-weight:700;margin:1px}
+
+/* Footer */
+.doc-footer{margin-top:36px;text-align:center;font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px}
+
+@media print {
+  .print-bar{display:none}
+  .page{padding:16px 20px;max-width:100%}
+  body{font-size:9.5pt}
+  .chapter{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div class="print-bar">
+  <span class="brand">ADN uPVC &amp; Aluminum Solutions</span>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <a href="/">&#8592; Rudi Dashboard</a>
+    <button class="btn-print" onclick="window.print()">&#11015; Chapisha / Hifadhi PDF</button>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ── HEADER ── -->
+<div class="doc-header">
+  <div class="co">
+    <h1>ADN <span>uPVC</span> &amp; Aluminum Solutions</h1>
+    <div class="sub">Dar es Salaam, Tanzania &middot; Reg. No 162491113 &middot; VAT TIN 162-491-113</div>
+  </div>
+  <div class="label">
+    <div class="title">MWONGOZO</div>
+    <div class="sub">Mwongozo wa Mtumiaji – Toleo 1.0</div>
+    <div style="font-size:8.5pt;color:#64748b;margin-top:4px;">{{ today|date:"d F Y" }}</div>
+  </div>
+</div>
+
+<!-- ── TOC ── -->
+<div class="toc">
+  <h3>&#128196; Yaliyomo</h3>
+  <ol>
+    <li><a href="#ch1">Utangulizi &amp; Muundo wa Mfumo</a></li>
+    <li><a href="#ch2">Dashboard (Ukurasa Mkuu)</a></li>
+    <li><a href="#ch3">Quotations &ndash; Maelezo ya Bei</a>
+      <ol class="sub-toc">
+        <li>Kuunda Quotation Mpya</li>
+        <li>Kuongeza Vipengee (Items)</li>
+        <li>Kuongeza Chaguo la Nyenzo (Material Options)</li>
+        <li>Kutuma kwa Mteja &amp; Kupokea Jibu</li>
+        <li>Kukubali Chaguo (Accept Option)</li>
+        <li>Kuchapisha PDF ya Mwisho</li>
+      </ol>
+    </li>
+    <li><a href="#ch4">Projects &ndash; Miradi</a>
+      <ol class="sub-toc">
+        <li>Kuunda Mradi kutoka Quotation</li>
+        <li>Hatua za Mradi</li>
+        <li>Ripoti ya Mradi</li>
+        <li>Kukamilisha Mradi</li>
+      </ol>
+    </li>
+    <li><a href="#ch5">Material Orders &ndash; Manunuzi ya Vifaa</a>
+      <ol class="sub-toc">
+        <li>Kuunda Order</li>
+        <li>Chanzo cha Malipo</li>
+        <li>Kusasisha Hali ya Order</li>
+      </ol>
+    </li>
+    <li><a href="#ch6">Invoices &ndash; Ankara</a>
+      <ol class="sub-toc">
+        <li>Kuunda Invoice kutoka Quotation</li>
+        <li>Kurekodi Malipo</li>
+        <li>Hali ya Invoice</li>
+      </ol>
+    </li>
+    <li><a href="#ch7">Finance &ndash; Fedha</a>
+      <ol class="sub-toc">
+        <li>Daily Snapshot</li>
+        <li>Business Report</li>
+        <li>Madeni (Debts)</li>
+        <li>Gharama (Expenses)</li>
+      </ol>
+    </li>
+    <li><a href="#ch8">Office &ndash; Ofisi</a></li>
+    <li><a href="#ch9">Mtiririko Kamili wa Mradi (Flow)</a></li>
+    <li><a href="#ch10">Maswali ya Kawaida (FAQ)</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 1: UTANGULIZI -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch1">
+  <div class="ch-header">
+    <div class="ch-num">1</div>
+    <div>
+      <div class="ch-title">Utangulizi &amp; Muundo wa Mfumo</div>
+      <div class="ch-sub">Kuhusu mfumo na jinsi unavyofanya kazi</div>
+    </div>
+  </div>
+
+  <p style="margin-bottom:12px;">Mfumo huu wa ADN uPVC &amp; Aluminum Solutions ni programu ya kusimamia biashara yako yote kuanzia kupata mteja hadi kukamilisha mradi. Unashughulikia:</p>
+
+  <table class="dtbl">
+    <thead><tr><th>Sehemu</th><th>Kusudi</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Quotations</strong></td><td>Tengeneza maelezo ya bei yenye chaguo nyingi za nyenzo, tuma kwa mteja, pokea jibu</td></tr>
+      <tr><td><strong>Projects</strong></td><td>Simamia mradi kutoka mwanzo hadi mwisho &mdash; vifaa, malipo, ripoti</td></tr>
+      <tr><td><strong>Invoices</strong></td><td>Tengeneza ankara, rekodi malipo, fuatilia mkopo wa mteja</td></tr>
+      <tr><td><strong>Material Orders</strong></td><td>Nunua vifaa, rekodi chanzo cha pesa (cash/benki/mkopo)</td></tr>
+      <tr><td><strong>Finance</strong></td><td>Angalia hali ya fedha, madeni, gharama, ripoti ya biashara</td></tr>
+      <tr><td><strong>Office</strong></td><td>Rekodi huduma za ofisi, mapato, viwango vya bei</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec">Jinsi ya Kusogea (Navigation)</div>
+  <p style="margin-bottom:8px;">Upande wa kushoto kuna <strong>sidebar</strong> (bar ya kuruka) yenye viungo vyote. Kila sehemu iko wapi:</p>
+  <ul style="padding-left:20px;font-size:10pt;margin-bottom:10px;">
+    <li style="margin-bottom:4px;"><strong>Overview &rarr; Dashboard</strong> &mdash; Muhtasari wa haraka</li>
+    <li style="margin-bottom:4px;"><strong>Quotations</strong> &mdash; Orodha &amp; Kuunda quotation</li>
+    <li style="margin-bottom:4px;"><strong>Invoices</strong> &mdash; Orodha &amp; Kuunda invoice</li>
+    <li style="margin-bottom:4px;"><strong>Projects</strong> &mdash; Miradi yote &amp; Kuunda mradi</li>
+    <li style="margin-bottom:4px;"><strong>Office</strong> &mdash; Huduma za ofisi &amp; Mapato</li>
+    <li style="margin-bottom:4px;"><strong>Finance</strong> &mdash; Snapshot, Ripoti, Madeni, Gharama</li>
+    <li style="margin-bottom:4px;"><strong>User Manual</strong> &mdash; Ukurasa huu</li>
+  </ul>
+
+  <div class="info-box tip">
+    <strong>&#128161; Ushauri:</strong> Kila ukurasa una kitufe cha "<strong>Back</strong>" juu kushoto ili kurudi nyuma, na vitufe vya haraka (quick actions) juu kulia.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 2: DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch2">
+  <div class="ch-header">
+    <div class="ch-num">2</div>
+    <div>
+      <div class="ch-title">Dashboard &ndash; Ukurasa Mkuu</div>
+      <div class="ch-sub">Muhtasari wa hali ya biashara yako kwa sekunde moja</div>
+    </div>
+  </div>
+
+  <p style="margin-bottom:12px;">Ukifungua mfumo utaona dashboard inayoonyesha:</p>
+  <table class="dtbl">
+    <thead><tr><th>Kadi</th><th>Inaonyesha nini</th></tr></thead>
+    <tbody>
+      <tr><td>Quotations</td><td>Jumla ya quote zote, zilizotumwa (sent), zilizokubaliwa (accepted)</td></tr>
+      <tr><td>Invoices</td><td>Jumla ya ankara, ambazo hazijalipwa, mapato yaliyolipwa (paid)</td></tr>
+      <tr><td>Projects</td><td>Miradi inayoendelea (active) na iliyokamilika</td></tr>
+      <tr><td>Income</td><td>Faida ya miradi, mapato ya huduma za ofisi, jumla</td></tr>
+      <tr><td>Recent Activity</td><td>Quote 5 za hivi karibuni, Invoice 5, Miradi 5, Madeni yanayosubiri</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info-box success">
+    <strong>&#10003; Angalia kila siku:</strong> Dashboard inaonyesha madeni yanayosubiri (pending debts) &mdash; yakiwa mengi, nenda Finance &rarr; Debts kuyashughulikia.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 3: QUOTATIONS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch3">
+  <div class="ch-header">
+    <div class="ch-num">3</div>
+    <div>
+      <div class="ch-title">Quotations &ndash; Maelezo ya Bei</div>
+      <div class="ch-sub">Toa bei yenye chaguo nyingi za nyenzo kwa mteja</div>
+    </div>
+  </div>
+
+  <div class="info-box tip">
+    <strong>Jinsi Inavyofanya Kazi:</strong> Quotation moja inaweza kuwa na chaguo nyingi za nyenzo (kwa mfano: Aluminium White, Aluminium Grey, uPVC White). Mteja akisema anapenda ipi, unakubali (Accept) hiyo moja &mdash; na hiyo inakuwa bei halisi ya mradi.
+  </div>
+
+  <div class="sec">3.1 &ndash; Kuunda Quotation Mpya</div>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Nenda <strong>Quotations &rarr; New Quotation</strong> kwenye sidebar.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Jaza <strong>Taarifa za Mteja</strong>: Jina, simu, barua pepe, anwani, jina la mradi.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Weka <strong>tarehe ya quotation</strong> na <strong>tarehe ya kumalizika</strong> (valid until). Default ni siku 30.</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Weka <strong>Discount</strong> ukitaka &mdash; chagua aina (percentage au fixed amount) na thamani.</div></li>
+    <li><div class="step-num">5</div><div class="step-body">Weka <strong>Kodi</strong> (taxes): VAT, Service Levy, Withholding &mdash; zinaweza kuwashwa au kuzimwa.</div></li>
+    <li><div class="step-num">6</div><div class="step-body">Bonyeza <strong>Save</strong> au <strong>Save &amp; Preview PDF</strong>.</div></li>
+  </ol>
+
+  <div class="sec">3.2 &ndash; Kuongeza Vipengee vya Kazi (Items)</div>
+  <p style="margin-bottom:8px;">Baada ya kuunda quotation, ongeza vipengee vya kazi (madirisha, milango, n.k.):</p>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Kwenye fomu ya quotation, chini kuna sehemu ya <strong>"Order Items"</strong>. Bonyeza <strong>"+ Add Item"</strong>.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Weka: <strong>Aina</strong> (k.m. "Casement Window"), <strong>Maelezo</strong>, <strong>Upana (cm)</strong>, <strong>Urefu (cm)</strong>, <strong>Idadi</strong>.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Eneo (m&sup2;) litahesabiwa moja kwa moja: <em>Upana &times; Urefu &times; Idadi &divide; 10,000</em>.</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Ongeza vipengee vyote vya kazi.</div></li>
+  </ol>
+
+  <div class="info-box tip">
+    <strong>Mfano:</strong> Dirisha la 120cm &times; 90cm, idadi 2 = (120 &times; 90 &times; 2) &divide; 10,000 = <strong>2.16 m&sup2;</strong>
+  </div>
+
+  <div class="sec">3.3 &ndash; Kuongeza Chaguo la Nyenzo (Material Options)</div>
+  <p style="margin-bottom:8px;">Hii ndiyo nguvu ya mfumo &mdash; unaweza kutoa bei tofauti kwa nyenzo tofauti:</p>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Kwenye fomu, sehemu ya <strong>"Material Options"</strong> ina orodha ya nyenzo za kawaida tayari (Aluminium, uPVC). Badilisha bei kwa kila moja au ongeza mpya.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Kila nyenzo ina <strong>Bei kwa m&sup2;</strong> (TZS/m&sup2;). Mfumo utahesabu Subtotal, Discount, Kodi, na <strong>Jumla (Grand Total)</strong> kwa kila chaguo.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Ongeza nyenzo nyingi kwa kutoa chaguo zaidi kwa mteja.</div></li>
+  </ol>
+
+  <table class="dtbl">
+    <thead><tr><th>Safu ya Jedwali la Bei</th><th>Maelezo</th><th>Rangi</th></tr></thead>
+    <tbody>
+      <tr><td>Unit Price/m&sup2;</td><td>Bei ya nyenzo kwa kila m&sup2;</td><td style="color:#185FA5">&#9679; Bluu</td></tr>
+      <tr><td>Subtotal</td><td>Bei/m&sup2; &times; Jumla ya eneo</td><td style="color:#f59e0b">&#9679; Chungwa</td></tr>
+      <tr><td>Discount</td><td>Punguzo ulioweka</td><td style="color:#dc2626">&#9679; Nyekundu</td></tr>
+      <tr><td>After Discount</td><td>Subtotal baada ya punguzo</td><td style="color:#f59e0b">&#9679; Chungwa</td></tr>
+      <tr><td>Final Investment</td><td>Bei ya mwisho (na kodi)</td><td style="color:#16a34a">&#9679; Kijani</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec">3.4 &ndash; Kutuma kwa Mteja</div>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Bonyeza <strong>"Print / PDF"</strong> ili kuchapisha quotation &mdash; itakuwa na jedwali la bei zote za nyenzo.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Tuma kwa mteja kwa WhatsApp, barua pepe, au kwa mkono.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Badilisha hali (status) hadi <strong>"Sent"</strong> kwa kutumia kitufe cha "Mark as Sent" kwenye ukurasa wa quotation.</div></li>
+  </ol>
+
+  <div class="sec">3.5 &ndash; Kukubali Chaguo la Mteja (Accept Option)</div>
+  <p style="margin-bottom:8px;">Mteja akikuambia anapenda nyenzo ipi:</p>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Nenda ukurasa wa quotation hiyo (Quotations &rarr; All Quotations &rarr; bonyeza jina lake).</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Kwenye jedwali la chaguo za nyenzo, bonyeza kitufe cha <span style="background:#16a34a;color:#fff;padding:1px 8px;border-radius:4px;font-size:9pt;">&#10003; Accept</span> karibu na nyenzo iliyochaguliwa na mteja.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Thibitisha kwenye dialog inayoonekana.</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Quotation sasa ina hali <span style="background:#dcfce7;color:#15803d;padding:1px 8px;border-radius:4px;font-size:9pt;font-weight:700;">Accepted</span> na chaguo lililochaguliwa linaonyeshwa kwa rangi ya kijani.</div></li>
+  </ol>
+
+  <div class="info-box success">
+    <strong>&#10003; Baada ya kukubali:</strong> Vitufe vipya vitaonekana: <strong>"Create Invoice"</strong> na <strong>"Create Project"</strong>. Pia unaweza kuchapisha <strong>Final PDF</strong> inayoonyesha chaguo moja tu lililokubaliwa.
+  </div>
+
+  <div class="sec">3.6 &ndash; PDF ya Awali (Draft) vs PDF ya Mwisho (Final)</div>
+  <table class="dtbl">
+    <thead><tr><th>Aina ya PDF</th><th>Inaonyesha nini</th><th>Inatumika lini</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Draft/Sent PDF</strong></td><td>Chaguo zote za nyenzo kwa jedwali moja &mdash; "Tafadhali chagua mojawapo"</td><td>Kutuma kwa mteja kabla hajachagua</td></tr>
+      <tr><td><strong>Final PDF</strong></td><td>Chaguo moja tu (lililokubaliwa) chenye alama &#10003; CLIENT CONFIRMED</td><td>Baada ya mteja kukubali &mdash; hii ndiyo mkataba</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 4: PROJECTS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch4">
+  <div class="ch-header">
+    <div class="ch-num">4</div>
+    <div>
+      <div class="ch-title">Projects &ndash; Miradi</div>
+      <div class="ch-sub">Simamia mradi wote kutoka mwanzo hadi mwisho</div>
+    </div>
+  </div>
+
+  <div class="sec">4.1 &ndash; Kuunda Mradi kutoka Quotation</div>
+  <p style="margin-bottom:8px;">Njia bora ya kuunda mradi ni kutoka quotation iliyokubaliwa:</p>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Nenda ukurasa wa quotation iliyokuwa <span style="background:#dcfce7;color:#15803d;padding:1px 8px;border-radius:4px;font-size:9pt;font-weight:700;">Accepted</span>.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Bonyeza kitufe cha <strong>"Create Project"</strong> juu kulia.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Fomu itajazwa moja kwa moja: jina la mradi, jina la mteja, simu, na quotation itaunganishwa (locked &mdash; haiwezi kubadilishwa).</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Weka tarehe za mradi: <strong>Start Date</strong>, <strong>Target Completion</strong>.</div></li>
+    <li><div class="step-num">5</div><div class="step-body">Bonyeza <strong>"Create Project"</strong>.</div></li>
+  </ol>
+
+  <div class="info-box warn">
+    <strong>&#9888; Kumbuka:</strong> Quotation moja inaweza kuunganishwa na mradi mmoja tu. Ukijaribu kuunda mradi mwingine kwa quotation ile ile, mfumo utakataa.
+  </div>
+
+  <div class="sec">4.2 &ndash; Hatua za Mradi (Project Stages)</div>
+  <div class="flow">
+    <div class="flow-box">&#128197; Planning</div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box alt">&#128717; Materials Ordered</div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box orange">&#128736; In Progress</div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box green">&#10003; Completed</div>
+  </div>
+
+  <table class="dtbl" style="margin-top:12px;">
+    <thead><tr><th>Hatua</th><th>Maelezo</th><th>Inabadilika moja kwa moja?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill" style="background:#e2e8f0;color:#64748b">Planning</span></td><td>Mradi umeundwa, unasubiri ununuzi wa vifaa</td><td>La &mdash; hali ya mwanzo</td></tr>
+      <tr><td><span class="pill" style="background:#dbeafe;color:#1d4ed8">Materials Ordered</span></td><td>Order ya kwanza ya vifaa imefanywa</td><td><strong>Ndiyo</strong> &mdash; moja kwa moja ukifanya order yoyote</td></tr>
+      <tr><td><span class="pill" style="background:#fef3c7;color:#d97706">In Progress</span></td><td>Vifaa vya kwanza vimepokelewa</td><td><strong>Ndiyo</strong> &mdash; moja kwa moja ukibonyeza "Received"</td></tr>
+      <tr><td><span class="pill" style="background:#dcfce7;color:#15803d">Completed</span></td><td>Mradi umekamilika</td><td>Unapaswa ubonyeze "Complete" wewe mwenyewe</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec">4.3 &ndash; Muhtasari wa Fedha (Financial Summary) kwenye Mradi</div>
+  <p style="margin-bottom:8px;">Ukurasa wa mradi una kadi ya <strong>"Financial Summary"</strong> inayoonyesha:</p>
+  <table class="dtbl">
+    <thead><tr><th>Safu</th><th>Maelezo</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Contract Value</strong></td><td>Thamani ya mradi &mdash; kutoka Invoice (au Quote kama invoice bado haipo)</td></tr>
+      <tr><td><strong>Advance Paid</strong></td><td>Malipo ya awali (deposit) kutoka kwa mteja</td></tr>
+      <tr><td><strong>Payment 1, 2...</strong></td><td>Malipo mengine yaliyorekodwa kwenye invoice</td></tr>
+      <tr><td><strong>Total Received</strong></td><td>Jumla yote iliyolipwa na mteja</td></tr>
+      <tr><td><strong>Balance Still Owed</strong></td><td>Kiasi kinachobaki kulipwa na mteja (Contract &minus; Jumla iliyolipwa)</td></tr>
+      <tr><td><strong>Materials Paid From</strong></td><td>Jinsi vifaa vilivyolipwa &mdash; Cash, Benki, M-Pesa, Mkopo</td></tr>
+      <tr><td><strong>Gross Profit</strong></td><td>Mapato ya mradi &minus; Gharama za vifaa</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info-box tip">
+    <strong>&#128161; Ikiwa revenue inaonyesha "From Quote"</strong> (badge ya bluu): Inamaanisha invoice bado haijaunganishwa. Thamani inatoka moja kwa moja kwenye chaguo lililokubaliwa la quotation.
+  </div>
+
+  <div class="sec">4.4 &ndash; Ripoti ya Mradi (Project Report)</div>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Kwenye ukurasa wa mradi, bonyeza kitufe cha <strong>"Report PDF"</strong> juu kulia.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Ripoti itaonyesha: taarifa za mradi, vipengee vya quotation, chaguo lililokubaliwa na bei yake, orders zote, muhtasari wa fedha, na timeline.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Bonyeza <strong>"Print / Save PDF"</strong> kuhifadhi.</div></li>
+  </ol>
+
+  <div class="sec">4.5 &ndash; Kukamilisha Mradi</div>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Kwenye ukurasa wa mradi, bonyeza kitufe cha <strong>"Mark as Completed"</strong> au <strong>"Complete"</strong> juu.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Chagua njia ya malipo ya faida (Cash, Bank, n.k.).</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Mfumo utahifadhi <strong>faida (gross profit)</strong> kwenye kumbukumbu ya mapato ya ofisi.</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Utaelekezwa kwenye Ripoti ya Mwisho ya mradi.</div></li>
+  </ol>
+
+  <div class="info-box success">
+    <strong>&#10003; Baada ya kukamilika:</strong> Faida ya mradi itaonekana kwenye Finance &rarr; Business Report chini ya "Project Profits".
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 5: MATERIAL ORDERS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch5">
+  <div class="ch-header">
+    <div class="ch-num">5</div>
+    <div>
+      <div class="ch-title">Material Orders &ndash; Manunuzi ya Vifaa</div>
+      <div class="ch-sub">Nunua vifaa na fuatilia gharama za mradi</div>
+    </div>
+  </div>
+
+  <div class="sec">5.1 &ndash; Kuunda Order ya Vifaa</div>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Nenda ukurasa wa mradi husika. Bonyeza <strong>"Add Order"</strong>.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Jaza: <strong>Jina la Muuzaji (Supplier)</strong>, tarehe ya order, tarehe inayotarajiwa kupokea vifaa.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Chagua <strong>Hali (Status)</strong>: <em>Draft</em> (bado haujaagiza) au <em>Ordered</em> (umeshaaagiza).</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Chagua <strong>Chanzo cha Malipo</strong>: Fedha zilizotoka wapi? (muhimu sana).</div></li>
+    <li><div class="step-num">5</div><div class="step-body">Ongeza vipengee vya vifaa kwenye jedwali: Jina, Maelezo, Idadi, Kitengo, Bei ya Kila Kitengo.</div></li>
+    <li><div class="step-num">6</div><div class="step-body">Angalia <strong>Grand Total</strong> inayohesabiwa moja kwa moja, kisha bonyeza <strong>"Create Order"</strong>.</div></li>
+  </ol>
+
+  <div class="info-box warn">
+    <strong>&#9888; Muhimu:</strong> Lazima uongeze angalau kipengee kimoja cha vifaa kabla ya kuhifadhi. Order yenye vipengee tupu haitakubaliwa.
+  </div>
+
+  <div class="sec">5.2 &ndash; Chaguo za Chanzo cha Malipo</div>
+  <table class="dtbl">
+    <thead><tr><th>Chanzo</th><th>Maelezo</th><th>Athari</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-green">Cash</span></td><td>Ulilipa kwa pesa taslimu</td><td>Inaonyeshwa kwenye muhtasari wa fedha wa mradi</td></tr>
+      <tr><td><span class="badge badge-navy">Bank Transfer</span></td><td>Ulituma pesa benki</td><td>Inaonyeshwa kwenye muhtasari wa fedha wa mradi</td></tr>
+      <tr><td><span class="badge badge-green">M-Pesa</span></td><td>Ulilipa kwa simu</td><td>Inaonyeshwa kwenye muhtasari wa fedha wa mradi</td></tr>
+      <tr><td><span class="badge badge-red">On Credit (Debt)</span></td><td>Umechukua vifaa kwa mkopo</td><td><strong>Deni (Debt) linaundwa moja kwa moja</strong> &mdash; inaonekana Finance &rarr; Debts</td></tr>
+      <tr><td><span class="badge badge-orange">Unspecified</span></td><td>Chanzo kisichojulikana</td><td>Inaonekana kwenye ripoti kama "Unspecified"</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec">5.3 &ndash; Kusasisha Hali ya Order</div>
+  <p style="margin-bottom:8px;">Ukurasa wa order una hatua nne zinazoonekana juu:</p>
+  <div class="flow" style="font-size:9pt;">
+    <div class="flow-box" style="font-size:8.5pt;min-width:80px;">Draft</div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box alt" style="font-size:8.5pt;min-width:80px;">Ordered</div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box orange" style="font-size:8.5pt;min-width:90px;">Partially Received</div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box green" style="font-size:8.5pt;min-width:80px;">Received</div>
+  </div>
+  <ul style="padding-left:20px;font-size:10pt;margin-top:10px;">
+    <li style="margin-bottom:4px;"><strong>Draft &rarr; Ordered:</strong> Bonyeza "Finalise &amp; Place Order" ukichagua chanzo cha malipo. Mradi utabadilika hadi "Materials Ordered" moja kwa moja.</li>
+    <li style="margin-bottom:4px;"><strong>Ordered &rarr; Partially/Received:</strong> Bonyeza "Mark Partial Delivery" au "Mark Fully Received". Mradi utabadilika hadi "In Progress" ukipokea vifaa vya kwanza.</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 6: INVOICES -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch6">
+  <div class="ch-header">
+    <div class="ch-num">6</div>
+    <div>
+      <div class="ch-title">Invoices &ndash; Ankara</div>
+      <div class="ch-sub">Tengeneza ankara na rekodi malipo ya mteja</div>
+    </div>
+  </div>
+
+  <div class="sec">6.1 &ndash; Kuunda Invoice kutoka Quotation</div>
+  <p style="margin-bottom:8px;">Njia bora ya kuunda invoice ni kutoka quotation iliyokubaliwa au kutoka mradi:</p>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Nenda ukurasa wa quotation iliyokuwa <strong>Accepted</strong>, au ukurasa wa mradi wenye quotation hiyo.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Bonyeza <strong>"Create Invoice"</strong>. Fomu itajazwa moja kwa moja na:
+      <ul style="margin-top:6px;padding-left:16px;font-size:9.5pt;">
+        <li>Taarifa za mteja (jina, simu, barua pepe, anwani)</li>
+        <li>Nambari ya quotation (Quote Ref)</li>
+        <li><strong>Contract Amount</strong> = Bei ya mwisho ya chaguo lililokubaliwa</li>
+      </ul>
+    </div></li>
+    <li><div class="step-num">3</div><div class="step-body">Weka <strong>Malipo ya Awali (Advance Paid)</strong> &mdash; deposit uliyopokea wakati wa mkataba.</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Angalia kando kuona <strong>banner ya kijani</strong> inayosema "ITAUNGANISHWA NA MRADI" &mdash; inamaanisha invoice itaunganishwa na mradi moja kwa moja.</div></li>
+    <li><div class="step-num">5</div><div class="step-body">Bonyeza <strong>"Save Invoice"</strong>. Utaelekezwa kwenye ukurasa wa mradi ukiona invoice imewekwa.</div></li>
+  </ol>
+
+  <div class="info-box success">
+    <strong>&#10003; Unganisho la Moja kwa Moja:</strong> Baada ya invoice kuhifadhiwa, mradi utaonyesha invoice hiyo na revenue itabadilika kuonyesha Contract Amount ya invoice badala ya quote.
+  </div>
+
+  <div class="sec">6.2 &ndash; Kurekodi Malipo (Payments)</div>
+  <p style="margin-bottom:8px;">Kila wakati mteja analipa, rekodi malipo kwenye invoice:</p>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Nenda <strong>Invoices &rarr; All Invoices</strong> &rarr; bonyeza invoice husika.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Chini ya ukurasa, kuna fomu ya <strong>"Record Payment"</strong>. Jaza: Kiasi, Tarehe, Njia ya Malipo, Nambari ya Kumbukumbu.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Bonyeza <strong>"Record Payment"</strong>.</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Malipo yataonekana kwenye invoice na <strong>kwenye mradi unaohusiana</strong> (Project Timeline itaonyesha: "Client payment received: TZS X").</div></li>
+    <li><div class="step-num">5</div><div class="step-body">Jumla yote iliyolipwa ikilingana na Contract Amount, invoice itabadilika hadi hali ya <span class="badge badge-green">Paid</span> moja kwa moja.</div></li>
+  </ol>
+
+  <div class="sec">6.3 &ndash; Hali za Invoice</div>
+  <table class="dtbl">
+    <thead><tr><th>Hali</th><th>Maelezo</th><th>Inabadilika lini</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill" style="background:#e2e8f0;color:#64748b">Draft</span></td><td>Imeundwa, bado haijakuwa rasmi</td><td>Mwanzo mwa kuunda</td></tr>
+      <tr><td><span class="pill" style="background:#dbeafe;color:#1d4ed8">Sent</span></td><td>Imepelekwa kwa mteja</td><td>Ubadilishe wewe mwenyewe</td></tr>
+      <tr><td><span class="pill" style="background:#dcfce7;color:#15803d">Paid</span></td><td>Imelipwa kikamilifu</td><td>Moja kwa moja ukimaliza kulipa</td></tr>
+      <tr><td><span class="pill" style="background:#fee2e2;color:#dc2626">Overdue</span></td><td>Tarehe ya kulipa imepita</td><td>Moja kwa moja asubuhi ukifungua invoices</td></tr>
+      <tr><td><span class="pill" style="background:#f1f5f9;color:#475569">Cancelled</span></td><td>Imefutwa</td><td>Ubadilishe wewe mwenyewe</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info-box warn">
+    <strong>&#9888; Balance Due:</strong> Balance inayoonyeshwa kwenye invoice = Contract Amount &minus; Advance Paid &minus; Malipo yote yaliyorekodiwa. Hakikisha unaingiza malipo yote ili balance iwe sahihi.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 7: FINANCE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch7">
+  <div class="ch-header">
+    <div class="ch-num">7</div>
+    <div>
+      <div class="ch-title">Finance &ndash; Fedha</div>
+      <div class="ch-sub">Simamia madeni, gharama, na ripoti za biashara</div>
+    </div>
+  </div>
+
+  <div class="sec">7.1 &ndash; Daily Snapshot</div>
+  <p style="margin-bottom:8px;">Finance &rarr; <strong>Daily Snapshot</strong> inaonyesha hali ya fedha ya leo:</p>
+  <ul style="padding-left:20px;font-size:10pt;margin-bottom:10px;">
+    <li style="margin-bottom:4px;"><strong>Cash Flow:</strong> Mapato ya leo dhidi ya gharama za leo</li>
+    <li style="margin-bottom:4px;"><strong>Receivables:</strong> Fedha zinazodaiwa kutoka kwa wateja (invoice ambazo hazijalipwa)</li>
+    <li style="margin-bottom:4px;"><strong>Liabilities:</strong> Madeni yanayodaiwa kwako (suppliers, mikopo)</li>
+    <li style="margin-bottom:4px;"><strong>Alerts:</strong> Madeni yaliyopita tarehe, invoice zilizochelewa</li>
+  </ul>
+
+  <div class="sec">7.2 &ndash; Business Report</div>
+  <p style="margin-bottom:8px;">Finance &rarr; <strong>Business Report</strong> inaonyesha muhtasari wa kipindi:</p>
+  <ul style="padding-left:20px;font-size:10pt;margin-bottom:10px;">
+    <li style="margin-bottom:4px;">Mapato yote (miradi + huduma za ofisi)</li>
+    <li style="margin-bottom:4px;">Gharama zote</li>
+    <li style="margin-bottom:4px;">Faida halisi</li>
+    <li style="margin-bottom:4px;">Utekelezaji wa miradi (project performance)</li>
+  </ul>
+  <p style="font-size:9.5pt;color:#64748b;">Ripoti inaweza kuhifadhiwa kwenye archive (Finance &rarr; Report Archive) kwa kutumia kitufe cha "Save to Archive".</p>
+
+  <div class="sec">7.3 &ndash; Madeni (Debts &amp; Liabilities)</div>
+  <p style="margin-bottom:8px;">Madeni yanaweza kuonekana kwenye Finance &rarr; <strong>Debts &amp; Liabilities</strong>:</p>
+
+  <div class="info-box tip">
+    <strong>Deni linaundwa moja kwa moja</strong> ukichagua "On Credit (Debt Created)" kama chanzo cha malipo wakati wa kuunda order ya vifaa.
+  </div>
+
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Nenda Finance &rarr; Debts &amp; Liabilities. Unaona orodha ya madeni yote.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Bonyeza deni lolote kuona maelezo yake na historia ya malipo.</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Bonyeza <strong>"Record Payment"</strong> kurekodi malipo ya deni &mdash; weka kiasi, tarehe, njia ya malipo.</div></li>
+    <li><div class="step-num">4</div><div class="step-body">Deni likilipwa kikamilifu, hali yake itabadilika hadi <span class="badge badge-green">Settled</span>.</div></li>
+  </ol>
+
+  <div class="sec">7.4 &ndash; Gharama (Expenses)</div>
+  <ol class="steps-list">
+    <li><div class="step-num">1</div><div class="step-body">Finance &rarr; <strong>Record Expense</strong> ili kurekodi gharama yoyote ya biashara.</div></li>
+    <li><div class="step-num">2</div><div class="step-body">Jaza: Aina ya gharama, kiasi, tarehe, maelezo, mradi unaohusiana (optional).</div></li>
+    <li><div class="step-num">3</div><div class="step-body">Gharama zitaonekana kwenye Business Report chini ya "Expenses".</div></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 8: OFFICE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch8">
+  <div class="ch-header">
+    <div class="ch-num">8</div>
+    <div>
+      <div class="ch-title">Office &ndash; Ofisi</div>
+      <div class="ch-sub">Simamia huduma za ofisi na mapato yake</div>
+    </div>
+  </div>
+
+  <table class="dtbl">
+    <thead><tr><th>Ukurasa</th><th>Kusudi</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Office Service</strong></td><td>Rekodi huduma za ofisi zinazolipwa (photocopy, print, n.k.) na fuatilia malipo</td></tr>
+      <tr><td><strong>New Service Record</strong></td><td>Unda rekodi mpya ya huduma</td></tr>
+      <tr><td><strong>Income Overview</strong></td><td>Angalia mapato yote &mdash; faida za miradi, mapato ya ofisi, mengine</td></tr>
+      <tr><td><strong>Service Rates</strong></td><td>Weka viwango vya bei vya huduma za ofisi (k.m. A4 = TZS 200, n.k.)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="info-box tip">
+    <strong>&#128161; Ushauri:</strong> Weka <strong>Service Rates</strong> mara moja kabla ya kuanza kurekodi huduma &mdash; bei zitajazwa moja kwa moja kwenye fomu mpya.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 9: FULL FLOW -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch9">
+  <div class="ch-header">
+    <div class="ch-num">9</div>
+    <div>
+      <div class="ch-title">Mtiririko Kamili wa Mradi</div>
+      <div class="ch-sub">Hatua zote kutoka mteja mpya hadi kukamilisha mradi</div>
+    </div>
+  </div>
+
+  <table class="dtbl">
+    <thead>
+      <tr>
+        <th style="width:30px;">#</th>
+        <th>Hatua</th>
+        <th>Unafanya Nini</th>
+        <th>Mfumo Unafanya Nini Moja kwa Moja</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="font-weight:700;color:#1a2e5a;">1</td>
+        <td><strong>Unda Quotation</strong></td>
+        <td>Quotations &rarr; New Quotation. Jaza taarifa za mteja, vipengee vya kazi, chaguo za nyenzo, kodi.</td>
+        <td>Nambari ya quote (QT-YYYY-NNNN) inagawiwa moja kwa moja. Bei zote za chaguo za nyenzo zinahesabiwa.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td style="font-weight:700;color:#1a2e5a;">2</td>
+        <td><strong>Tuma kwa Mteja</strong></td>
+        <td>Chapisha PDF, tuma kwa WhatsApp/email. Badilisha hali hadi "Sent".</td>
+        <td>PDF ya draft inaonyesha chaguo zote. Muda wa kumalizika (valid until) unafuatiliwa.</td>
+      </tr>
+      <tr>
+        <td style="font-weight:700;color:#1a2e5a;">3</td>
+        <td><strong>Pokea Jibu la Mteja</strong></td>
+        <td>Mteja akisema anapenda nyenzo ipi, bonyeza "Accept" karibu na nyenzo hiyo kwenye quotation.</td>
+        <td>Hali inabadilika hadi "Accepted". Vitufe vya "Create Invoice" na "Create Project" vinaonekana.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td style="font-weight:700;color:#1a2e5a;">4</td>
+        <td><strong>Unda Mradi</strong></td>
+        <td>Bonyeza "Create Project" kutoka kwenye quotation.</td>
+        <td>Fomu inajazwa moja kwa moja. Quotation inaunganishwa na mradi (locked).</td>
+      </tr>
+      <tr>
+        <td style="font-weight:700;color:#1a2e5a;">5</td>
+        <td><strong>Unda Invoice</strong></td>
+        <td>Bonyeza "Create Invoice" kutoka kwenye quotation au mradi.</td>
+        <td>Contract Amount inajazwa kutoka bei ya chaguo lililokubaliwa. Invoice inaunganishwa na mradi moja kwa moja baada ya kuhifadhi.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td style="font-weight:700;color:#1a2e5a;">6</td>
+        <td><strong>Pokea Malipo ya Awali</strong></td>
+        <td>Rekodi advance paid kwenye invoice.</td>
+        <td>Advance inaonekana kwenye mradi chini ya "Client Income". Balance inasasishwa.</td>
+      </tr>
+      <tr>
+        <td style="font-weight:700;color:#1a2e5a;">7</td>
+        <td><strong>Nunua Vifaa</strong></td>
+        <td>Kutoka kwenye mradi, bonyeza "Add Order". Jaza vifaa na chanzo cha malipo.</td>
+        <td>Gharama za vifaa zinaonekana kwenye mradi. Mradi unabadilika hadi "Materials Ordered". Ikiwa ni mkopo, Debt inaundwa.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td style="font-weight:700;color:#1a2e5a;">8</td>
+        <td><strong>Pokea Vifaa</strong></td>
+        <td>Kwenye order, bonyeza "Mark Fully Received".</td>
+        <td>Mradi unabadilika hadi "In Progress" moja kwa moja.</td>
+      </tr>
+      <tr>
+        <td style="font-weight:700;color:#1a2e5a;">9</td>
+        <td><strong>Rekodi Malipo Zaidi</strong></td>
+        <td>Kila mteja analipa, rekodi kwenye invoice.</td>
+        <td>Project Timeline inapata kumbukumbu ya malipo. Balance inasasishwa. Invoice inabadilika hadi "Paid" ukimaliza.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td style="font-weight:700;color:#1a2e5a;">10</td>
+        <td><strong>Kamilisha Mradi</strong></td>
+        <td>Bonyeza "Complete" kwenye mradi ukimaliza kazi.</td>
+        <td>Faida (Gross Profit) inahifadhiwa kwenye Office Income. Ripoti ya mwisho inaweza kuchapishwa.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="info-box success" style="margin-top:16px;">
+    <strong>&#127775; Mfumo Huu ni Unaounganishwa:</strong> Kila hatua inaunganishwa na nyingine &mdash; quotation &rarr; mradi &rarr; invoice &rarr; malipo &rarr; ripoti. Huhitaji kuingiza taarifa za mteja zaidi ya mara moja.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHAPTER 10: FAQ -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="chapter" id="ch10">
+  <div class="ch-header">
+    <div class="ch-num">10</div>
+    <div>
+      <div class="ch-title">Maswali ya Kawaida (FAQ)</div>
+      <div class="ch-sub">Majibu ya matatizo yanayojitokeza mara nyingi</div>
+    </div>
+  </div>
+
+  <table class="dtbl">
+    <thead><tr><th>Swali</th><th>Jibu</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Revenue ya mradi inaonyesha TZS 0</strong></td>
+        <td>Invoice bado haijaunganishwa na mradi. Ikiwa quotation imekubaliwa lakini invoice haijafanywa, revenue itasomwa kutoka quotation. Ikiwa bado ni 0, angalia kama accepted_material imewekwa kwenye quotation.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td><strong>Sijui contract amount inatoka wapi</strong></td>
+        <td>Contract Amount = Grand Total ya chaguo lililokubaliwa (accepted material option) la quotation. Inajumuisha: Subtotal + Kodi &minus; Discount.</td>
+      </tr>
+      <tr>
+        <td><strong>Invoice haikuunganishwa na mradi moja kwa moja</strong></td>
+        <td>Hakikisha uliunda invoice kwa kubonyeza "Create Invoice" kutoka ukurasa wa quotation au mradi &mdash; si kutoka Invoices &rarr; New Invoice moja kwa moja. Njia ya moja kwa moja ndio inaunganisha.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td><strong>Sijui kubadilisha hali ya order kutoka draft</strong></td>
+        <td>Kwenye ukurasa wa order, juu kuna kitufe cha "Finalise &amp; Place Order" chenye dropdown ya chanzo cha malipo. Chagua chanzo kisha bonyeza hicho kitufe.</td>
+      </tr>
+      <tr>
+        <td><strong>Deni liliundwa kwa bahati mbaya</strong></td>
+        <td>Nenda Finance &rarr; Debts, fungua deni lile, bonyeza "Delete" au badilisha hali yake. Au hariri order na ubadilishe payment_source.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td><strong>Quotation inaonekana "Expired"</strong></td>
+        <td>Muda wake (valid until) umepita. Badilisha tarehe ya kumalizika kwa kuhariri quotation, kisha badilisha hali wewe mwenyewe hadi "draft" au "sent".</td>
+      </tr>
+      <tr>
+        <td><strong>Naweza kubadilisha bei ya chaguo baada ya kukubali?</strong></td>
+        <td>Ndiyo &mdash; hariri quotation na ubadilishe bei kwenye material option. Lakini kama invoice tayari imefanywa, contract amount kwenye invoice haitabadilika moja kwa moja &mdash; unahitaji kuihariri invoice pia.</td>
+      </tr>
+      <tr style="background:#f8fafc;">
+        <td><strong>Mradi hauonyeshi gross profit sahihi</strong></td>
+        <td>Gross Profit = Revenue &minus; Materials Cost. Hakikisha: (1) Invoice ina contract_amount sahihi, (2) Orders zote zinazohusiana zina hali ya "ordered/received" (si draft), (3) Items za order zina unit_cost sahihi.</td>
+      </tr>
+      <tr>
+        <td><strong>Balance ya invoice inashindwa kusasishwa</strong></td>
+        <td>Balance = Contract Amount &minus; Advance Paid &minus; Jumla ya Malipo yaliyorekodiwa. Hakikisha unabonyeza "Record Payment" kwa kila malipo &mdash; si kuhariri advance_paid tu.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="doc-footer">
+  <strong>ADN Hardware Solutions Limited PVC</strong> &middot; Dar es Salaam, Tanzania &middot;
+  Reg. No 162491113 &middot; VAT TIN 162-491-113 &middot; CRDB Bank Akaunti: 0150792421302<br>
+  Mwongozo huu ulitengenezwa: {{ today|date:"d F Y" }} &middot; Toleo 1.0
+</div>
+
+</div><!-- /page -->
+</body>
+</html>

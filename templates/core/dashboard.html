@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – ADN Solutions{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'quotations:create' %}" class="btn btn-sm btn-adn me-2">
+  <i class="bi bi-plus-lg me-1"></i>New Quotation
+</a>
+<a href="{% url 'invoices:create' %}" class="btn btn-sm btn-adn-sky">
+  <i class="bi bi-plus-lg me-1"></i>New Invoice
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Row 1: Core Stats -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Quotations</div>
+          <div class="fw-bold fs-3 mt-1">{{ total_quotes }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dbeafe;color:#2563eb;">
+          <i class="bi bi-file-earmark-text"></i>
+        </div>
+      </div>
+      <div class="text-muted" style="font-size:.72rem;margin-top:.5rem;">
+        <span class="text-success fw-semibold">{{ accepted_quotes }}</span> accepted ·
+        <span class="text-warning fw-semibold">{{ pending_quotes }}</span> pending
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Invoices</div>
+          <div class="fw-bold fs-3 mt-1">{{ total_invoices }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dcfce7;color:#15803d;">
+          <i class="bi bi-receipt"></i>
+        </div>
+      </div>
+      <div class="text-muted" style="font-size:.72rem;margin-top:.5rem;">
+        <span class="text-danger fw-semibold">{{ unpaid_invoices }}</span> unpaid ·
+        TZS {{ total_revenue|floatformat:0 }} collected
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Projects</div>
+          <div class="fw-bold fs-3 mt-1">{{ active_projects }}</div>
+        </div>
+        <div class="stat-icon" style="background:#f3e8ff;color:#7c3aed;">
+          <i class="bi bi-kanban"></i>
+        </div>
+      </div>
+      <div class="text-muted" style="font-size:.72rem;margin-top:.5rem;">
+        Active · <span class="text-success fw-semibold">{{ completed_projects }}</span> completed
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Office Debts</div>
+          <div class="fw-bold fs-3 mt-1 text-danger" style="font-size:1rem!important;">
+            TZS {{ total_debt|floatformat:0 }}
+          </div>
+        </div>
+        <div class="stat-icon" style="background:#fee2e2;color:#dc2626;">
+          <i class="bi bi-exclamation-circle"></i>
+        </div>
+      </div>
+      <div class="text-muted" style="font-size:.72rem;margin-top:.5rem;">Outstanding service debts</div>
+    </div>
+  </div>
+</div>
+
+<!-- Row 2: Income Summary -->
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="stat-card" style="border-left:3px solid #2563eb;">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Project Profits</div>
+          <div class="fw-bold mt-1 text-primary" style="font-size:1.1rem;">TZS {{ project_profit|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-building"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card" style="border-left:3px solid #16a34a;">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Office Service Income</div>
+          <div class="fw-bold mt-1 text-success" style="font-size:1.1rem;">TZS {{ service_income|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-grid-3x3-gap"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card" style="border-left:3px solid var(--adn-sky);">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="text-muted" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Total Office Revenue</div>
+          <div class="fw-bold mt-1" style="font-size:1.2rem;color:var(--adn-navy);">TZS {{ total_income|floatformat:0 }}</div>
+        </div>
+        <div class="stat-icon" style="background:#e0e7ff;color:#4338ca;"><i class="bi bi-graph-up-arrow"></i></div>
+      </div>
+      <a href="{% url 'office:income' %}" class="text-muted d-block mt-1" style="font-size:.72rem;">
+        View breakdown <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Row 3: Activity Tables -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center py-3 px-4">
+        <span><i class="bi bi-file-earmark-text me-2 text-primary"></i>Recent Quotations</span>
+        <a href="{% url 'quotations:list' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Quote #</th><th>Client</th><th>Date</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for q in recent_quotes %}
+            <tr style="cursor:pointer" onclick="window.location='{% url 'quotations:detail' q.pk %}'">
+              <td><a href="{% url 'quotations:detail' q.pk %}" class="fw-semibold text-decoration-none">{{ q.quote_no }}</a></td>
+              <td>{{ q.client_name }}</td>
+              <td>{{ q.quote_date|date:"d M Y" }}</td>
+              <td><span class="badge rounded-pill badge-{{ q.status }} px-2 py-1">{{ q.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No quotations yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center py-3 px-4">
+        <span><i class="bi bi-receipt me-2 text-success"></i>Recent Invoices</span>
+        <a href="{% url 'invoices:list' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Invoice #</th><th>Client</th><th>Amount</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for inv in recent_invoices %}
+            <tr style="cursor:pointer" onclick="window.location='{% url 'invoices:detail' inv.pk %}'">
+              <td><a href="{% url 'invoices:detail' inv.pk %}" class="fw-semibold text-decoration-none">{{ inv.invoice_no }}</a></td>
+              <td>{{ inv.client_name }}</td>
+              <td>{{ inv.contract_amount|floatformat:0 }}</td>
+              <td><span class="badge rounded-pill badge-{{ inv.status }} px-2 py-1">{{ inv.get_status_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No invoices yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Recent Projects -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center py-3 px-4">
+        <span><i class="bi bi-kanban me-2 text-purple" style="color:#7c3aed"></i>Active Projects</span>
+        <a href="{% url 'projects:list' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Project</th><th>Client</th><th>Status</th><th class="text-end">Profit (TZS)</th></tr>
+          </thead>
+          <tbody>
+            {% for p in recent_projects %}
+            <tr style="cursor:pointer" onclick="window.location='{% url 'projects:detail' p.pk %}'">
+              <td><a href="{% url 'projects:detail' p.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">{{ p.name }}</a></td>
+              <td class="text-muted small">{{ p.client_name }}</td>
+              <td>
+                <span class="badge rounded-pill px-2
+                  {% if p.status == 'completed' %}badge-accepted
+                  {% elif p.status == 'in_progress' %}badge-sent
+                  {% elif p.status == 'ordered' %}badge-expired
+                  {% elif p.status == 'cancelled' %}badge-rejected
+                  {% else %}badge-draft{% endif %}">
+                  {{ p.get_status_display }}
+                </span>
+              </td>
+              <td class="text-end fw-semibold {% if p.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ p.gross_profit|floatformat:0 }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No projects yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outstanding Office Debts -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center py-3 px-4">
+        <span><i class="bi bi-people me-2 text-danger"></i>Office Debts</span>
+        <a href="{% url 'office:service_list' %}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr><th>Client</th><th>Date</th><th class="text-end">Balance (TZS)</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for d in recent_debts %}
+            <tr style="cursor:pointer" onclick="window.location='{% url 'office:service_detail' d.pk %}'">
+              <td>
+                <a href="{% url 'office:service_detail' d.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">{{ d.client_name }}</a>
+                {% if d.client_phone %}<div class="text-muted" style="font-size:.72rem;">{{ d.client_phone }}</div>{% endif %}
+              </td>
+              <td class="text-muted small">{{ d.date_recorded|date:"d M Y" }}</td>
+              <td class="text-end fw-bold text-danger">{{ d.balance|floatformat:0 }}</td>
+              <td>
+                <span class="badge rounded-pill px-2
+                  {% if d.status == 'partial' %}badge-expired{% else %}badge-draft{% endif %}">
+                  {{ d.get_status_display }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">No outstanding debts</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

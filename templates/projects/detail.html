@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} – ADN Solutions{% endblock %}
+{% block page_title %}{{ project.name }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2 flex-wrap">
+  <a href="{% url 'projects:list' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <a href="{% url 'projects:edit' project.pk %}" class="btn btn-sm btn-outline-primary">
+    <i class="bi bi-pencil me-1"></i>Edit
+  </a>
+  <a href="{% url 'orders:create' project.pk %}" class="btn btn-sm btn-adn-sky">
+    <i class="bi bi-cart-plus me-1"></i>Add Order
+  </a>
+  <a href="{% url 'finance:expense_add' %}?from_project={{ project.pk }}" class="btn btn-sm btn-outline-danger">
+    <i class="bi bi-cash-stack me-1"></i>Add Expense
+  </a>
+  {% if project.status != 'completed' and project.status != 'cancelled' %}
+  <a href="{% url 'projects:complete' project.pk %}" class="btn btn-sm btn-success">
+    <i class="bi bi-check2-circle me-1"></i>Complete
+  </a>
+  {% endif %}
+  <a href="{% url 'projects:report' project.pk %}" class="btn btn-sm btn-adn" target="_blank">
+    <i class="bi bi-file-earmark-bar-graph me-1"></i>Report PDF
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Progress Bar -->
+<div class="card mb-3 py-0 px-0 overflow-hidden">
+  <div style="padding:14px 24px 10px;">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      {% for step_val, step_label in project.STATUS_CHOICES %}
+      {% if step_val != 'cancelled' %}
+      <div class="text-center" style="flex:1;">
+        <div class="mx-auto mb-1 rounded-circle d-flex align-items-center justify-content-center"
+          style="width:28px;height:28px;font-size:.75rem;font-weight:700;
+            background:{% if project.status_step >= forloop.counter0 %}var(--adn-navy){% else %}#e2e8f0{% endif %};
+            color:{% if project.status_step >= forloop.counter0 %}#fff{% else %}#94a3b8{% endif %};">
+          {{ forloop.counter }}
+        </div>
+        <div style="font-size:.65rem;font-weight:600;
+          color:{% if project.status_step >= forloop.counter0 %}var(--adn-navy){% else %}#94a3b8{% endif %};">
+          {{ step_label }}
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="progress" style="height:6px;border-radius:3px;background:#e2e8f0;">
+      <div class="progress-bar" style="width:{{ project.progress_pct }}%;background:var(--adn-navy);transition:.3s;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- LEFT: Main content -->
+  <div class="col-lg-8">
+
+    <!-- Project Header Card -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="fw-bold mb-1" style="color:var(--adn-navy)">{{ project.name }}</h5>
+            <div class="text-muted small">
+              <i class="bi bi-person me-1"></i>{{ project.client_name }}
+              {% if project.client_phone %} · <i class="bi bi-telephone me-1"></i>{{ project.client_phone }}{% endif %}
+            </div>
+          </div>
+          <!-- Quick Status Update -->
+          <form method="post" action="{% url 'projects:update_status' project.pk %}">
+            {% csrf_token %}
+            <div class="input-group input-group-sm">
+              <select name="status" class="form-select form-select-sm" style="min-width:140px;">
+                {% for val, label in project.STATUS_CHOICES %}
+                <option value="{{ val }}" {% if project.status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-adn btn-sm">Update</button>
+            </div>
+          </form>
+        </div>
+
+        {% if project.description %}
+        <div class="text-muted small mb-3" style="border-left:3px solid var(--adn-sky);padding-left:10px;">{{ project.description }}</div>
+        {% endif %}
+
+        <div class="row g-2">
+          <div class="col-md-4">
+            <div class="section-heading">Timeline</div>
+            <div class="text-muted small mb-1">Start: <strong>{{ project.start_date|date:"d M Y" }}</strong></div>
+            {% if project.target_date %}<div class="text-muted small mb-1">Target: <strong>{{ project.target_date|date:"d M Y" }}</strong></div>{% endif %}
+            {% if project.completion_date %}<div class="text-success small">Completed: <strong>{{ project.completion_date|date:"d M Y" }}</strong></div>{% endif %}
+            <div class="text-muted small">Days elapsed: <strong>{{ project.days_elapsed }}</strong></div>
+          </div>
+          <div class="col-md-4">
+            <div class="section-heading">Linked Documents</div>
+            {% if project.quotation %}
+            <div class="small mb-1">
+              <i class="bi bi-file-earmark-text me-1 text-primary"></i>
+              <a href="{% url 'quotations:detail' project.quotation.pk %}">{{ project.quotation.quote_no }}</a>
+            </div>
+            {% endif %}
+            {% if project.invoice %}
+            <div class="small mb-1">
+              <i class="bi bi-receipt me-1 text-success"></i>
+              <a href="{% url 'invoices:detail' project.invoice.pk %}">{{ project.invoice.invoice_no }}</a>
+            </div>
+            {% endif %}
+            {% if not project.invoice %}
+            <div class="mt-1">
+              <a href="{% url 'invoices:create' %}?from_project={{ project.pk }}{% if project.quotation %}&from_quote={{ project.quotation.pk }}{% endif %}"
+                 class="btn btn-xs btn-outline-success btn-sm" style="font-size:.72rem;padding:2px 8px;">
+                <i class="bi bi-receipt me-1"></i>Create &amp; Link Invoice
+              </a>
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <div class="section-heading">Financials</div>
+            <div class="small mb-1">
+              Revenue: <strong>TZS {{ project.revenue|floatformat:0 }}</strong>
+              {% if project.revenue_source == 'quotation' %}
+              <span class="badge bg-primary ms-1" style="font-size:.6rem;">Quote</span>
+              {% elif project.revenue_source == 'invoice' %}
+              <span class="badge bg-success ms-1" style="font-size:.6rem;">Invoice</span>
+              {% endif %}
+            </div>
+            <div class="small mb-1">Received: <strong class="text-primary">TZS {{ funding.total_client_received|floatformat:0 }}</strong></div>
+            {% if funding.balance_due > 0 %}
+            <div class="small mb-1 text-warning">Balance owed: <strong>TZS {{ funding.balance_due|floatformat:0 }}</strong></div>
+            {% endif %}
+            <div class="small mb-1 text-danger">Materials: <strong>TZS {{ project.materials_cost|floatformat:0 }}</strong></div>
+            {% if project.direct_expenses_cost > 0 %}
+            <div class="small mb-1 text-danger">Direct Expenses: <strong>TZS {{ project.direct_expenses_cost|floatformat:0 }}</strong></div>
+            {% endif %}
+            <div class="small fw-bold {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+              Net Profit: TZS {{ project.gross_profit|floatformat:0 }}
+              {% if project.revenue > 0 %}({{ project.profit_margin|floatformat:0 }}%){% endif %}
+            </div>
+            {% if funding.own_funds_message %}
+            <div class="mt-1 small text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i>Own funds used</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Material Orders -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center py-2 px-4">
+        <span><i class="bi bi-cart me-2 text-warning"></i>Material Orders
+          <span class="badge bg-secondary rounded-pill ms-1">{{ orders|length }}</span>
+        </span>
+        <a href="{% url 'orders:create' project.pk %}" class="btn btn-sm btn-adn-sky">
+          <i class="bi bi-plus-lg me-1"></i>Add Order
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Date</th>
+              <th>Expected</th>
+              <th>Status</th>
+              <th>Paid From</th>
+              <th class="text-end">Total (TZS)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td>
+                <a href="{% url 'orders:detail' order.pk %}" class="fw-semibold text-decoration-none" style="color:var(--adn-navy)">
+                  {{ order.supplier_name }}
+                </a>
+                <div class="text-muted" style="font-size:.7rem;">{{ order.items.count }} item(s)</div>
+              </td>
+              <td class="small">{{ order.order_date|date:"d M Y" }}</td>
+              <td class="small">
+                {{ order.expected_delivery|date:"d M Y"|default:"—" }}
+                {% if order.is_overdue %}<br><span class="badge badge-overdue rounded-pill" style="font-size:.6rem;">Overdue</span>{% endif %}
+              </td>
+              <td>
+                <span class="badge rounded-pill px-2
+                  {% if order.status == 'received' %}badge-accepted
+                  {% elif order.status == 'ordered' %}badge-sent
+                  {% elif order.status == 'partially_received' %}badge-expired
+                  {% elif order.status == 'cancelled' %}badge-rejected
+                  {% else %}badge-draft{% endif %}">
+                  {{ order.get_status_display }}
+                </span>
+                {% if order.status == 'draft' %}
+                <form method="post" action="{% url 'orders:update_status' order.pk %}" class="d-inline ms-1 mt-1">
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="ordered">
+                  <select name="payment_source" class="form-select form-select-sm d-inline-block"
+                          style="width:auto;font-size:.68rem;">
+                    {% for val, label in payment_source_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="btn btn-xs btn-outline-primary"
+                          style="font-size:.65rem;padding:2px 8px;">Finalise</button>
+                </form>
+                {% endif %}
+              </td>
+              <td>
+                {% if order.status != 'draft' and order.status != 'cancelled' %}
+                  {% if order.payment_source == 'cash' %}
+                    <span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-cash-coin me-1"></i>Cash</span>
+                  {% elif order.payment_source == 'bank' %}
+                    <span class="badge bg-primary" style="font-size:.65rem;"><i class="bi bi-bank me-1"></i>Bank</span>
+                  {% elif order.payment_source == 'mpesa' %}
+                    <span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-phone me-1"></i>M-Pesa</span>
+                  {% elif order.payment_source == 'cheque' %}
+                    <span class="badge bg-secondary" style="font-size:.65rem;">Cheque</span>
+                  {% elif order.payment_source == 'credit' %}
+                    {% with debt=order.debts.first %}
+                    {% if debt %}
+                    <a href="{% url 'finance:debt_detail' debt.pk %}" class="badge bg-danger text-white text-decoration-none" style="font-size:.65rem;" title="On Credit — click to view debt"><i class="bi bi-exclamation-triangle me-1"></i>On Credit</a>
+                    {% else %}
+                    <span class="badge bg-danger" style="font-size:.65rem;"><i class="bi bi-exclamation-triangle me-1"></i>On Credit</span>
+                    {% endif %}
+                    {% endwith %}
+                  {% else %}
+                    <span class="badge bg-light text-muted" style="font-size:.65rem;">—</span>
+                  {% endif %}
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-end fw-semibold">{{ order.total_cost|floatformat:0 }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'orders:detail' order.pk %}" class="btn btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                  <a href="{% url 'orders:edit' order.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                <i class="bi bi-cart-x d-block fs-3 mb-1"></i>
+                No material orders yet.
+                <a href="{% url 'orders:create' project.pk %}">Add the first order</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if orders %}
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="5" class="text-end fw-bold">Total Materials Cost:</td>
+              <td class="text-end fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+
+    <!-- Direct Project Expenses (transport, labour, site costs, etc.) -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center py-2 px-4">
+        <span><i class="bi bi-cash-stack me-2 text-danger"></i>Project Expenses
+          <span class="badge bg-secondary rounded-pill ms-1">{{ funding.direct_expenses|length }}</span>
+          <span class="text-muted ms-2" style="font-size:.72rem;">(transport, labour, site costs, etc.)</span>
+        </span>
+        <a href="{% url 'finance:expense_add' %}?from_project={{ project.pk }}" class="btn btn-sm btn-outline-danger">
+          <i class="bi bi-plus-lg me-1"></i>Add Expense
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Paid To</th>
+              <th>Method</th>
+              <th class="text-end">Amount (TZS)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exp in funding.direct_expenses %}
+            <tr>
+              <td class="small">{{ exp.date|date:"d M Y" }}</td>
+              <td>
+                <span class="badge rounded-pill px-2" style="background:{{ exp.category.color }}20;color:{{ exp.category.color }};font-size:.7rem;">
+                  <i class="bi {{ exp.category.icon }} me-1"></i>{{ exp.category.name }}
+                </span>
+              </td>
+              <td class="small">{{ exp.description|truncatechars:50 }}</td>
+              <td class="small text-muted">{{ exp.paid_to|default:"—" }}</td>
+              <td>
+                {% if exp.payment_method == 'cash' %}<span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-cash-coin me-1"></i>Cash</span>
+                {% elif exp.payment_method == 'bank' %}<span class="badge bg-primary" style="font-size:.65rem;"><i class="bi bi-bank me-1"></i>Bank</span>
+                {% elif exp.payment_method == 'mpesa' %}<span class="badge bg-success" style="font-size:.65rem;"><i class="bi bi-phone me-1"></i>M-Pesa</span>
+                {% elif exp.payment_method == 'cheque' %}<span class="badge bg-secondary" style="font-size:.65rem;">Cheque</span>
+                {% else %}<span class="badge bg-light text-muted" style="font-size:.65rem;">{{ exp.get_payment_method_display }}</span>{% endif %}
+              </td>
+              <td class="text-end fw-semibold text-danger">{{ exp.amount|floatformat:0 }}</td>
+              <td class="text-end">
+                <a href="{% url 'finance:expense_edit' exp.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-3">
+                <i class="bi bi-cash-stack d-block fs-3 mb-1"></i>
+                No direct expenses recorded.
+                <a href="{% url 'finance:expense_add' %}?from_project={{ project.pk }}">Add first expense</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if funding.direct_expenses %}
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="5" class="text-end fw-bold">Total Direct Expenses:</td>
+              <td class="text-end fw-bold text-danger">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+
+    {% if project.notes %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Notes</div>
+        <div class="text-muted small" style="white-space:pre-wrap;">{{ project.notes }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- RIGHT: Timeline + Actions -->
+  <div class="col-lg-4">
+
+    <!-- Financial Summary Card (with full funding breakdown) -->
+    <div class="card mb-3">
+      <div class="card-header py-2 px-4"><i class="bi bi-graph-up me-2 text-success"></i>Financial Summary</div>
+      <div class="card-body">
+
+        {# ── Revenue & Client Payments ── #}
+        <div class="section-heading">Client Income</div>
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">
+            Contract Value
+            {% if project.revenue_source == 'quotation' %}
+            <span class="badge bg-primary ms-1" style="font-size:.58rem;">From Quote</span>
+            {% elif project.revenue_source == 'invoice' %}
+            <span class="badge bg-success ms-1" style="font-size:.58rem;">Invoice</span>
+            {% endif %}
+          </span>
+          <span class="fw-semibold">TZS {{ project.revenue|floatformat:0 }}</span>
+        </div>
+        {% if funding.advance_paid %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">Advance Paid</span>
+          <span class="fw-semibold text-primary">TZS {{ funding.advance_paid|floatformat:0 }}</span>
+        </div>
+        {% endif %}
+        {% for pay in funding.inv_payments %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">
+            Payment {{ forloop.counter }}
+            <span class="badge bg-light text-dark ms-1" style="font-size:.62rem;">
+              {% if pay.payment_method == 'bank_transfer' %}Bank
+              {% elif pay.payment_method == 'mobile_money' %}M-Pesa
+              {% elif pay.payment_method == 'cash' %}Cash
+              {% else %}{{ pay.get_payment_method_display }}{% endif %}
+            </span>
+          </span>
+          <span class="fw-semibold text-success">TZS {{ pay.amount|floatformat:0 }}</span>
+        </div>
+        {% endfor %}
+        <div class="d-flex justify-content-between mb-1 small border-top pt-1">
+          <span class="fw-semibold">Total Received</span>
+          <span class="fw-bold text-primary">TZS {{ funding.total_client_received|floatformat:0 }}</span>
+        </div>
+        {% if funding.balance_due > 0 %}
+        <div class="d-flex justify-content-between mb-2 small">
+          <span class="text-muted">Balance Still Owed</span>
+          <span class="fw-semibold text-warning">TZS {{ funding.balance_due|floatformat:0 }}</span>
+        </div>
+        {% elif project.revenue > 0 %}
+        <div class="d-flex justify-content-between mb-2 small">
+          <span class="text-muted">Balance Still Owed</span>
+          <span class="fw-semibold text-success">Paid in Full ✓</span>
+        </div>
+        {% endif %}
+
+        {# ── Materials Outflow ── #}
+        <div class="section-heading mt-2">Materials Paid From</div>
+        {% for item in funding.mat_breakdown %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">
+            {% if item.key == 'cash' %}<i class="bi bi-cash-coin text-success me-1"></i>
+            {% elif item.key == 'bank' %}<i class="bi bi-bank text-primary me-1"></i>
+            {% elif item.key == 'mpesa' %}<i class="bi bi-phone text-success me-1"></i>
+            {% elif item.key == 'credit' %}<i class="bi bi-exclamation-triangle text-danger me-1"></i>
+            {% endif %}
+            {{ item.label }}
+          </span>
+          <span class="fw-semibold text-danger">TZS {{ item.amount|floatformat:0 }}</span>
+        </div>
+        {% empty %}
+        <div class="small text-muted">No finalised orders yet.</div>
+        {% endfor %}
+        <div class="d-flex justify-content-between mb-2 small border-top pt-1">
+          <span class="fw-semibold">Total Materials</span>
+          <span class="fw-bold text-danger">TZS {{ project.materials_cost|floatformat:0 }}</span>
+        </div>
+
+        {# ── Direct Project Expenses ── #}
+        {% if funding.direct_expenses_by_cat %}
+        <div class="section-heading mt-2">Direct Expenses</div>
+        {% for cat in funding.direct_expenses_by_cat %}
+        <div class="d-flex justify-content-between mb-1 small">
+          <span class="text-muted">
+            <i class="bi {{ cat.icon }} me-1" style="color:{{ cat.color }};"></i>{{ cat.name }}
+          </span>
+          <span class="fw-semibold text-danger">TZS {{ cat.total|floatformat:0 }}</span>
+        </div>
+        {% endfor %}
+        <div class="d-flex justify-content-between mb-2 small border-top pt-1">
+          <span class="fw-semibold">Total Expenses</span>
+          <span class="fw-bold text-danger">TZS {{ funding.direct_expenses_cost|floatformat:0 }}</span>
+        </div>
+        {% endif %}
+
+        {# ── Total Cost ── #}
+        {% if funding.direct_expenses_cost > 0 %}
+        <div class="d-flex justify-content-between mb-2 small" style="background:#fff1f2;border-radius:5px;padding:4px 6px;">
+          <span class="fw-semibold text-danger"><i class="bi bi-dash-circle me-1"></i>Total Project Cost</span>
+          <span class="fw-bold text-danger">TZS {{ funding.total_cost|floatformat:0 }}</span>
+        </div>
+        {% endif %}
+
+        {# ── Net Profit ── #}
+        <hr class="my-2">
+        <div class="d-flex justify-content-between">
+          <span class="fw-bold">Net Profit</span>
+          <span class="fw-bold fs-5 {% if project.gross_profit > 0 %}text-success{% else %}text-danger{% endif %}">
+            TZS {{ project.gross_profit|floatformat:0 }}
+          </span>
+        </div>
+        {% if project.revenue > 0 %}
+        <div class="text-muted small text-end mt-1">Margin: {{ project.profit_margin|floatformat:1 }}%</div>
+        {% endif %}
+
+        {# ── Credit orders alert ── #}
+        {% if funding.credit_orders %}
+        <div class="alert alert-danger py-2 px-3 mt-2 mb-0 small">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          <strong>TZS {{ funding.credit_amount|floatformat:0 }}</strong> of materials purchased on credit.
+          {% for o in funding.credit_orders %}
+            {% with debt=o.debts.first %}
+            {% if debt %}
+              <a href="{% url 'finance:debt_detail' debt.pk %}" class="alert-link">View debt →</a>
+            {% endif %}
+            {% endwith %}
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# ── Own funds alert ── #}
+        {% if funding.own_funds_message %}
+        <div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>
+          {{ funding.own_funds_message }}
+        </div>
+        {% endif %}
+        {% if funding.surplus and funding.surplus > 0 %}
+        <div class="alert alert-success py-2 px-3 mt-2 mb-0 small">
+          <i class="bi bi-check-circle me-1"></i>
+          Client payments exceed materials cost by TZS {{ funding.surplus|floatformat:0 }} — profit well-covered.
+        </div>
+        {% endif %}
+
+        {% if project.status != 'completed' and project.status != 'cancelled' %}
+        <hr class="my-2">
+        <a href="{% url 'projects:complete' project.pk %}" class="btn btn-sm btn-success w-100">
+          <i class="bi bi-check2-circle me-1"></i>Mark as Completed
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card border-danger">
+      <div class="card-body">
+        <div class="section-heading text-danger">Danger Zone</div>
+        <a href="{% url 'projects:delete' project.pk %}" class="btn btn-sm btn-outline-danger w-100">
+          <i class="bi bi-trash me-1"></i>Delete Project
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

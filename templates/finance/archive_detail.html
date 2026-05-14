@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ snapshot.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <a href="{% url 'finance:archive' %}" class="btn btn-link text-muted p-0 mb-1">
+      <i class="bi bi-arrow-left me-1"></i>Archive
+    </a>
+    <h2 class="mb-0">{{ snapshot.title }}</h2>
+    <small class="text-muted">
+      {{ snapshot.get_report_type_display }} &nbsp;|&nbsp;
+      {{ snapshot.period_from }} – {{ snapshot.period_to }} &nbsp;|&nbsp;
+      Saved {{ snapshot.generated_at|date:"d M Y, H:i" }}
+    </small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'finance:archive_delete' snapshot.pk %}" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>Delete
+    </a>
+  </div>
+</div>
+
+{% if snapshot.notes %}
+<div class="alert alert-light border mb-4">{{ snapshot.notes }}</div>
+{% endif %}
+
+<!-- Re-use the same report layout but from saved figures -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body">
+        <div class="text-success fw-semibold small mb-1">INCOME</div>
+        <div class="fs-4 fw-bold text-success">TZS {{ snapshot.total_income|floatformat:0 }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body">
+        <div class="text-danger fw-semibold small mb-1">EXPENSES</div>
+        <div class="fs-4 fw-bold text-danger">TZS {{ snapshot.total_expenses|floatformat:0 }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body">
+        <div class="fw-semibold small mb-1 {% if snapshot.net_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">NET PROFIT</div>
+        <div class="fs-4 fw-bold {% if snapshot.net_profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
+          TZS {{ snapshot.net_profit|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body">
+        <div class="text-warning fw-semibold small mb-1">OUTSTANDING</div>
+        <div class="fs-4 fw-bold text-warning">TZS {{ data.total_receivable|floatformat:0 }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Expense by category -->
+{% if data.by_category %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold">Expenses by Category</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr><th>Category</th><th class="text-end">Amount (TZS)</th><th>Share</th></tr>
+      </thead>
+      <tbody>
+        {% for cat in data.by_category %}
+        <tr>
+          <td>{{ cat.name }}</td>
+          <td class="text-end">{{ cat.total|floatformat:0 }}</td>
+          <td><small>{{ cat.pct }}%</small></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Project stats -->
+{% if data.project_stats.count %}
+<div class="card border-0 shadow-sm">
+  <div class="card-header fw-semibold">Project Performance</div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead class="table-light">
+        <tr><th>Project</th><th>Client</th><th class="text-end">Revenue</th><th class="text-end">Profit</th><th>Margin</th></tr>
+      </thead>
+      <tbody>
+        {% for p in data.project_stats.projects %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td>{{ p.client_name }}</td>
+          <td class="text-end">{{ p.revenue|floatformat:0 }}</td>
+          <td class="text-end text-success">{{ p.gross_profit|floatformat:0 }}</td>
+          <td>{{ p.profit_margin|floatformat:1 }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Cash Book — ADN{% endblock %}
+{% block page_title %}Cash Book{% endblock %}
+
+{% block topbar_actions %}
+<form method="get" class="d-flex align-items-center gap-2 flex-wrap">
+  <input type="date" name="from" value="{{ date_from|date:'Y-m-d' }}"
+         class="form-control form-control-sm" style="width:140px;">
+  <span class="text-muted small">to</span>
+  <input type="date" name="to" value="{{ date_to|date:'Y-m-d' }}"
+         class="form-control form-control-sm" style="width:140px;">
+  <select name="account" class="form-select form-select-sm" style="width:130px;">
+    <option value="all"   {% if account == 'all'   %}selected{% endif %}>All Accounts</option>
+    <option value="cash"  {% if account == 'cash'  %}selected{% endif %}>Cash</option>
+    <option value="bank"  {% if account == 'bank'  %}selected{% endif %}>Bank</option>
+    <option value="mpesa" {% if account == 'mpesa' %}selected{% endif %}>M-Pesa</option>
+    <option value="cheque"{% if account == 'cheque'%}selected{% endif %}>Cheque</option>
+    <option value="other" {% if account == 'other' %}selected{% endif %}>Unclassified</option>
+  </select>
+  <button type="submit" class="btn btn-sm btn-adn">
+    <i class="bi bi-funnel me-1"></i>Filter
+  </button>
+  <a href="?from={{ date_from|date:'Y-m-d' }}&to={{ date_to|date:'Y-m-d' }}&account={{ account }}&print=1"
+     onclick="window.print();return false;"
+     class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-printer me-1"></i>Print
+  </a>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .acct-cash   { background:#dcfce7; color:#15803d; }
+  .acct-bank   { background:#dbeafe; color:#1d4ed8; }
+  .acct-mpesa  { background:#f0fdf4; color:#166534; }
+  .acct-cheque { background:#fef3c7; color:#92400e; }
+  .acct-other  { background:#f1f5f9; color:#64748b; }
+  .type-in   { color:#16a34a; font-weight:600; }
+  .type-out  { color:#dc2626; font-weight:600; }
+  .bal-pos   { color:#16a34a; }
+  .bal-neg   { color:#dc2626; }
+  .print-header { display: none; }
+  @media print {
+    #sidebar, #topbar { display:none !important; }
+    #main { margin-left:0 !important; padding:0 !important; }
+    .no-print { display:none !important; }
+    .table { font-size:.75rem; }
+    .print-header { display: block !important; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 3px solid #1a2e5a; }
+    .print-header h1 { font-size: 16pt; color: #1a2e5a; font-weight: 700; }
+    .print-header .sub { font-size: 8.5pt; color: #64748b; margin-top: 3px; }
+    .print-header .rpt-title { font-size: 13pt; font-weight: 700; color: #3aacdc; }
+    @page { size: A4 landscape; margin: 12mm 14mm; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Print-only company header -->
+<div class="print-header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div>
+      <h1>{{ company.name }}</h1>
+      <div class="sub">{{ company.address }} · {{ company.phone }} · {{ company.email }}</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="rpt-title">CASH BOOK</div>
+      <div class="sub">{{ date_from|date:"d M Y" }} — {{ date_to|date:"d M Y" }}{% if account != 'all' %} · {{ account|title }}{% endif %}</div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI strip -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#dcfce7;">
+          <i class="bi bi-arrow-down-circle-fill text-success fs-5"></i>
+        </div>
+        <div>
+          <div class="text-muted small">Total In</div>
+          <div class="fw-bold fs-5 text-success">TZS {{ total_in|floatformat:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#fee2e2;">
+          <i class="bi bi-arrow-up-circle-fill text-danger fs-5"></i>
+        </div>
+        <div>
+          <div class="text-muted small">Total Out</div>
+          <div class="fw-bold fs-5 text-danger">TZS {{ total_out|floatformat:0 }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="stat-card">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:{% if net >= 0 %}#dcfce7{% else %}#fee2e2{% endif %};">
+          <i class="bi bi-wallet2 fs-5 {% if net >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
+        </div>
+        <div>
+          <div class="text-muted small">Net Balance</div>
+          <div class="fw-bold fs-5 {% if net >= 0 %}text-success{% else %}text-danger{% endif %}">
+            TZS {{ net|floatformat:0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ledger table -->
+<div class="card">
+  <div class="card-header py-2 px-4 d-flex justify-content-between align-items-center">
+    <span>
+      <i class="bi bi-journal-bookmark me-2"></i>
+      <strong>Cash Book</strong>
+      <span class="text-muted ms-2 small">
+        {{ date_from|date:"d M Y" }} — {{ date_to|date:"d M Y" }}
+        {% if account != 'all' %}· {{ account|title }}{% endif %}
+      </span>
+    </span>
+    <span class="badge bg-secondary">{{ entries|length }} transactions</span>
+  </div>
+  <div class="card-body p-0">
+    {% if entries %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th style="width:100px;">Date</th>
+            <th>Description</th>
+            <th style="width:110px;">Account</th>
+            <th style="width:90px;">Type</th>
+            <th class="text-end" style="width:130px;">In (TZS)</th>
+            <th class="text-end" style="width:130px;">Out (TZS)</th>
+            <th class="text-end" style="width:140px;">Balance (TZS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Opening balance row -->
+          <tr class="table-secondary">
+            <td class="text-muted small">{{ date_from|date:"d M Y" }}</td>
+            <td colspan="3" style="font-size:.85rem;font-style:italic;color:#64748b;">
+              Opening Balance
+            </td>
+            <td class="text-end"><span class="text-muted">—</span></td>
+            <td class="text-end"><span class="text-muted">—</span></td>
+            <td class="text-end fw-semibold {% if opening_balance >= 0 %}bal-pos{% else %}bal-neg{% endif %}">
+              {{ opening_balance|floatformat:0 }}
+            </td>
+          </tr>
+          {% for e in entries %}
+          <tr>
+            <td class="text-muted small">{{ e.date|date:"d M Y" }}</td>
+            <td style="font-size:.85rem;">{{ e.description }}</td>
+            <td>
+              <span class="badge acct-{{ e.account }}" style="font-size:.72rem;">
+                {{ e.acct_label }}
+              </span>
+            </td>
+            <td>
+              <span class="text-muted" style="font-size:.72rem;">{{ e.type_label }}</span>
+            </td>
+            <td class="text-end">
+              {% if e.in %}
+              <span class="type-in">{{ e.in|floatformat:0 }}</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td class="text-end">
+              {% if e.out %}
+              <span class="type-out">{{ e.out|floatformat:0 }}</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td class="text-end fw-semibold {% if e.balance >= 0 %}bal-pos{% else %}bal-neg{% endif %}">
+              {{ e.balance|floatformat:0 }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="4" class="text-end text-muted" style="font-size:.85rem;">Period Movement</td>
+            <td class="text-end text-success">{{ total_in|floatformat:0 }}</td>
+            <td class="text-end text-danger">{{ total_out|floatformat:0 }}</td>
+            <td class="text-end {% if net >= 0 %}text-success{% else %}text-danger{% endif %}">
+              {{ net|floatformat:0 }}
+            </td>
+          </tr>
+          <tr style="border-top:2px solid #1a2e5a;">
+            <td colspan="6" class="text-end">Closing Balance</td>
+            <td class="text-end {% if closing_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+              {{ closing_balance|floatformat:0 }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+      No transactions found for the selected period{% if account != 'all' %} and account{% endif %}.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

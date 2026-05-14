@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Accounts Receivable (AR){% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+  #sidebar, #topbar, .no-print { display: none !important; }
+  #main { margin-left: 0 !important; }
+  .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+  .table-responsive { overflow: visible !important; }
+  body { font-size: 12px; }
+  .content-area { padding: .5rem !important; }
+  .print-header { display: block !important; }
+}
+.print-header { display: none; }
+</style>
+{% endblock %}
+
+{% block page_title %}AR — Accounts Receivable{% endblock %}
+
+{% block topbar_actions %}
+<button onclick="window.print()" class="btn btn-sm btn-outline-secondary no-print">
+  <i class="bi bi-printer me-1"></i>Print / PDF
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="print-header mb-3">
+  <h4 class="mb-0">ADN uPVC & Aluminum Solutions — Accounts Receivable (AR)</h4>
+</div>
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0"><i class="bi bi-arrow-down-circle text-success me-2"></i>Accounts Receivable (AR)</h2>
+    <small class="text-muted">All outstanding balances owed to us — invoices &amp; office services (Fedha tunazodai)</small>
+  </div>
+  <a href="{% url 'finance:full_report' %}" class="btn btn-outline-secondary btn-sm no-print">
+    <i class="bi bi-bar-chart-line me-1"></i>Full Report
+  </a>
+</div>
+
+{# ── Summary banner ── #}
+<div class="row g-3 mb-4">
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100" style="border-top:3px solid #16a34a!important;">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Total Outstanding (AR)</div>
+        <div class="fs-3 fw-bold text-success">TZS {{ data.total_ar|floatformat:0 }}</div>
+        <div class="small text-muted mt-1">{{ data.all_rows|length }} item(s)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Project Invoices</div>
+        <div class="fs-5 fw-bold text-warning">TZS {{ data.inv_total_outstanding|floatformat:0 }}</div>
+        <div class="small text-muted">{{ data.inv_rows|length }} invoice(s)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Office Services</div>
+        <div class="fs-5 fw-bold text-warning">TZS {{ data.svc_total_outstanding|floatformat:0 }}</div>
+        <div class="small text-muted">{{ data.svc_rows|length }} record(s)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card border-0 shadow-sm text-center h-100">
+      <div class="card-body">
+        <div class="small text-muted mb-1">Already Received</div>
+        <div class="small fw-semibold text-success mt-1">
+          <i class="bi bi-cash-coin me-1"></i>Cash: TZS {{ data.total_recv_cash|floatformat:0 }}
+        </div>
+        <div class="small fw-semibold text-primary mt-1">
+          <i class="bi bi-bank me-1"></i>Bank: TZS {{ data.total_recv_bank|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Single combined AR list ── #}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center" style="background:#f0fdf4;">
+    <span><i class="bi bi-list-ul me-2 text-success"></i>All Receivables — Invoices &amp; Office Services</span>
+    <span class="text-success fw-bold">TZS {{ data.total_ar|floatformat:0 }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if data.all_rows %}
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Type</th>
+            <th>Client (Mteja)</th>
+            <th>Reference</th>
+            <th>Date / Due</th>
+            <th class="text-end">Charged</th>
+            <th class="text-end text-success">Cash</th>
+            <th class="text-end text-primary">Bank</th>
+            <th class="text-end text-warning">Balance Due</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in data.all_rows %}
+          <tr class="{% if r.is_overdue %}table-danger{% endif %}">
+
+            {# Type badge #}
+            <td>
+              {% if r.type == 'invoice' %}
+                <span class="badge bg-primary" style="font-size:.65rem;">
+                  <i class="bi bi-receipt-cutoff me-1"></i>Invoice
+                </span>
+              {% else %}
+                <span class="badge bg-info text-dark" style="font-size:.65rem;">
+                  <i class="bi bi-building me-1"></i>Office
+                </span>
+              {% endif %}
+            </td>
+
+            {# Client #}
+            <td>
+              <div class="fw-semibold">{{ r.client_name }}</div>
+              {% if r.client_phone %}<div class="small text-muted">{{ r.client_phone }}</div>{% endif %}
+            </td>
+
+            {# Reference / link #}
+            <td>
+              {% if r.type == 'invoice' %}
+                <a href="{% url 'invoices:detail' r.pk %}" class="fw-semibold text-decoration-none text-primary">
+                  {{ r.ref }}
+                </a>
+                {% if r.sub_ref %}
+                <br>
+                <a href="{% url 'projects:detail' r.sub_ref_pk %}" class="badge bg-light text-dark text-decoration-none" style="font-size:.65rem;">
+                  <i class="bi bi-tools me-1"></i>{{ r.sub_ref|truncatechars:25 }}
+                </a>
+                {% endif %}
+              {% else %}
+                <a href="{% url 'office:service_detail' r.pk %}" class="text-decoration-none text-dark">
+                  <span class="small text-muted">{{ r.ref|truncatechars:30 }}</span>
+                </a>
+                {% if r.sub_ref %}
+                <br><span class="badge bg-light text-dark" style="font-size:.65rem;">{{ r.sub_ref }}</span>
+                {% endif %}
+              {% endif %}
+            </td>
+
+            {# Dates #}
+            <td class="small text-muted">
+              <div>{{ r.date }}</div>
+              {% if r.due_date %}
+              <div class="{% if r.is_overdue %}text-danger fw-semibold{% endif %}">Due: {{ r.due_date }}</div>
+              {% endif %}
+            </td>
+
+            <td class="text-end fw-semibold">{{ r.total_charged|floatformat:0 }}</td>
+            <td class="text-end text-success">{{ r.recv_cash|floatformat:0 }}</td>
+            <td class="text-end text-primary">{{ r.recv_bank|floatformat:0 }}</td>
+            <td class="text-end fw-bold text-warning">{{ r.balance|floatformat:0 }}</td>
+
+            <td>
+              {% if r.is_overdue %}
+                <span class="badge bg-danger">Overdue</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Pending</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td colspan="4">TOTAL ({{ data.all_rows|length }} items)</td>
+            <td class="text-end">—</td>
+            <td class="text-end text-success">{{ data.total_recv_cash|floatformat:0 }}</td>
+            <td class="text-end text-primary">{{ data.total_recv_bank|floatformat:0 }}</td>
+            <td class="text-end text-warning">TZS {{ data.total_ar|floatformat:0 }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-check-circle-fill text-success display-4 d-block mb-3"></i>
+      <h5>No outstanding receivables!</h5>
+      <p class="text-muted">All clients have paid in full.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

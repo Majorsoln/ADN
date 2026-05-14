@@ -1,0 +1,661 @@
+{% extends "base.html" %}
+{% block title %}Daily Snapshot – {{ for_date|date:"d M Y" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .kpi-card {
+    border-radius: 12px; border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  }
+  .kpi-card .kpi-label {
+    font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; opacity: .7;
+  }
+  .kpi-card .kpi-val {
+    font-size: 1.7rem; font-weight: 800; line-height: 1.1;
+  }
+  .kpi-card .kpi-sub { font-size: .75rem; opacity: .75; margin-top: 4px; }
+  .kpi-card .kpi-breakdown { font-size: .72rem; border-top: 1px solid rgba(255,255,255,.2); margin-top: 10px; padding-top: 8px; }
+  .kpi-card .kpi-breakdown .kpi-row { display:flex; justify-content:space-between; padding: 2px 0; }
+
+  .section-card {
+    border: none; border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.06);
+  }
+  .section-card .card-header {
+    border-radius: 10px 10px 0 0 !important;
+    font-size: .8rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; padding: 10px 16px;
+  }
+
+  .activity-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px; border-bottom: 1px solid #f1f5f9;
+    font-size: .85rem;
+  }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-row .act-badge { flex-shrink: 0; }
+  .activity-row .act-main { flex-grow: 1; min-width: 0; }
+  .activity-row .act-amount { flex-shrink: 0; font-weight: 700; font-size: .9rem; }
+
+  .funds-account {
+    border-radius: 8px; padding: 12px; text-align: center;
+    border: 1px solid #e2e8f0;
+  }
+  .funds-account .fa-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; }
+  .funds-account .fa-val { font-size: 1.1rem; font-weight: 800; margin-top: 4px; }
+  .funds-account .fa-sub { font-size: .65rem; color: #94a3b8; margin-top: 2px; }
+
+  .project-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: 8px; border: 1px solid #e2e8f0;
+    font-size: .82rem; background: #f8fafc;
+  }
+  .project-pill .pp-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dot-ordered    { background:#d97706; }
+  .dot-in_progress{ background:#2563eb; }
+
+  .alert-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; border-radius: 6px; margin-bottom: 6px; font-size: .83rem;
+  }
+  .alert-row.overdue  { background:#fef2f2; border-left: 3px solid #dc2626; }
+  .alert-row.due-today{ background:#fff7ed; border-left: 3px solid #f97316; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Page header ──────────────────────────────────────────────────────── -->
+<div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0 fw-bold" style="color:#1a2e5a;">
+      <i class="bi bi-speedometer2 me-2" style="color:#3aacdc;"></i>Daily Snapshot
+    </h2>
+    <div class="text-muted" style="font-size:.85rem;">
+      {{ for_date|date:"l, d F Y" }}
+      {% if is_today %}<span class="badge ms-2" style="background:#3aacdc;font-size:.7rem;">TODAY</span>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a href="?date={{ prev_date|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-chevron-left"></i>
+    </a>
+    <form method="get">
+      <input type="date" name="date" value="{{ for_date|date:'Y-m-d' }}"
+             class="form-control form-control-sm" style="width:145px;" onchange="this.form.submit()">
+    </form>
+    {% if not is_today %}
+    <a href="?date={{ next_date|date:'Y-m-d' }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-chevron-right"></i>
+    </a>
+    <a href="?" class="btn btn-sm" style="background:#1a2e5a;color:#fff;">Today</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Alerts ──────────────────────────────────────────────────────────── -->
+{% if data.alerts %}
+<div class="mb-3">
+  {% for alert in data.alerts %}
+  <div class="alert alert-{{ alert.level }} d-flex align-items-center gap-2 py-2 mb-2">
+    <i class="bi {{ alert.icon }}"></i><span>{{ alert.message }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── KPI strip ───────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Money In -->
+  <div class="col-sm-4">
+    <div class="kpi-card card h-100" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;">
+      <div class="card-body">
+        <div class="kpi-label">Money In</div>
+        <div class="kpi-val">TZS {{ data.total_in|floatformat:0 }}</div>
+        <div class="kpi-sub">Cash received today</div>
+        {% if data.total_in %}
+        <div class="kpi-breakdown">
+          {% if data.invoice_income %}
+          <div class="kpi-row"><span>Invoice payments</span><span>{{ data.invoice_income|floatformat:0 }}</span></div>
+          {% endif %}
+          {% if data.advance_income %}
+          <div class="kpi-row"><span>Advances</span><span>{{ data.advance_income|floatformat:0 }}</span></div>
+          {% endif %}
+          {% if data.office_income %}
+          <div class="kpi-row"><span>Office service</span><span>{{ data.office_income|floatformat:0 }}</span></div>
+          {% endif %}
+          {% if data.other_income %}
+          <div class="kpi-row"><span>Other income</span><span>{{ data.other_income|floatformat:0 }}</span></div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Money Out -->
+  <div class="col-sm-4">
+    <div class="kpi-card card h-100" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;">
+      <div class="card-body">
+        <div class="kpi-label">Money Out</div>
+        <div class="kpi-val">TZS {{ data.total_out|floatformat:0 }}</div>
+        <div class="kpi-sub">Cash paid today</div>
+        <div class="kpi-breakdown">
+          {% if data.exp_total %}
+          <div class="kpi-row"><span>Cash expenses</span><span>{{ data.exp_total|floatformat:0 }}</span></div>
+          {% endif %}
+          {% if data.mat_orders_today %}
+          <div class="kpi-row"><span>Material orders</span><span>{{ data.mat_orders_today|floatformat:0 }}</span></div>
+          {% endif %}
+          {% if data.debt_payments_total %}
+          <div class="kpi-row"><span>Debt repayments</span><span>{{ data.debt_payments_total|floatformat:0 }}</span></div>
+          {% endif %}
+          {% if data.credit_exp_total %}
+          <div class="kpi-row" style="opacity:.75;"><span>+ Credit (no cash)</span><span>{{ data.credit_exp_total|floatformat:0 }}</span></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Net -->
+  <div class="col-sm-4">
+    <div class="kpi-card card h-100"
+         style="background:{% if data.net_today >= 0 %}linear-gradient(135deg,#1a2e5a,#2563eb){% else %}linear-gradient(135deg,#7c3aed,#9333ea){% endif %};color:#fff;">
+      <div class="card-body">
+        <div class="kpi-label">Net Today</div>
+        <div class="kpi-val">TZS {{ data.net_today|floatformat:0 }}</div>
+        <div class="kpi-sub">In minus Out</div>
+        <div class="kpi-breakdown">
+          <div class="kpi-row">
+            <span>Outstanding receivables</span>
+            <span>{{ data.total_receivable|floatformat:0 }}</span>
+          </div>
+          {% if data.liabilities.total_balance %}
+          <div class="kpi-row">
+            <span>Total liabilities</span>
+            <span>{{ data.liabilities.total_balance|floatformat:0 }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Attention Required ──────────────────────────────────────────────── -->
+{% if invoices_overdue or invoices_due %}
+<div class="section-card card mb-4">
+  <div class="card-header" style="background:#fef2f2;color:#dc2626;">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>Attention Required
+    <span class="float-end fw-normal text-muted" style="text-transform:none;font-size:.8rem;">
+      {{ invoices_overdue|length }} overdue · {{ invoices_due|length }} due today
+    </span>
+  </div>
+  <div class="card-body p-3">
+    {% for inv in invoices_overdue %}
+    <div class="alert-row overdue">
+      <div>
+        <span class="badge bg-danger me-1">OVERDUE</span>
+        <strong>{{ inv.client_name }}</strong>
+        <span class="text-muted ms-1" style="font-size:.78rem;">{{ inv.invoice_no }}</span>
+        <span class="text-muted ms-2" style="font-size:.75rem;">Due {{ inv.due_date|date:"d M Y" }}</span>
+      </div>
+      <div class="text-danger fw-bold">TZS {{ inv.balance_due|floatformat:0 }}</div>
+    </div>
+    {% endfor %}
+    {% for inv in invoices_due %}
+    <div class="alert-row due-today">
+      <div>
+        <span class="badge bg-warning text-dark me-1">DUE TODAY</span>
+        <strong>{{ inv.client_name }}</strong>
+        <span class="text-muted ms-1" style="font-size:.78rem;">{{ inv.invoice_no }}</span>
+      </div>
+      <div class="text-warning fw-bold">TZS {{ inv.balance_due|floatformat:0 }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Today's Activity ────────────────────────────────────────────────── -->
+{% if quotes_today or invoices_today %}
+<div class="row g-3 mb-4">
+  {% if quotes_today %}
+  <div class="col-lg-6">
+    <div class="section-card card h-100">
+      <div class="card-header" style="background:#eff6ff;color:#1d4ed8;">
+        <i class="bi bi-file-earmark-text me-2"></i>Quotations Issued Today
+        <span class="float-end badge" style="background:#1d4ed8;text-transform:none;font-size:.72rem;">{{ quotes_today|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        {% for q in quotes_today %}
+        <div class="activity-row">
+          <div class="act-badge">
+            <span class="badge rounded-pill
+              {% if q.status == 'sent' %}bg-primary
+              {% elif q.status == 'accepted' %}bg-success
+              {% elif q.status == 'draft' %}bg-secondary
+              {% else %}bg-light text-dark{% endif %}">
+              {{ q.get_status_display }}
+            </span>
+          </div>
+          <div class="act-main">
+            <a href="{% url 'quotations:detail' q.pk %}" class="fw-semibold text-decoration-none text-dark">
+              {{ q.client_name }}
+            </a>
+            <div class="text-muted" style="font-size:.75rem;">{{ q.quote_no }}{% if q.project_name %} · {{ q.project_name }}{% endif %}</div>
+          </div>
+          <div class="act-amount text-primary">
+            <a href="{% url 'quotations:detail' q.pk %}" class="text-decoration-none">
+              <i class="bi bi-arrow-right-circle"></i>
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if invoices_today %}
+  <div class="col-lg-6">
+    <div class="section-card card h-100">
+      <div class="card-header" style="background:#f0fdf4;color:#16a34a;">
+        <i class="bi bi-receipt me-2"></i>Invoices Created Today
+        <span class="float-end badge" style="background:#16a34a;text-transform:none;font-size:.72rem;">{{ invoices_today|length }}</span>
+      </div>
+      <div class="card-body p-0">
+        {% for inv in invoices_today %}
+        <div class="activity-row">
+          <div class="act-badge">
+            <span class="badge rounded-pill
+              {% if inv.status == 'paid' %}bg-success
+              {% elif inv.status == 'sent' %}bg-primary
+              {% elif inv.status == 'partial' %}bg-warning text-dark
+              {% else %}bg-secondary{% endif %}">
+              {{ inv.get_status_display }}
+            </span>
+          </div>
+          <div class="act-main">
+            <a href="{% url 'invoices:detail' inv.pk %}" class="fw-semibold text-decoration-none text-dark">
+              {{ inv.client_name }}
+            </a>
+            <div class="text-muted" style="font-size:.75rem;">{{ inv.invoice_no }} · Due {{ inv.due_date|date:"d M Y"|default:"—" }}</div>
+          </div>
+          <div class="act-amount text-success">TZS {{ inv.contract_amount|floatformat:0 }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ── Payments In + Expenses ──────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Payments Received -->
+  <div class="col-lg-6">
+    <div class="section-card card h-100">
+      <div class="card-header" style="background:#f0fdf4;color:#16a34a;">
+        <i class="bi bi-arrow-down-circle-fill me-2"></i>Payments Received
+      </div>
+      <div class="card-body p-0">
+        {% if data.inv_payments or data.off_payments or data.advance_rows or data.other_income_rows %}
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Type</th><th>Client</th><th>Method</th>
+              <th class="text-end">Amount (TZS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inv in data.advance_rows %}
+            <tr>
+              <td><span class="badge bg-warning text-dark">Advance</span></td>
+              <td>
+                <div class="fw-semibold" style="font-size:.83rem;">{{ inv.client_name }}</div>
+                <div class="text-muted" style="font-size:.72rem;">{{ inv.invoice_no }}</div>
+              </td>
+              <td class="text-muted small">{{ inv.advance_payment_method }}</td>
+              <td class="text-end fw-bold text-success">{{ inv.advance_paid|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+            {% for p in data.inv_payments %}
+            <tr>
+              <td><span class="badge bg-info text-dark">Invoice</span></td>
+              <td>
+                <div class="fw-semibold" style="font-size:.83rem;">{{ p.invoice.client_name }}</div>
+                <div class="text-muted" style="font-size:.72rem;">{{ p.invoice.invoice_no }}</div>
+              </td>
+              <td class="text-muted small">{{ p.get_payment_method_display }}</td>
+              <td class="text-end fw-bold text-success">{{ p.amount|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+            {% for p in data.off_payments %}
+            <tr>
+              <td><span class="badge bg-secondary">Office</span></td>
+              <td class="fw-semibold" style="font-size:.83rem;">{{ p.record.client_name }}</td>
+              <td class="text-muted small">{{ p.get_payment_method_display }}</td>
+              <td class="text-end fw-bold text-success">{{ p.amount|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+            {% for inc in data.other_income_rows %}
+            <tr>
+              <td><span class="badge" style="background:#ca8a04;">Other</span></td>
+              <td class="text-muted small">{{ inc.description|default:"—" }}</td>
+              <td class="text-muted small">{{ inc.get_payment_method_display }}</td>
+              <td class="text-end fw-bold text-success">{{ inc.amount|floatformat:0 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="3" class="text-end fw-bold">Total</td>
+              <td class="text-end fw-bold text-success">{{ data.total_in|floatformat:0 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-inbox fs-2 d-block mb-2"></i>No payments recorded today.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Expenses -->
+  <div class="col-lg-6">
+    <div class="section-card card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center"
+           style="background:#fef2f2;color:#dc2626;">
+        <span><i class="bi bi-arrow-up-circle-fill me-2"></i>Expenses Today</span>
+        <a href="{% url 'finance:expense_add' %}" class="btn btn-sm btn-danger py-0 px-2">
+          <i class="bi bi-plus"></i> Add
+        </a>
+      </div>
+      {% if data.credit_exp_total %}
+      <div class="px-3 py-2 border-bottom d-flex justify-content-between"
+           style="background:#fefce8;font-size:.78rem;">
+        <span class="text-warning fw-semibold">
+          <i class="bi bi-exclamation-circle me-1"></i>Credit expenses (no cash paid — new debts)
+        </span>
+        <span class="fw-bold text-warning">TZS {{ data.credit_exp_total|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+      <div class="card-body p-0">
+        {% if data.expenses %}
+        <table class="table table-sm table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Category</th><th>Description</th><th>Method</th>
+              <th class="text-end">Amount (TZS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in data.expenses %}
+            <tr {% if e.payment_method == 'credit' %}class="table-warning"{% endif %}>
+              <td>
+                <i class="bi {{ e.category.icon }}" style="color:{{ e.category.color }};"></i>
+                <span style="font-size:.8rem;">{{ e.category.name }}</span>
+              </td>
+              <td class="text-muted" style="font-size:.78rem;">{{ e.description|truncatechars:30 }}</td>
+              <td>
+                {% if e.payment_method == 'credit' %}
+                <span class="badge bg-warning text-dark" style="font-size:.65rem;">Credit</span>
+                {% else %}
+                <span class="badge bg-light text-dark border" style="font-size:.65rem;">{{ e.get_payment_method_display }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end fw-semibold {% if e.payment_method == 'credit' %}text-warning{% else %}text-danger{% endif %}">
+                {{ e.amount|floatformat:0 }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="3" class="text-end fw-bold">Cash Total</td>
+              <td class="text-end fw-bold text-danger">{{ data.exp_total|floatformat:0 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>No expenses recorded today.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Debt Repayments ─────────────────────────────────────────────────── -->
+{% if data.debt_payments %}
+<div class="section-card card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="background:#fef2f2;color:#dc2626;">
+    <span><i class="bi bi-arrow-return-right me-2"></i>Debt Repayments Today</span>
+    <span class="fw-bold">TZS {{ data.debt_payments_total|floatformat:0 }}</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Creditor</th><th>Debt Type</th><th>Payment Source</th>
+          <th class="text-end">Amount (TZS)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dp in data.debt_payments %}
+        <tr>
+          <td class="fw-semibold">{{ dp.debt.creditor_name }}</td>
+          <td class="text-muted small">{{ dp.debt.get_debt_type_display }}</td>
+          <td>
+            <span class="badge
+              {% if dp.payment_source == 'cash' %}bg-success
+              {% elif dp.payment_source == 'bank' %}bg-primary
+              {% elif dp.payment_source == 'mpesa' %}bg-success
+              {% else %}bg-secondary{% endif %}">
+              {{ dp.get_payment_source_display }}
+            </span>
+          </td>
+          <td class="text-end fw-bold text-danger">{{ dp.amount|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Active Projects + Receivables ──────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Active Projects -->
+  {% if active_projects %}
+  <div class="col-lg-6">
+    <div class="section-card card h-100">
+      <div class="card-header" style="background:#eff6ff;color:#1d4ed8;">
+        <i class="bi bi-hammer me-2"></i>Active Projects
+        <span class="float-end badge" style="background:#1d4ed8;text-transform:none;font-size:.72rem;">{{ active_projects|length }}</span>
+      </div>
+      <div class="card-body p-3">
+        <div class="d-flex flex-column gap-2">
+          {% for p in active_projects %}
+          <a href="{% url 'projects:detail' p.pk %}" class="project-pill text-decoration-none text-dark">
+            <span class="pp-dot dot-{{ p.status }}"></span>
+            <div style="flex-grow:1;min-width:0;">
+              <div class="fw-semibold text-truncate">{{ p.name }}</div>
+              <div class="text-muted" style="font-size:.72rem;">{{ p.client_name }} · {{ p.get_status_display }}</div>
+            </div>
+            <i class="bi bi-chevron-right text-muted" style="font-size:.75rem;"></i>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Outstanding Receivables -->
+  <div class="col-lg-{% if active_projects %}6{% else %}12{% endif %}">
+    <div class="section-card card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center"
+           style="background:#fffbeb;color:#92400e;">
+        <span><i class="bi bi-clock-history me-2"></i>Outstanding Receivables</span>
+        <span class="fw-bold">TZS {{ data.total_receivable|floatformat:0 }}</span>
+      </div>
+      <div class="card-body py-3">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+              <div class="text-muted small fw-semibold mb-1">Invoice Balances</div>
+              <div class="fw-bold fs-6">TZS {{ data.invoice_receivable|floatformat:0 }}</div>
+              {% if data.invoice_overdue_count %}
+              <div class="text-danger small mt-1">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ data.invoice_overdue_count }} overdue — TZS {{ data.invoice_overdue_amount|floatformat:0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+              <div class="text-muted small fw-semibold mb-1">Office Service Balances</div>
+              <div class="fw-bold fs-6">TZS {{ data.service_receivable|floatformat:0 }}</div>
+              {% if data.service_overdue_count %}
+              <div class="text-danger small mt-1">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ data.service_overdue_count }} overdue — TZS {{ data.service_overdue_amount|floatformat:0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent text-end border-0">
+        <a href="{% url 'finance:report' %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-bar-chart-line me-1"></i>Full Report
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Liabilities ─────────────────────────────────────────────────────── -->
+{% if data.liabilities.total_balance > 0 %}
+<div class="section-card card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="background:#fef2f2;color:#dc2626;">
+    <span><i class="bi bi-exclamation-triangle me-2"></i>Outstanding Debts &amp; Liabilities</span>
+    <span class="fw-bold">TZS {{ data.liabilities.total_balance|floatformat:0 }}</span>
+  </div>
+  <div class="card-body py-3">
+    <div class="row g-3 align-items-center">
+      <div class="col-sm-4">
+        <div class="text-muted small mb-1">Total Owed</div>
+        <div class="fw-bold">TZS {{ data.liabilities.total_owed|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-4">
+        <div class="text-muted small mb-1">Total Repaid</div>
+        <div class="fw-bold text-success">TZS {{ data.liabilities.total_paid|floatformat:0 }}</div>
+      </div>
+      <div class="col-sm-4">
+        <div class="text-muted small mb-1">Balance Remaining</div>
+        <div class="fw-bold text-danger">TZS {{ data.liabilities.total_balance|floatformat:0 }}</div>
+      </div>
+      {% if data.liabilities.overdue_count %}
+      <div class="col-12">
+        <div class="alert alert-danger py-2 mb-0 small">
+          <i class="bi bi-alarm me-1"></i>
+          <strong>{{ data.liabilities.overdue_count }} overdue debt(s)</strong>
+          — TZS {{ data.liabilities.overdue_amount|floatformat:0 }} past due date
+        </div>
+      </div>
+      {% endif %}
+      {% if data.liabilities.by_type %}
+      <div class="col-12">
+        <div class="d-flex flex-wrap gap-2">
+          {% for t in data.liabilities.by_type %}
+          <span class="badge px-2 py-1"
+                style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-weight:600;font-size:.75rem;">
+            {{ t.label }}: TZS {{ t.balance|floatformat:0 }} ({{ t.count }})
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-footer bg-transparent text-end border-0">
+    <a href="{% url 'finance:debt_list' %}" class="btn btn-sm btn-outline-danger">
+      <i class="bi bi-exclamation-triangle me-1"></i>Manage Debts
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Funds Position ──────────────────────────────────────────────────── -->
+{% if data.funds %}
+<div class="section-card card mb-2" style="border-left: 4px solid #1a2e5a !important;">
+  <div class="card-header d-flex justify-content-between align-items-center"
+       style="background:#f0f4ff;color:#1a2e5a;">
+    <span><i class="bi bi-safe2 me-2"></i>Funds Position — Where Is the Money?</span>
+    <a href="{% url 'finance:report' %}" class="btn btn-sm btn-outline-primary"
+       style="text-transform:none;font-size:.78rem;">Full Report →</a>
+  </div>
+  <div class="card-body py-3">
+    <!-- Account balances -->
+    <div class="row g-2 mb-3">
+      {% for acc in data.funds.accounts %}
+      <div class="col-6 col-lg-3">
+        <div class="funds-account">
+          <div class="fa-label"><i class="bi {{ acc.icon }} me-1" style="color:{{ acc.color }};"></i>{{ acc.label }}</div>
+          <div class="fa-val {% if acc.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+            TZS {{ acc.balance|floatformat:0 }}
+          </div>
+          <div class="fa-sub">In {{ acc.in|floatformat:0 }} / Out {{ acc.out|floatformat:0 }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <!-- Position summary -->
+    <div class="row g-2">
+      <div class="col-sm-4">
+        <div class="p-3 rounded text-center" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+          <div class="text-muted small fw-semibold mb-1">Receivables (Owed to Us)</div>
+          <div class="fw-bold text-success">TZS {{ data.funds.total_receivable|floatformat:0 }}</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="p-3 rounded text-center" style="background:#fff1f2;border:1px solid #fecaca;">
+          <div class="text-muted small fw-semibold mb-1">Payables (We Owe)</div>
+          <div class="fw-bold text-danger">TZS {{ data.funds.total_payable|floatformat:0 }}</div>
+          {% if data.funds.labour_credit > 0 %}
+          <div style="font-size:.68rem;color:#dc2626;">Labour: {{ data.funds.labour_credit|floatformat:0 }}</div>
+          {% endif %}
+          {% if data.funds.material_credit > 0 %}
+          <div style="font-size:.68rem;color:#dc2626;">Materials: {{ data.funds.material_credit|floatformat:0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="p-3 rounded text-center" style="background:#1a2e5a;">
+          <div class="small fw-semibold mb-1" style="color:#94a3b8;">NET POSITION</div>
+          <div class="fw-bold fs-5 {% if data.funds.net_position >= 0 %}text-success{% else %}text-warning{% endif %}">
+            TZS {{ data.funds.net_position|floatformat:0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Project – ADN Solutions{% endblock %}
+{% block page_title %}{{ action }} Project{% endblock %}
+
+{% block topbar_actions %}
+{% if project %}
+<a href="{% url 'projects:detail' project.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% else %}
+<a href="{% url 'projects:list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post">
+{% csrf_token %}
+<div class="row g-3">
+  <div class="col-lg-8">
+
+    <!-- Project Info -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Project Information</div>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Project Name *</label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Client Name *</label>
+            {{ form.client_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Client Phone</label>
+            {{ form.client_phone }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Linked Documents</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            {% if locked_quotation %}
+            {# Locked: show accepted quotation as a read-only info card #}
+            <label class="form-label">Linked Quotation</label>
+            <input type="hidden" name="quotation" value="{{ locked_quotation.pk }}">
+            <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;padding:10px 14px;">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="bi bi-lock-fill text-success" style="font-size:.85rem;"></i>
+                <span class="fw-bold text-success" style="font-size:.82rem;">{{ locked_quotation.quote_no }}</span>
+                <span class="badge bg-success" style="font-size:.6rem;">Accepted</span>
+              </div>
+              <div class="small text-muted">{{ locked_quotation.client_name }}</div>
+              {% if locked_quotation.accepted_material %}
+              <div class="small mt-1">
+                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                <strong>{{ locked_quotation.accepted_material.material_name }}</strong>
+              </div>
+              {% for opt in locked_quotation.material_options %}
+              {% if opt.material.pk == locked_quotation.accepted_material_id %}
+              <div class="small text-success fw-bold mt-1">Contract Value: TZS {{ opt.grand|floatformat:0 }}</div>
+              {% endif %}
+              {% endfor %}
+              {% endif %}
+            </div>
+            {% else %}
+            <label class="form-label">Linked Quotation <small class="text-muted">(accepted only)</small></label>
+            {{ form.quotation }}
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Linked Invoice</label>
+            {{ form.invoice }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Notes</div>
+        {{ form.notes }}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="section-heading">Timeline & Status</div>
+        <div class="mb-3">
+          <label class="form-label">Status</label>
+          {{ form.status }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Start Date *</label>
+          {{ form.start_date }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Target Completion</label>
+          {{ form.target_date }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Actual Completion</label>
+          {{ form.completion_date }}
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-adn w-100 py-2">
+      <i class="bi bi-check-lg me-1"></i>{{ action }} Project
+    </button>
+  </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('input,select,textarea').forEach(el => {
+    if (el.tagName === 'SELECT') el.classList.add('form-select','form-select-sm');
+    else el.classList.add('form-control','form-control-sm');
+  });
+  const sd = document.querySelector('[name=start_date]');
+  if (sd && !sd.value) sd.value = new Date().toISOString().slice(0,10);
+});
+</script>
+{% endblock %}

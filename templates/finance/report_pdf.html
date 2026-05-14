@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Financial Report – {{ date_from }} to {{ date_to }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; font-size: 10.5pt; color: #1e293b; background: #fff; }
+
+    .page { max-width: 820px; margin: 0 auto; padding: 36px 40px; }
+
+    /* ── Print bar ─────────────────────────────────────────────── */
+    .print-bar {
+      background: #1a2e5a; color: #fff;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .print-bar button {
+      background: #3aacdc; color: #fff; border: none;
+      padding: 6px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 10pt;
+    }
+    .print-bar a { color: #94ccde; text-decoration: none; font-size: 9pt; }
+
+    /* ── Doc Header ────────────────────────────────────────────── */
+    .doc-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding-bottom: 22px; border-bottom: 3px solid #1a2e5a; margin-bottom: 26px;
+    }
+    .company-block h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20pt; color: #1a2e5a; line-height: 1.2;
+    }
+    .company-block .meta { font-size: 9pt; color: #64748b; margin-top: 4px; line-height: 1.6; }
+    .doc-title-block { text-align: right; }
+    .doc-type { font-size: 22pt; font-weight: 700; color: #1a2e5a; letter-spacing: -0.5px; }
+    .doc-period { font-size: 10pt; color: #3aacdc; font-weight: 600; margin-top: 4px; }
+    .doc-generated { font-size: 8.5pt; color: #94a3b8; margin-top: 4px; }
+
+    /* ── KPI strip ─────────────────────────────────────────────── */
+    .kpi-row { display: flex; gap: 14px; margin-bottom: 26px; }
+    .kpi-box {
+      flex: 1; border-radius: 8px; padding: 14px 16px;
+      border: 1px solid #e2e8f0; background: #f8fafc;
+    }
+    .kpi-label { font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; }
+    .kpi-val { font-size: 14pt; font-weight: 800; }
+    .green { color: #16a34a; } .red { color: #dc2626; }
+    .blue  { color: #2563eb; } .orange { color: #d97706; }
+
+    /* ── Section heading ───────────────────────────────────────── */
+    h2 {
+      font-size: 8pt; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: #94a3b8;
+      margin: 24px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0;
+    }
+
+    /* ── Alert boxes ───────────────────────────────────────────── */
+    .alert-box {
+      border-left: 4px solid #dc2626; background: #fef2f2;
+      padding: 9px 14px; border-radius: 0 6px 6px 0; margin-bottom: 10px; font-size: 9.5pt;
+    }
+    .alert-warn { border-color: #d97706; background: #fffbeb; }
+
+    /* ── Tables ─────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-top: 4px; }
+    thead tr { background: #1a2e5a; color: #fff; }
+    thead th { padding: 7px 10px; font-size: 8pt; font-weight: 600; text-align: left; }
+    tbody td { padding: 5px 10px; border-bottom: 1px solid #e2e8f0; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    .text-right { text-align: right; }
+    .total-row td { font-weight: 700; background: #f1f5f9 !important; border-top: 2px solid #1a2e5a; }
+
+    /* ── Signatures ─────────────────────────────────────────────── */
+    .signatures { display: flex; gap: 40px; margin-top: 52px; }
+    .sig-block { flex: 1; }
+    .sig-line { border-top: 1px solid #94a3b8; margin-top: 40px; padding-top: 5px; font-size: 8.5pt; color: #64748b; }
+
+    /* ── Footer strip ───────────────────────────────────────────── */
+    .footer-strip {
+      margin-top: 24px; text-align: center; font-size: 8pt;
+      color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px;
+    }
+
+    /* ── Page / Print ───────────────────────────────────────────── */
+    @page { size: A4 portrait; margin: 14mm 18mm 12mm 18mm; }
+    @media print {
+      .no-print { display: none !important; }
+      .page { padding: 0; max-width: 100%; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .kpi-row, .signatures, .total-row { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="print-bar no-print">
+  <div>
+    <span style="font-family:'DM Serif Display',serif;font-size:13pt;">{{ company.name }}</span>
+    <span style="margin-left:12px;font-size:9pt;opacity:.6;">– Financial Report</span>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <button onclick="window.print()">⬇ Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div class="company-block">
+      <h1>{{ company.name }}</h1>
+      <div class="meta">
+        {{ company.address }}<br>
+        {{ company.phone }} · {{ company.email }}<br>
+        TIN: {{ company.tin }}
+      </div>
+    </div>
+    <div class="doc-title-block">
+      <div class="doc-type">FINANCIAL REPORT</div>
+      <div class="doc-period">{{ date_from }} – {{ date_to }}</div>
+      <div class="doc-generated">Generated: {{ generated_at|date:"d M Y, H:i" }}</div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  {% for alert in data.alerts %}
+  <div class="alert-box {% if alert.level == 'warning' %}alert-warn{% endif %}">
+    {{ alert.message }}
+  </div>
+  {% endfor %}
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi-box">
+      <div class="kpi-label">Total Income</div>
+      <div class="kpi-val green">TZS {{ data.total_income|floatformat:0 }}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Total Expenses</div>
+      <div class="kpi-val red">TZS {{ data.total_expenses|floatformat:0 }}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Net Profit</div>
+      <div class="kpi-val {% if data.net_profit >= 0 %}blue{% else %}red{% endif %}">
+        TZS {{ data.net_profit|floatformat:0 }}
+      </div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Outstanding</div>
+      <div class="kpi-val orange">TZS {{ data.total_receivable|floatformat:0 }}</div>
+    </div>
+  </div>
+
+  <!-- Income breakdown -->
+  <h2>Income Breakdown</h2>
+  <table>
+    <thead>
+      <tr><th>Source</th><th class="text-right">Amount (TZS)</th></tr>
+    </thead>
+    <tbody>
+      {% for item in data.income_breakdown %}
+      <tr><td>{{ item.source }}</td><td class="text-right">{{ item.amount|floatformat:0 }}</td></tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td>Total Income</td>
+        <td class="text-right">{{ data.total_income|floatformat:0 }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Expenses by category -->
+  <h2>Expenses by Category</h2>
+  <table>
+    <thead>
+      <tr><th>Category</th><th class="text-right">Amount (TZS)</th><th>Share (%)</th><th>Entries</th></tr>
+    </thead>
+    <tbody>
+      {% for cat in data.by_category %}
+      <tr>
+        <td>{{ cat.name }}</td>
+        <td class="text-right">{{ cat.total|floatformat:0 }}</td>
+        <td>{{ cat.pct }}%</td>
+        <td>{{ cat.count }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td>Total Expenses</td>
+        <td class="text-right">{{ data.total_expenses|floatformat:0 }}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Expense ledger -->
+  {% if data.expense_rows %}
+  <h2>Expense Detail Ledger</h2>
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Category</th><th>Description</th><th>Paid To</th><th class="text-right">Amount (TZS)</th></tr>
+    </thead>
+    <tbody>
+      {% for e in data.expense_rows %}
+      <tr>
+        <td>{{ e.date }}</td>
+        <td>{{ e.category }}</td>
+        <td>{{ e.description }}</td>
+        <td>{{ e.paid_to|default:"—" }}</td>
+        <td class="text-right">{{ e.amount|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Receivables -->
+  {% if data.invoice_recv_rows or data.service_recv_rows %}
+  <h2>Outstanding Receivables</h2>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Client</th><th>Due Date</th><th>Status</th><th class="text-right">Balance (TZS)</th></tr>
+    </thead>
+    <tbody>
+      {% for r in data.invoice_recv_rows %}
+      <tr>
+        <td>Invoice {{ r.invoice_no }}</td><td>{{ r.client_name }}</td>
+        <td>{{ r.due_date }}</td>
+        <td>{% if r.is_overdue %}<span style="color:#dc2626;font-weight:600;">OVERDUE</span>{% else %}Pending{% endif %}</td>
+        <td class="text-right">{{ r.balance|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+      {% for r in data.service_recv_rows %}
+      <tr>
+        <td>Office Service</td><td>{{ r.client_name }}</td>
+        <td>{{ r.due_date|default:"—" }}</td>
+        <td>{% if r.is_overdue %}<span style="color:#dc2626;font-weight:600;">OVERDUE</span>{% else %}Pending{% endif %}</td>
+        <td class="text-right">{{ r.balance|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="4">Total Outstanding</td>
+        <td class="text-right">{{ data.total_receivable|floatformat:0 }}</td>
+      </tr>
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- Project performance -->
+  {% with ps=data.project_stats %}
+  {% if ps.count %}
+  <h2>Project Performance (Completed in Period)</h2>
+  <table>
+    <thead>
+      <tr><th>Project</th><th>Client</th><th>Completed</th>
+          <th class="text-right">Revenue</th><th class="text-right">Materials</th>
+          <th class="text-right">Profit</th><th>Margin</th></tr>
+    </thead>
+    <tbody>
+      {% for p in ps.projects %}
+      <tr>
+        <td>{{ p.name }}</td><td>{{ p.client_name }}</td><td>{{ p.completion_date }}</td>
+        <td class="text-right">{{ p.revenue|floatformat:0 }}</td>
+        <td class="text-right">{{ p.materials_cost|floatformat:0 }}</td>
+        <td class="text-right">{{ p.gross_profit|floatformat:0 }}</td>
+        <td>{{ p.profit_margin|floatformat:1 }}%</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-row">
+        <td colspan="3">Totals</td>
+        <td class="text-right">{{ ps.total_revenue|floatformat:0 }}</td>
+        <td class="text-right">{{ ps.total_materials|floatformat:0 }}</td>
+        <td class="text-right">{{ ps.total_profit|floatformat:0 }}</td>
+        <td>{{ ps.profit_margin|floatformat:1 }}%</td>
+      </tr>
+    </tbody>
+  </table>
+  {% endif %}
+  {% endwith %}
+
+  <!-- Signatures -->
+  <div class="signatures">
+    <div class="sig-block">
+      <div class="sig-line">Prepared By</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">Reviewed By (Accountant)</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">Approved By – {{ company.name }}</div>
+    </div>
+  </div>
+
+  <div class="footer-strip">
+    {{ company.name }} · {{ company.address }} · {{ company.phone }} · Confidential Financial Report · {{ date_from }} to {{ date_to }}
+  </div>
+
+</div>
+</body>
+</html>

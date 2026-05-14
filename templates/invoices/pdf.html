@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice {{ invoice.invoice_no }} – ADN Solutions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; font-size: 11pt; color: #1e293b; background: #fff; }
+
+    .page { max-width: 800px; margin: 0 auto; padding: 40px; }
+
+    /* Header */
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 24px;
+      border-bottom: 3px solid #1a2e5a;
+      margin-bottom: 28px;
+    }
+    .company-block h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20pt;
+      color: #1a2e5a;
+      line-height: 1.2;
+    }
+    .company-block h1 span { color: #3aacdc; }
+    .company-block .meta { font-size: 9pt; color: #64748b; margin-top: 4px; line-height: 1.6; }
+    .doc-title-block { text-align: right; }
+    .doc-type { font-size: 26pt; font-weight: 700; color: #1a2e5a; letter-spacing: -1px; }
+    .doc-no { font-size: 13pt; color: #3aacdc; font-weight: 600; margin-top: 2px; }
+    .doc-dates { font-size: 9pt; color: #64748b; margin-top: 6px; line-height: 1.8; }
+
+    /* Status stamp */
+    .status-stamp {
+      display: inline-block;
+      border: 3px solid;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 11pt;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      transform: rotate(-10deg);
+      margin-top: 4px;
+    }
+    .stamp-paid   { border-color: #16a34a; color: #16a34a; }
+    .stamp-overdue { border-color: #dc2626; color: #dc2626; }
+    .stamp-sent   { border-color: #2563eb; color: #2563eb; }
+
+    /* Meta row */
+    .meta-row { display: flex; gap: 24px; margin-bottom: 28px; }
+    .meta-box {
+      flex: 1;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .box-label { font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; }
+    .box-name { font-size: 13pt; font-weight: 700; color: #1a2e5a; }
+    .box-detail { font-size: 9pt; color: #64748b; margin-top: 3px; line-height: 1.6; }
+
+    /* Section heading */
+    .sec-heading {
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    /* Description */
+    .description-box {
+      background: #f0f4ff;
+      border-left: 4px solid #1a2e5a;
+      border-radius: 0 6px 6px 0;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 10.5pt;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    /* Summary table */
+    .summary-table { width: 100%; max-width: 380px; margin: 0 0 0 auto; border-collapse: collapse; }
+    .summary-table td { padding: 7px 10px; font-size: 10pt; }
+    .summary-table .label { color: #64748b; }
+    .summary-table .amount { text-align: right; font-weight: 600; }
+    .summary-table .sub-amount { text-align: right; color: #16a34a; font-weight: 600; }
+    .summary-table .total-row td {
+      border-top: 2px solid #1a2e5a;
+      font-size: 13pt;
+      font-weight: 800;
+      color: #1a2e5a;
+      padding-top: 10px;
+    }
+    .summary-table .total-row .total-amount { text-align: right; }
+    .balance-due-block {
+      background: #fef2f2;
+      border: 2px solid #fca5a5;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .balance-due-block.paid {
+      background: #f0fdf4;
+      border-color: #86efac;
+    }
+    .balance-due-block .label-bd { font-size: 10pt; font-weight: 600; color: #1e293b; }
+    .balance-due-block .amount-bd { font-size: 18pt; font-weight: 800; color: #dc2626; }
+    .balance-due-block.paid .amount-bd { color: #16a34a; }
+
+    /* Payment history */
+    table.payments { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    table.payments thead tr { background: #1a2e5a; color: #fff; }
+    table.payments thead th { padding: 7px 10px; font-size: 8.5pt; font-weight: 600; }
+    table.payments tbody td { padding: 6px 10px; font-size: 9.5pt; border-bottom: 1px solid #e2e8f0; }
+    table.payments tbody tr:nth-child(even) { background: #f8fafc; }
+
+    /* Footer */
+    .footer-grid { display: flex; gap: 24px; margin-top: 28px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
+    .footer-col { flex: 1; }
+    .bank-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 9pt; line-height: 1.7; }
+
+    /* Signature */
+    .signature-row { display: flex; gap: 40px; margin-top: 32px; }
+    .sig-block { flex: 1; }
+    .sig-line { border-top: 1px solid #94a3b8; margin-top: 36px; padding-top: 4px; font-size: 8.5pt; color: #64748b; }
+
+    @page { size: A4 portrait; margin: 14mm 18mm 12mm 18mm; }
+    @media print {
+      .no-print { display: none !important; }
+      .page { padding: 0; max-width: 100%; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .footer-grid, .signature-row, .balance-due-block { page-break-inside: avoid; }
+    }
+
+    .print-bar {
+      background: #1a2e5a;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .print-bar button {
+      background: #3aacdc;
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 10pt;
+    }
+    .print-bar a { color: #94ccde; text-decoration: none; font-size: 9pt; }
+  </style>
+</head>
+<body>
+
+<div class="print-bar no-print">
+  <div>
+    <span style="font-family:'DM Serif Display',serif;font-size:14pt;">{{ company.name }}</span>
+    <span style="margin-left:12px;font-size:9pt;opacity:.6;">– Invoice {{ invoice.invoice_no }}</span>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <a href="{% url 'invoices:detail' invoice.pk %}">← Back</a>
+    <button onclick="window.print()">⬇ Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="doc-header">
+    <div class="company-block">
+      <h1>{{ company.name }}</h1>
+      <div class="meta">
+        {{ company.address }}<br>
+        {{ company.phone }} · {{ company.email }}<br>
+        TIN: {{ company.tin }}
+      </div>
+    </div>
+    <div class="doc-title-block">
+      <div class="doc-type">INVOICE</div>
+      <div class="doc-no">{{ invoice.invoice_no }}</div>
+      <div class="doc-dates">
+        Invoice Date: {{ invoice.invoice_date|date:"d F Y" }}<br>
+        Due Date: <strong>{{ invoice.due_date|date:"d F Y"|default:"—" }}</strong><br>
+        {% if invoice.completion_date %}Completion: {{ invoice.completion_date|date:"d F Y" }}<br>{% endif %}
+        {% if invoice.quote_ref %}Ref: <strong>{{ invoice.quote_ref }}</strong>{% endif %}
+      </div>
+      {% if invoice.status == 'paid' %}
+      <div class="status-stamp stamp-paid">PAID</div>
+      {% elif invoice.is_overdue %}
+      <div class="status-stamp stamp-overdue">OVERDUE</div>
+      {% elif invoice.status == 'sent' %}
+      <div class="status-stamp stamp-sent">SENT</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Client -->
+  <div class="meta-row">
+    <div class="meta-box">
+      <div class="box-label">Bill To</div>
+      <div class="box-name">{{ invoice.client_name }}</div>
+      <div class="box-detail">
+        {% if invoice.client_phone %}📞 {{ invoice.client_phone }}<br>{% endif %}
+        {% if invoice.client_email %}✉ {{ invoice.client_email }}<br>{% endif %}
+        {% if invoice.client_address %}📍 {{ invoice.client_address }}{% endif %}
+      </div>
+    </div>
+    <div class="meta-box">
+      <div class="box-label">From</div>
+      <div class="box-name">{{ company.name }}</div>
+      <div class="box-detail">
+        📍 {{ company.address }}<br>
+        📞 {{ company.phone }}<br>
+        ✉ {{ company.email }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  {% if invoice.description %}
+  <div class="sec-heading">Description of Works</div>
+  <div class="description-box">
+    {{ invoice.description }}
+  </div>
+  {% endif %}
+
+  <!-- Financial Summary -->
+  <div class="sec-heading">Financial Summary</div>
+  <table class="summary-table">
+    <tr>
+      <td class="label">Contract Amount</td>
+      <td class="amount">TZS {{ invoice.contract_amount|floatformat:0 }}</td>
+    </tr>
+    <tr>
+      <td class="label">Advance Payment Received</td>
+      <td class="sub-amount">– TZS {{ invoice.advance_paid|floatformat:0 }}</td>
+    </tr>
+  </table>
+
+  <div class="balance-due-block {% if invoice.balance_due <= 0 %}paid{% endif %}" style="max-width:380px;margin:12px 0 0 auto;">
+    <div class="label-bd">Balance Due</div>
+    <div class="amount-bd">TZS {{ invoice.balance_due|floatformat:0 }}</div>
+  </div>
+
+  <!-- Payment History (if any) -->
+  {% if invoice.payments.exists %}
+  <div style="margin-top: 28px;">
+    <div class="sec-heading">Payment History</div>
+    <table class="payments">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Amount (TZS)</th>
+          <th>Method</th>
+          <th>Reference</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pay in invoice.payments.all %}
+        <tr>
+          <td>{{ pay.payment_date|date:"d M Y" }}</td>
+          <td style="font-weight:600;color:#16a34a;">{{ pay.amount|floatformat:0 }}</td>
+          <td>{{ pay.get_payment_method_display }}</td>
+          <td>{{ pay.reference|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Footer -->
+  <div class="footer-grid">
+    <div class="footer-col">
+      <div class="sec-heading">Payment Details – Bank Transfer</div>
+      <div class="bank-box">
+        <strong>{{ company.account_name }}</strong><br>
+        Bank: {{ company.bank_name }}<br>
+        Account No: {{ company.bank_account }}<br>
+        Branch: {{ company.bank_branch }}<br>
+        <em style="font-size:8pt;color:#94a3b8;">Please use {{ invoice.invoice_no }} as payment reference.</em>
+      </div>
+    </div>
+    <div class="footer-col">
+      <div class="sec-heading">Remarks</div>
+      {% if invoice.notes %}
+      <div style="font-size:9pt;color:#64748b;line-height:1.6;">{{ invoice.notes }}</div>
+      {% else %}
+      <div style="font-size:9pt;color:#94a3b8;line-height:1.6;">
+        Thank you for your business.<br>
+        Payment is due by {{ invoice.due_date|date:"d F Y"|default:"the agreed date" }}.<br>
+        For queries, contact us at {{ company.phone }}.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Signatures -->
+  <div class="signature-row">
+    <div class="sig-block">
+      <div class="sig-line">Authorized Signatory – {{ company.name }}</div>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line">Client Acknowledgment – {{ invoice.client_name }}</div>
+    </div>
+  </div>
+
+  <!-- Footer strip -->
+  <div style="margin-top:24px;text-align:center;font-size:8pt;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;">
+    {{ company.name }} · {{ company.address }} · {{ company.phone }} · Thank you for your business.
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% block title %}Cash & Bank Flow Report{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Print ──────────────────────────────────────────────────── */
+@media print {
+  #sidebar, #topbar, .no-print { display: none !important; }
+  #main { margin-left: 0 !important; padding: 0 !important; }
+  body { font-size: 10px; color: #000 !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  .table-responsive { overflow: visible !important; }
+}
+.print-header { display: none; }
+@media print {
+  .print-header { display: block !important; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 3px solid #1a2e5a; }
+  .print-header .ph-name { font-size: 15pt; font-weight: 700; color: #1a2e5a; }
+  .print-header .ph-meta { font-size: 8pt; color: #64748b; margin-top: 2px; }
+  .print-header .ph-title { font-size: 13pt; font-weight: 700; color: #3aacdc; text-align: right; }
+  .print-header .ph-period { font-size: 8.5pt; color: #94a3b8; text-align: right; }
+  @page { size: A4 portrait; margin: 12mm 16mm; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.kpi { border-radius: 10px; border: none; }
+.kpi .kpi-val { font-size: 1.5rem; font-weight: 700; }
+.kpi .kpi-lbl { font-size: .78rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ── Account card ────────────────────────────────────────────── */
+.acct-card { border-radius: 12px; border: 2px solid transparent; }
+.acct-card .acct-header { border-radius: 10px 10px 0 0; padding: .6rem 1rem; }
+.acct-card .section-lbl {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .07em;
+  font-weight: 600; color: #64748b; margin-top: .5rem; margin-bottom: .25rem;
+}
+.acct-card .flow-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .3rem 0; border-bottom: 1px solid #f1f5f9;
+}
+.acct-card .flow-row:last-child { border-bottom: none; }
+.acct-card .flow-lbl { font-size: .85rem; color: #374151; }
+.acct-card .flow-amt { font-size: .9rem; font-weight: 600; font-family: monospace; }
+.acct-card .flow-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .4rem 0; margin-top: .2rem;
+  border-top: 2px solid #e2e8f0;
+}
+.acct-card .flow-total .flow-lbl { font-weight: 700; color: #111; }
+.acct-card .flow-total .flow-amt { font-size: 1rem; }
+.acct-card .net-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .5rem .8rem; border-radius: 8px; margin-top: .5rem;
+}
+
+/* ── Summary table ───────────────────────────────────────────── */
+.sum-table th { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; background: #f8fafc; }
+.sum-table td { font-size: .88rem; }
+.sum-table tfoot td { font-weight: 700; background: #f1f5f9; }
+.sum-table .lbl-col { color: #374151; font-weight: 600; }
+
+.pill {
+  display: inline-block; padding: .15rem .55rem; border-radius: 20px;
+  font-size: .75rem; font-weight: 600; color: #fff;
+}
+.text-in  { color: #16a34a; }
+.text-out { color: #dc2626; }
+.text-net-pos { color: #16a34a; }
+.text-net-neg { color: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 no-print">
+  <h4 class="mb-0 fw-bold">
+    <i class="bi bi-arrow-left-right me-2 text-primary"></i>Cash &amp; Bank Flow Report
+  </h4>
+  <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+    <i class="bi bi-printer me-1"></i>Print / PDF
+  </button>
+</div>
+
+{# ── Period filter ─────────────────────────────────────────────────────── #}
+<div class="card shadow-sm mb-4 no-print">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-end">
+      {% for field in form %}
+        <div class="col-auto">
+          <label class="form-label mb-1 small fw-semibold">{{ field.label }}</label>
+          {{ field }}
+        </div>
+      {% endfor %}
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-funnel me-1"></i>Apply
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if data %}
+
+{# Print header (hidden on screen, shown when printing) #}
+<div class="print-header mb-3">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div>
+      <div class="ph-name">{{ company.name }}</div>
+      <div class="ph-meta">{{ company.address }} · {{ company.phone }} · {{ company.email }}</div>
+    </div>
+    <div>
+      <div class="ph-title">CASH &amp; BANK FLOW REPORT</div>
+      <div class="ph-period">{{ date_from }} – {{ date_to }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── KPI strip ──────────────────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="card kpi shadow-sm h-100" style="border-top: 4px solid #16a34a;">
+      <div class="card-body">
+        <div class="kpi-lbl">Fedha Iliyoingia</div>
+        <div class="kpi-val text-in">
+          {{ data.grand_total_in|floatformat:0 }}
+        </div>
+        <small class="text-muted">TZS</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card kpi shadow-sm h-100" style="border-top: 4px solid #dc2626;">
+      <div class="card-body">
+        <div class="kpi-lbl">Fedha Iliyotoka</div>
+        <div class="kpi-val text-out">
+          {{ data.grand_total_out|floatformat:0 }}
+        </div>
+        <small class="text-muted">TZS</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card kpi shadow-sm h-100"
+         style="border-top: 4px solid {% if data.grand_net >= 0 %}#2563eb{% else %}#f59e0b{% endif %};">
+      <div class="card-body">
+        <div class="kpi-lbl">Net</div>
+        <div class="kpi-val {% if data.grand_net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
+          {% if data.grand_net >= 0 %}+{% endif %}{{ data.grand_net|floatformat:0 }}
+        </div>
+        <small class="text-muted">TZS</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Summary matrix table ─────────────────────────────────────────────────── #}
+{% if data.account_rows %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white fw-semibold py-2">
+    <i class="bi bi-table me-2 text-primary"></i>Muhtasari kwa Akaunti
+    <span class="text-muted fw-normal small ms-2">{{ date_from }} – {{ date_to }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover sum-table mb-0">
+      <thead>
+        <tr>
+          <th class="lbl-col" style="min-width:180px;">Chanzo / Matumizi</th>
+          {% for row in data.account_rows %}
+            <th class="text-center">
+              <i class="bi {{ row.icon }} me-1" style="color:{{ row.color }};"></i>{{ row.label }}
+            </th>
+          {% endfor %}
+          <th class="text-center">Jumla</th>
+        </tr>
+      </thead>
+      <tbody>
+        {# ── INFLOWS ──────────────────────────────────────────── #}
+        <tr class="table-light">
+          <td colspan="{{ data.account_rows|length|add:2 }}" class="py-1 px-2">
+            <span class="text-in fw-bold small"><i class="bi bi-arrow-down-circle me-1"></i>PESA INAYOINGIA</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="lbl-col"><i class="bi bi-receipt me-1 text-muted"></i>Invoice (Malipo)</td>
+          {% for row in data.account_rows %}
+            <td class="text-end {% if row.inv_in %}text-in{% else %}text-muted{% endif %}">
+              {{ row.inv_in|floatformat:0 }}
+            </td>
+          {% endfor %}
+          <td class="text-end fw-semibold text-in">{{ data.grand_inv_in|floatformat:0 }}</td>
+        </tr>
+        <tr>
+          <td class="lbl-col"><i class="bi bi-shop me-1 text-muted"></i>Huduma za Ofisi</td>
+          {% for row in data.account_rows %}
+            <td class="text-end {% if row.svc_in %}text-in{% else %}text-muted{% endif %}">
+              {{ row.svc_in|floatformat:0 }}
+            </td>
+          {% endfor %}
+          <td class="text-end fw-semibold text-in">{{ data.grand_svc_in|floatformat:0 }}</td>
+        </tr>
+        {% if data.grand_oth_in %}
+        <tr>
+          <td class="lbl-col"><i class="bi bi-plus-circle me-1 text-muted"></i>Mapato Mengine</td>
+          {% for row in data.account_rows %}
+            <td class="text-end {% if row.oth_in %}text-in{% else %}text-muted{% endif %}">
+              {{ row.oth_in|floatformat:0 }}
+            </td>
+          {% endfor %}
+          <td class="text-end fw-semibold text-in">{{ data.grand_oth_in|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+        <tr class="fw-bold" style="background:#f0fdf4;">
+          <td>Jumla Inayoingia</td>
+          {% for row in data.account_rows %}
+            <td class="text-end text-in">{{ row.total_in|floatformat:0 }}</td>
+          {% endfor %}
+          <td class="text-end text-in">{{ data.grand_total_in|floatformat:0 }}</td>
+        </tr>
+
+        {# ── OUTFLOWS ─────────────────────────────────────────── #}
+        <tr class="table-light">
+          <td colspan="{{ data.account_rows|length|add:2 }}" class="py-1 px-2">
+            <span class="text-out fw-bold small"><i class="bi bi-arrow-up-circle me-1"></i>PESA INAYOTOKA</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="lbl-col"><i class="bi bi-box-seam me-1 text-muted"></i>Vifaa (Material Orders)</td>
+          {% for row in data.account_rows %}
+            <td class="text-end {% if row.mat_out %}text-out{% else %}text-muted{% endif %}">
+              {{ row.mat_out|floatformat:0 }}
+            </td>
+          {% endfor %}
+          <td class="text-end fw-semibold text-out">{{ data.grand_mat_out|floatformat:0 }}</td>
+        </tr>
+        <tr>
+          <td class="lbl-col"><i class="bi bi-cash-stack me-1 text-muted"></i>Gharama (Expenses)</td>
+          {% for row in data.account_rows %}
+            <td class="text-end {% if row.exp_out %}text-out{% else %}text-muted{% endif %}">
+              {{ row.exp_out|floatformat:0 }}
+            </td>
+          {% endfor %}
+          <td class="text-end fw-semibold text-out">{{ data.grand_exp_out|floatformat:0 }}</td>
+        </tr>
+        {% if data.grand_dbt_out %}
+        <tr>
+          <td class="lbl-col"><i class="bi bi-arrow-return-right me-1 text-muted"></i>Malipo ya Deni</td>
+          {% for row in data.account_rows %}
+            <td class="text-end {% if row.dbt_out %}text-out{% else %}text-muted{% endif %}">
+              {{ row.dbt_out|floatformat:0 }}
+            </td>
+          {% endfor %}
+          <td class="text-end fw-semibold text-out">{{ data.grand_dbt_out|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+        <tr class="fw-bold" style="background:#fff5f5;">
+          <td>Jumla Inayotoka</td>
+          {% for row in data.account_rows %}
+            <td class="text-end text-out">{{ row.total_out|floatformat:0 }}</td>
+          {% endfor %}
+          <td class="text-end text-out">{{ data.grand_total_out|floatformat:0 }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td class="fw-bold">NET</td>
+          {% for row in data.account_rows %}
+            <td class="text-end fw-bold {% if row.net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
+              {% if row.net >= 0 %}+{% endif %}{{ row.net|floatformat:0 }}
+            </td>
+          {% endfor %}
+          <td class="text-end fw-bold {% if data.grand_net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
+            {% if data.grand_net >= 0 %}+{% endif %}{{ data.grand_net|floatformat:0 }}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+
+{# ── Per-account detail cards ─────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+{% for row in data.account_rows %}
+<div class="col-12 col-md-6">
+  <div class="card acct-card shadow-sm h-100" style="border-color: {{ row.color }}20;">
+    {# Header #}
+    <div class="acct-header d-flex align-items-center gap-2"
+         style="background: {{ row.color }}15; border-bottom: 2px solid {{ row.color }}30;">
+      <span class="pill" style="background:{{ row.color }};">
+        <i class="bi {{ row.icon }} me-1"></i>{{ row.label }}
+      </span>
+      <span class="ms-auto small text-muted">{{ date_from }} – {{ date_to }}</span>
+    </div>
+    <div class="card-body py-2 px-3">
+
+      {# Inflows #}
+      <div class="section-lbl"><i class="bi bi-arrow-down-circle-fill text-in me-1"></i>Pesa Inayoingia</div>
+
+      {% if row.inv_in %}
+      <div class="flow-row">
+        <span class="flow-lbl"><i class="bi bi-receipt text-muted me-1"></i>Invoice (Malipo)</span>
+        <span class="flow-amt text-in">{{ row.inv_in|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+
+      {% if row.svc_in %}
+      <div class="flow-row">
+        <span class="flow-lbl"><i class="bi bi-shop text-muted me-1"></i>Huduma za Ofisi</span>
+        <span class="flow-amt text-in">{{ row.svc_in|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+
+      {% if row.oth_in %}
+      <div class="flow-row">
+        <span class="flow-lbl"><i class="bi bi-plus-circle text-muted me-1"></i>Mapato Mengine</span>
+        <span class="flow-amt text-in">{{ row.oth_in|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+
+      {% if not row.inv_in and not row.svc_in and not row.oth_in %}
+      <div class="flow-row">
+        <span class="flow-lbl text-muted fst-italic">Hakuna malipo yaliyopokelewa</span>
+        <span class="flow-amt text-muted">0</span>
+      </div>
+      {% endif %}
+
+      <div class="flow-total">
+        <span class="flow-lbl">Jumla Inayoingia</span>
+        <span class="flow-amt text-in">{{ row.total_in|floatformat:0 }}</span>
+      </div>
+
+      {# Outflows #}
+      <div class="section-lbl mt-2"><i class="bi bi-arrow-up-circle-fill text-out me-1"></i>Pesa Inayotoka</div>
+
+      {% if row.mat_out %}
+      <div class="flow-row">
+        <span class="flow-lbl"><i class="bi bi-box-seam text-muted me-1"></i>Vifaa (Material Orders)</span>
+        <span class="flow-amt text-out">{{ row.mat_out|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+
+      {% if row.exp_out %}
+      <div class="flow-row">
+        <span class="flow-lbl"><i class="bi bi-cash-stack text-muted me-1"></i>Gharama (Expenses)</span>
+        <span class="flow-amt text-out">{{ row.exp_out|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+
+      {% if row.dbt_out %}
+      <div class="flow-row">
+        <span class="flow-lbl"><i class="bi bi-arrow-return-right text-muted me-1"></i>Malipo ya Deni</span>
+        <span class="flow-amt text-out">{{ row.dbt_out|floatformat:0 }}</span>
+      </div>
+      {% endif %}
+
+      {% if not row.mat_out and not row.exp_out and not row.dbt_out %}
+      <div class="flow-row">
+        <span class="flow-lbl text-muted fst-italic">Hakuna matumizi yaliyorekodiwa</span>
+        <span class="flow-amt text-muted">0</span>
+      </div>
+      {% endif %}
+
+      <div class="flow-total">
+        <span class="flow-lbl">Jumla Inayotoka</span>
+        <span class="flow-amt text-out">{{ row.total_out|floatformat:0 }}</span>
+      </div>
+
+      {# Net #}
+      <div class="net-row mt-2
+        {% if row.net >= 0 %}bg-success bg-opacity-10{% else %}bg-danger bg-opacity-10{% endif %}">
+        <span class="fw-bold">NET {{ row.label }}</span>
+        <span class="fw-bold fs-5
+          {% if row.net >= 0 %}text-net-pos{% else %}text-net-neg{% endif %}">
+          {% if row.net >= 0 %}+{% endif %}{{ row.net|floatformat:0 }} TZS
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+{# ── Unaccounted warning ──────────────────────────────────────────────────── #}
+{% if data.unacc_in or data.unacc_out %}
+<div class="alert alert-warning d-flex gap-3 align-items-start mb-4">
+  <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-shrink-0"></i>
+  <div>
+    <strong>Miamala Isiyo na Akaunti Wazi</strong> — baadhi ya rekodi zina njia ya malipo
+    "<em>Haijabainishwa</em>" au "<em>Nyingine</em>" na hazijaweza kuorodheshwa kwenye akaunti yoyote hapo juu.
+    <div class="mt-1 d-flex flex-wrap gap-3">
+      {% if data.unacc_in %}
+        <span class="badge bg-success bg-opacity-75 fs-6 fw-normal px-3 py-2">
+          <i class="bi bi-arrow-down me-1"></i>Inayoingia: TZS {{ data.unacc_in|floatformat:0 }}
+        </span>
+      {% endif %}
+      {% if data.unacc_out %}
+        <span class="badge bg-danger bg-opacity-75 fs-6 fw-normal px-3 py-2">
+          <i class="bi bi-arrow-up me-1"></i>Inayotoka: TZS {{ data.unacc_out|floatformat:0 }}
+        </span>
+      {% endif %}
+    </div>
+    <small class="text-muted mt-1 d-block">
+      Rekebisha rekodi hizi — bainisha akaunti (Cash / Bank / M-Pesa / Cheque) ili zipate kuhesabiwa.
+    </small>
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+{# No transactions in period #}
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-2"></i>Hakuna miamala kwa kipindi kilichochaguliwa.
+</div>
+{% endif %}
+
+{% else %}
+<div class="alert alert-secondary no-print">
+  <i class="bi bi-calendar me-2"></i>Chagua kipindi ili kuona ripoti.
+</div>
+{% endif %}
+
+{% endblock %}

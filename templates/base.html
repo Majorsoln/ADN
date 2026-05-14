@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ADN uPVC & Aluminum Solutions{% endblock %}</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --adn-navy:    #1a2e5a;
+      --adn-blue:    #2563eb;
+      --adn-sky:     #3aacdc;
+      --adn-accent:  #f59e0b;
+      --adn-success: #10b981;
+      --adn-danger:  #ef4444;
+      --adn-light:   #f8fafc;
+      --adn-border:  #e2e8f0;
+      --sidebar-w:   260px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--adn-light); color: #1e293b; }
+
+    /* ── Sidebar ──────────────────────────────────────────── */
+    #sidebar {
+      width: var(--sidebar-w);
+      height: 100vh;
+      background: var(--adn-navy);
+      position: fixed;
+      top: 0; left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      transition: transform .25s ease;
+      overflow-y: auto;
+    }
+    #sidebar .brand {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    #sidebar .brand h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.1rem;
+      color: #fff;
+      margin: 0;
+      line-height: 1.3;
+    }
+    #sidebar .brand span { color: var(--adn-sky); }
+    #sidebar .nav-section {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      color: rgba(255,255,255,.35);
+      text-transform: uppercase;
+      padding: .75rem 1.5rem .25rem;
+    }
+    #sidebar .nav-link {
+      color: rgba(255,255,255,.7);
+      padding: .55rem 1.5rem;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      font-size: .875rem;
+      transition: all .15s;
+    }
+    #sidebar .nav-link:hover, #sidebar .nav-link.active {
+      color: #fff;
+      background: rgba(255,255,255,.08);
+    }
+    #sidebar .nav-link.active { border-left: 3px solid var(--adn-sky); }
+    #sidebar .nav-link i { font-size: 1rem; width: 1.25rem; }
+
+    /* ── Main ─────────────────────────────────────────────── */
+    #main {
+      margin-left: var(--sidebar-w);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #topbar {
+      background: #fff;
+      border-bottom: 1px solid var(--adn-border);
+      padding: .75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+    }
+    #topbar .page-title { font-weight: 600; font-size: 1rem; color: var(--adn-navy); flex: 1; }
+    .content-area { padding: 1.75rem; flex: 1; }
+
+    /* ── Cards ────────────────────────────────────────────── */
+    .card { border: 1px solid var(--adn-border); border-radius: 12px; }
+    .card-header { background: #fff; border-bottom: 1px solid var(--adn-border); font-weight: 600; }
+
+    /* ── Status badges ────────────────────────────────────── */
+    .badge-draft    { background:#e2e8f0; color:#475569; }
+    .badge-sent     { background:#dbeafe; color:#1d4ed8; }
+    .badge-accepted { background:#dcfce7; color:#15803d; }
+    .badge-rejected { background:#fee2e2; color:#b91c1c; }
+    .badge-expired  { background:#fef9c3; color:#92400e; }
+    .badge-paid     { background:#dcfce7; color:#15803d; }
+    .badge-overdue  { background:#fee2e2; color:#b91c1c; }
+    .badge-cancelled{ background:#f1f5f9; color:#64748b; }
+
+    /* ── Stat cards ───────────────────────────────────────── */
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--adn-border);
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-card .stat-icon {
+      width: 46px; height: 46px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    /* ── Tables ───────────────────────────────────────────── */
+    .table thead th {
+      background: #f8fafc;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: #64748b;
+      border-bottom: 1px solid var(--adn-border);
+    }
+    .table td { vertical-align: middle; font-size: .875rem; }
+
+    /* ── Forms ────────────────────────────────────────────── */
+    .form-label { font-size: .8rem; font-weight: 600; color: #374151; }
+    .form-control, .form-select {
+      border-color: var(--adn-border);
+      border-radius: 8px;
+      font-size: .875rem;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--adn-blue);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+    .section-heading {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: .75rem;
+      padding-bottom: .5rem;
+      border-bottom: 1px solid var(--adn-border);
+    }
+
+    /* ── Buttons ──────────────────────────────────────────── */
+    .btn-adn {
+      background: var(--adn-navy);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: .875rem;
+    }
+    .btn-adn:hover { background: #243a70; color: #fff; }
+    .btn-adn-sky {
+      background: var(--adn-sky);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: .875rem;
+    }
+    .btn-adn-sky:hover { background: #2d9bc7; color: #fff; }
+
+    /* ── Alert ────────────────────────────────────────────── */
+    .alert { border-radius: 10px; font-size: .875rem; }
+
+    /* ── Responsive ───────────────────────────────────────── */
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); }
+      #main { margin-left: 0; }
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="brand">
+    <h1>ADN <span>uPVC</span> &amp;<br>Aluminum Solutions</h1>
+    <div style="font-size:.7rem;color:rgba(255,255,255,.4);margin-top:.25rem;">Arusha, Tanzania</div>
+  </div>
+
+  <div class="mt-2">
+    <div class="nav-section">Overview</div>
+    <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+
+    <div class="nav-section mt-2">Quotations</div>
+    <a href="{% url 'quotations:list' %}" class="nav-link {% if 'quotations' in request.path %}active{% endif %}">
+      <i class="bi bi-file-earmark-text"></i> All Quotations
+    </a>
+    {% if can_edit %}
+    <a href="{% url 'quotations:create' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> New Quotation
+    </a>
+    {% endif %}
+
+    <div class="nav-section mt-2">Invoices</div>
+    <a href="{% url 'invoices:list' %}" class="nav-link {% if 'invoices' in request.path %}active{% endif %}">
+      <i class="bi bi-receipt"></i> All Invoices
+    </a>
+    {% if can_edit %}
+    <a href="{% url 'invoices:create' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> New Invoice
+    </a>
+    {% endif %}
+
+    <div class="nav-section mt-2">Projects</div>
+    <a href="{% url 'projects:list' %}" class="nav-link {% if 'projects' in request.path %}active{% endif %}">
+      <i class="bi bi-kanban"></i> All Projects
+    </a>
+    {% if can_edit %}
+    <a href="{% url 'projects:create' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> New Project
+    </a>
+    {% endif %}
+    <a href="{% url 'orders:list' %}" class="nav-link {% if 'orders' in request.path and 'project' not in request.path %}active{% endif %}">
+      <i class="bi bi-cart3"></i> Material Orders
+    </a>
+
+    <div class="nav-section mt-2">Office</div>
+    <a href="{% url 'office:service_list' %}" class="nav-link {% if 'office/service' in request.path %}active{% endif %}">
+      <i class="bi bi-people"></i> Office Service
+    </a>
+    {% if can_edit %}
+    <a href="{% url 'office:service_create' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> New Service Record
+    </a>
+    {% endif %}
+    <a href="{% url 'office:income' %}" class="nav-link {% if 'income' in request.path %}active{% endif %}">
+      <i class="bi bi-graph-up-arrow"></i> Income Overview
+    </a>
+    <a href="{% url 'office:rates' %}" class="nav-link {% if 'rates' in request.path %}active{% endif %}">
+      <i class="bi bi-currency-dollar"></i> Service Rates
+    </a>
+
+    <div class="nav-section mt-2">Finance — Reports</div>
+    <a href="{% url 'finance:snapshot' %}" class="nav-link {% if request.path == '/finance/' %}active{% endif %}">
+      <i class="bi bi-speedometer"></i> Daily Snapshot
+    </a>
+    <a href="{% url 'finance:ar_report' %}" class="nav-link {% if 'finance/ar' in request.path %}active{% endif %}">
+      <i class="bi bi-arrow-down-circle"></i> AR — Receivables
+    </a>
+    <a href="{% url 'finance:debt_list' %}" class="nav-link {% if 'finance/debt' in request.path and request.resolver_match.url_name not in 'debt_add,debt_detail,debt_edit,debt_delete' %}active{% endif %}">
+      <i class="bi bi-arrow-up-circle"></i> AP — Debts &amp; Liabilities
+    </a>
+    <a href="{% url 'finance:office_report' %}" class="nav-link {% if 'finance/office' in request.path %}active{% endif %}">
+      <i class="bi bi-building"></i> Office Services
+    </a>
+    <a href="{% url 'finance:projects_report' %}" class="nav-link {% if 'finance/projects' in request.path %}active{% endif %}">
+      <i class="bi bi-clipboard-check"></i> Projects Report
+    </a>
+    <a href="{% url 'finance:full_report' %}" class="nav-link {% if 'finance/full' in request.path %}active{% endif %}">
+      <i class="bi bi-bar-chart-line"></i> Full Report
+    </a>
+    <a href="{% url 'finance:cashbook' %}" class="nav-link {% if 'finance/cashbook' in request.path %}active{% endif %}">
+      <i class="bi bi-journal-bookmark"></i> Cash Book
+    </a>
+
+    {% if can_edit %}
+    <div class="nav-section mt-2">Finance — Expenses</div>
+    <a href="{% url 'finance:expense_list' %}" class="nav-link {% if 'finance/expense' in request.path %}active{% endif %}">
+      <i class="bi bi-receipt-cutoff"></i> All Expenses
+    </a>
+    <a href="{% url 'finance:expense_add' %}" class="nav-link">
+      <i class="bi bi-plus-circle"></i> Add Expense
+    </a>
+    <a href="{% url 'finance:debt_add' %}" class="nav-link {% if request.resolver_match.url_name == 'debt_add' %}active{% endif %}">
+      <i class="bi bi-plus-circle"></i> Add Debt (Manual)
+    </a>
+    {% else %}
+    <div class="nav-section mt-2">Finance — Expenses</div>
+    <a href="{% url 'finance:expense_list' %}" class="nav-link {% if 'finance/expense' in request.path %}active{% endif %}">
+      <i class="bi bi-receipt-cutoff"></i> All Expenses
+    </a>
+    {% endif %}
+  </div>
+
+  {# ── User info + logout ─────────────────────────────────────── #}
+  <div class="mt-auto p-3" style="border-top:1px solid rgba(255,255,255,.08);">
+    {% if user.is_authenticated %}
+    <div class="d-flex align-items-center gap-2 mb-2 px-1">
+      <div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);
+                  display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="bi bi-person-fill" style="color:rgba(255,255,255,.8);font-size:.9rem;"></i>
+      </div>
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:.8rem;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {{ user.username }}
+        </div>
+        <div style="font-size:.68rem;margin-top:.05rem;">
+          {% if user_role == 'admin' %}
+            <span style="color:#f59e0b;">&#9679; Admin</span>
+          {% elif user_role == 'editor' %}
+            <span style="color:#34d399;">&#9679; Editor</span>
+          {% else %}
+            <span style="color:#94a3b8;">&#9679; Viewer</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <a href="{% url 'manual' %}" class="nav-link {% if request.resolver_match.url_name == 'manual' %}active{% endif %}" style="font-size:.8rem;">
+      <i class="bi bi-book"></i> User Manual
+    </a>
+    {% if can_delete %}
+    <a href="/admin/" class="nav-link" style="font-size:.8rem;">
+      <i class="bi bi-gear"></i> Admin Panel
+    </a>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+      {% csrf_token %}
+      <button type="submit" class="nav-link w-100 border-0 bg-transparent text-start" style="font-size:.8rem;cursor:pointer;">
+        <i class="bi bi-box-arrow-left"></i> Toka (Logout)
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- Main -->
+<div id="main">
+  <!-- Topbar -->
+  <div id="topbar">
+    <button class="btn btn-sm d-md-none" onclick="document.getElementById('sidebar').classList.toggle('open')">
+      <i class="bi bi-list fs-5"></i>
+    </button>
+    <div class="page-title">{% block page_title %}ADN Solutions{% endblock %}</div>
+    {% block topbar_actions %}{% endblock %}
+  </div>
+
+  <!-- Messages -->
+  <div class="px-4 pt-3">
+    {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Content -->
+  <div class="content-area">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
